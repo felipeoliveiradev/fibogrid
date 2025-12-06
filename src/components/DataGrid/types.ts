@@ -308,6 +308,7 @@ export interface DataGridProps<T = any> extends GridEvents<T> {
   // Styling
   className?: string;
   theme?: 'light' | 'dark' | 'auto';
+  height?: number | string;
   
   // Loading
   loading?: boolean;
@@ -316,6 +317,10 @@ export interface DataGridProps<T = any> extends GridEvents<T> {
   
   // Quick filter
   quickFilterText?: string;
+  
+  // Toolbar & Status bar
+  showToolbar?: boolean;
+  showStatusBar?: boolean;
   
   // Context menu
   contextMenu?: boolean;
