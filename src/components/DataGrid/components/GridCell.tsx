@@ -15,6 +15,7 @@ interface GridCellProps<T> {
   onClick: (e: React.MouseEvent) => void;
   onDoubleClick: (e: React.MouseEvent) => void;
   isSelected?: boolean;
+  isFocused?: boolean;
   onMouseDown?: (e: React.MouseEvent) => void;
   onMouseEnter?: () => void;
 }
@@ -31,6 +32,7 @@ export function GridCell<T>({
   onClick,
   onDoubleClick,
   isSelected,
+  isFocused,
   onMouseDown,
   onMouseEnter,
 }: GridCellProps<T>) {
@@ -172,6 +174,7 @@ export function GridCell<T>({
         column.editable && !isEditing && 'cursor-pointer hover:bg-muted/50',
         isEditing && 'ring-2 ring-primary ring-inset p-0',
         isSelected && 'bg-primary/20',
+        isFocused && !isEditing && 'ring-2 ring-primary/50 ring-inset',
         cellClass
       )}
       style={{ width: column.computedWidth, minWidth: column.minWidth || 50 }}

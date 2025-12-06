@@ -32,6 +32,7 @@ interface GridRowProps<T> {
   dropPosition?: 'before' | 'after' | null;
   // Range selection
   isCellSelected?: (rowIndex: number, colIndex: number) => boolean;
+  isCellFocused?: (rowId: string, field: string) => boolean;
   onCellMouseDown?: (rowIndex: number, colIndex: number, e: React.MouseEvent) => void;
   onCellMouseEnter?: (rowIndex: number, colIndex: number) => void;
   // API
@@ -64,6 +65,7 @@ function GridRowInner<T>({
   isDropTarget,
   dropPosition,
   isCellSelected,
+  isCellFocused,
   onCellMouseDown,
   onCellMouseEnter,
   api,
@@ -113,6 +115,7 @@ function GridRowInner<T>({
         const isEditing =
           editingCell?.rowId === row.id && editingCell?.field === column.field;
         const cellSelected = isCellSelected?.(row.rowIndex, colIndex);
+        const cellFocused = isCellFocused?.(row.id, column.field);
         
         return (
           <GridCell
@@ -128,6 +131,7 @@ function GridRowInner<T>({
             onClick={(e) => onCellClick(column, e)}
             onDoubleClick={(e) => onCellDoubleClick(column, e)}
             isSelected={cellSelected}
+            isFocused={cellFocused}
             onMouseDown={(e) => onCellMouseDown?.(row.rowIndex, colIndex, e)}
             onMouseEnter={() => onCellMouseEnter?.(row.rowIndex, colIndex)}
           />

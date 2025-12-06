@@ -6,12 +6,15 @@ import { useColumnResize } from './hooks/useColumnResize';
 import { useColumnDrag } from './hooks/useColumnDrag';
 import { useRowDrag } from './hooks/useRowDrag';
 import { useRangeSelection } from './hooks/useRangeSelection';
+import { useKeyboardNavigation } from './hooks/useKeyboardNavigation';
 import { GridHeader } from './components/GridHeader';
 import { GridRow } from './components/GridRow';
 import { GridPagination } from './components/GridPagination';
 import { GridOverlay } from './components/GridOverlay';
 import { FilterPopover } from './components/FilterPopover';
 import { GridContextMenu } from './components/ContextMenu';
+import { GridToolbar } from './components/GridToolbar';
+import { GridStatusBar } from './components/GridStatusBar';
 import { cn } from '@/lib/utils';
 import { Copy, Download, Trash2 } from 'lucide-react';
 
@@ -32,6 +35,9 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
     className,
     contextMenu = true,
     getContextMenuItems,
+    showToolbar = true,
+    showStatusBar = true,
+    height,
     // Events
     onRowSelected,
     onSelectionChanged,
@@ -55,6 +61,7 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
   const [containerWidth, setContainerWidth] = useState(0);
   const [containerHeight, setContainerHeight] = useState(0);
   const [filterColumn, setFilterColumn] = useState<ProcessedColumn<T> | null>(null);
+  const [quickFilterValue, setQuickFilterValue] = useState('');
 
   // Resize observer
   useEffect(() => {
@@ -92,15 +99,20 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
     api,
     setColumnOrder,
     setColumnWidths,
-  } = useGridState(props, containerWidth);
+  } = useGridState({ ...props, quickFilterText: quickFilterValue }, containerWidth);
 
   // Fire grid ready event
   useEffect(() => {
     onGridReady?.({ api });
   }, [api, onGridReady]);
 
+  // Calculate heights
+  const toolbarHeight = showToolbar ? 48 : 0;
+  const statusBarHeight = showStatusBar ? 36 : 0;
+  const paginationHeight = pagination ? 52 : 0;
+  const bodyHeight = containerHeight - headerHeight - toolbarHeight - statusBarHeight - paginationHeight;
+
   // Virtualization
-  const bodyHeight = containerHeight - headerHeight - (pagination ? 52 : 0);
   const {
     virtualRows,
     totalHeight,
@@ -110,7 +122,7 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
   } = useVirtualization(displayedRows, {
     rowHeight,
     overscan: rowBuffer,
-    containerHeight: bodyHeight,
+    containerHeight: Math.max(bodyHeight, 100),
   });
 
   // Column resize
@@ -161,7 +173,6 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
         api.updateRowData({
           remove: [displayedRows.find((r) => r.id === fromId)?.data as T],
         });
-        // Reinsert at new position
         const targetIndex = displayedRows.findIndex((r) => r.id === toId);
         const insertIndex = position === 'after' ? targetIndex + 1 : targetIndex;
         const movedRow = displayedRows.find((r) => r.id === fromId)?.data;
@@ -187,6 +198,21 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
     handleCellMouseDown,
     handleCellMouseEnter,
   } = useRangeSelection();
+
+  // Keyboard navigation
+  const {
+    focusedCell,
+    focusCell,
+    isCellFocused,
+  } = useKeyboardNavigation({
+    containerRef,
+    displayedRows,
+    columns,
+    api,
+    onStartEdit: (rowId, field) => api.startEditingCell(rowId, field),
+    onStopEdit: (cancel) => api.stopEditing(cancel),
+    isEditing: !!editingCell,
+  });
 
   // Sort handler
   const handleSort = useCallback(
@@ -245,6 +271,14 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
     [rowSelection, selectRow]
   );
 
+  // Fire selection changed event
+  useEffect(() => {
+    if (onSelectionChanged) {
+      const selectedRows = displayedRows.filter((r) => selection.selectedRows.has(r.id));
+      onSelectionChanged({ selectedRows, api });
+    }
+  }, [selection.selectedRows, displayedRows, api, onSelectionChanged]);
+
   const allSelected =
     displayedRows.length > 0 &&
     displayedRows.every((r) => selection.selectedRows.has(r.id));
@@ -300,16 +334,38 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
     [setPaginationState, onPaginationChanged]
   );
 
+  // Column visibility handler
+  const handleColumnVisibilityChange = useCallback(
+    (field: string, visible: boolean) => {
+      api.setColumnVisible(field, visible);
+    },
+    [api]
+  );
+
   const gridContent = (
     <div
       ref={containerRef}
       className={cn(
-        'relative flex flex-col border border-border rounded-lg overflow-hidden bg-background',
+        'relative flex flex-col border border-border rounded-lg overflow-hidden bg-background focus:outline-none focus:ring-2 focus:ring-primary/50',
         isResizing && 'cursor-col-resize select-none',
         className
       )}
-      style={{ height: '100%', minHeight: 400 }}
+      style={{ height: height || '100%', minHeight: 400 }}
+      tabIndex={0}
     >
+      {/* Toolbar */}
+      {showToolbar && (
+        <GridToolbar
+          api={api}
+          columns={columns}
+          quickFilterValue={quickFilterValue}
+          onQuickFilterChange={setQuickFilterValue}
+          onColumnVisibilityChange={handleColumnVisibilityChange}
+          selectedCount={selection.selectedRows.size}
+          totalCount={displayedRows.length}
+        />
+      )}
+
       {/* Header */}
       <GridHeader
         columns={columns}
@@ -349,12 +405,14 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
                 isSelected={selection.selectedRows.has(row.id)}
                 onRowClick={(e) => {
                   handleRowClick(row.id, e);
+                  focusCell(row.id, columns[0]?.field || '');
                   onRowClicked?.({ rowNode: row, event: e, api });
                 }}
                 onRowDoubleClick={(e) => {
                   onRowDoubleClicked?.({ rowNode: row, event: e, api });
                 }}
                 onCellClick={(col, e) => {
+                  focusCell(row.id, col.field);
                   onCellClicked?.({
                     rowNode: row,
                     column: col,
@@ -364,6 +422,9 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
                   });
                 }}
                 onCellDoubleClick={(col, e) => {
+                  if (col.editable) {
+                    api.startEditingCell(row.id, col.field);
+                  }
                   onCellDoubleClicked?.({
                     rowNode: row,
                     column: col,
@@ -403,6 +464,7 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
                 isDropTarget={dropTargetRow === row.id}
                 dropPosition={dropTargetRow === row.id ? dropPosition : null}
                 isCellSelected={isCellSelected}
+                isCellFocused={isCellFocused}
                 onCellMouseDown={handleCellMouseDown}
                 onCellMouseEnter={handleCellMouseEnter}
                 api={api}
@@ -420,6 +482,16 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
           pageSizeOptions={paginationPageSizeOptions}
           onPageChange={handlePageChange}
           onPageSizeChange={handlePageSizeChange}
+        />
+      )}
+
+      {/* Status Bar */}
+      {showStatusBar && (
+        <GridStatusBar
+          displayedRows={displayedRows}
+          totalRows={props.rowData.length}
+          selectedCount={selection.selectedRows.size}
+          columns={columns}
         />
       )}
 
