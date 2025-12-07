@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { ProcessedColumn, SortModel, SortDirection } from '../types';
 import { cn } from '@/lib/utils';
 import { ArrowUp, ArrowDown, GripVertical, Filter } from 'lucide-react';
@@ -8,6 +8,7 @@ interface GridHeaderProps<T> {
   sortModel: SortModel[];
   onSort: (field: string) => void;
   onResizeStart: (e: React.MouseEvent, column: ProcessedColumn<T>) => void;
+  onResizeDoubleClick?: (column: ProcessedColumn<T>, measureContent: () => number) => void;
   resizingColumn: string | null;
   // Column drag
   onDragStart: (e: React.DragEvent, column: ProcessedColumn<T>) => void;
@@ -24,6 +25,8 @@ interface GridHeaderProps<T> {
   // Filter
   onFilterClick?: (column: ProcessedColumn<T>) => void;
   headerHeight: number;
+  // For measuring column content
+  measureColumnContent?: (field: string) => number;
 }
 
 export function GridHeader<T>({
@@ -31,6 +34,7 @@ export function GridHeader<T>({
   sortModel,
   onSort,
   onResizeStart,
+  onResizeDoubleClick,
   resizingColumn,
   onDragStart,
   onDragOver,
@@ -44,6 +48,7 @@ export function GridHeader<T>({
   onSelectAll,
   onFilterClick,
   headerHeight,
+  measureColumnContent,
 }: GridHeaderProps<T>) {
   const getSortDirection = (field: string): SortDirection => {
     const sort = sortModel.find((s) => s.field === field);
@@ -56,6 +61,15 @@ export function GridHeader<T>({
   };
 
   const visibleColumns = columns.filter((col) => !col.hide);
+
+  const handleResizeDoubleClick = (e: React.MouseEvent, column: ProcessedColumn<T>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (onResizeDoubleClick && measureColumnContent) {
+      onResizeDoubleClick(column, () => measureColumnContent(column.field));
+    }
+  };
 
   return (
     <div
@@ -142,11 +156,14 @@ export function GridHeader<T>({
             {column.resizable !== false && (
               <div
                 className={cn(
-                  'absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-primary',
+                  'absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-primary group/resize',
                   resizingColumn === column.field && 'bg-primary'
                 )}
                 onMouseDown={(e) => onResizeStart(e, column)}
-              />
+                onDoubleClick={(e) => handleResizeDoubleClick(e, column)}
+              >
+                <div className="absolute right-0 top-0 bottom-0 w-1 group-hover/resize:bg-primary transition-colors" />
+              </div>
             )}
           </div>
         );
