@@ -647,6 +647,11 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
           column={filterColumn}
           currentFilter={filterModel.find((f) => f.field === filterColumn.field)}
           onFilterChange={handleFilterChange}
+          allValues={displayedRows.map((r) => (r.data as any)[filterColumn.field])}
+          onSort={(direction) => {
+            setSortModel([{ field: filterColumn.field, direction }]);
+            setFilterColumn(null);
+          }}
         >
           <div className="hidden" />
         </FilterPopover>
