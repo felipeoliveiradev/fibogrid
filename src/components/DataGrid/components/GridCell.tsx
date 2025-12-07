@@ -2,6 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import { ProcessedColumn, RowNode, GridApi } from '../types';
 import { getValueFromPath } from '../utils/helpers';
 import { cn } from '@/lib/utils';
+import { ChevronRight, ChevronDown } from 'lucide-react';
 
 interface GridCellProps<T> {
   column: ProcessedColumn<T>;
@@ -18,6 +19,13 @@ interface GridCellProps<T> {
   isFocused?: boolean;
   onMouseDown?: (e: React.MouseEvent) => void;
   onMouseEnter?: () => void;
+  // Tree/hierarchy support
+  indent?: number;
+  showExpandIcon?: boolean;
+  isExpanded?: boolean;
+  onToggleExpand?: () => void;
+  // Cell ref for auto-size
+  registerCellRef?: (field: string, rowId: string, element: HTMLElement | null) => void;
 }
 
 export function GridCell<T>({
@@ -35,8 +43,14 @@ export function GridCell<T>({
   isFocused,
   onMouseDown,
   onMouseEnter,
+  indent = 0,
+  showExpandIcon,
+  isExpanded,
+  onToggleExpand,
+  registerCellRef,
 }: GridCellProps<T>) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
   const value = getValueFromPath(row.data, column.field);
   
   // Focus input when editing starts
@@ -47,6 +61,14 @@ export function GridCell<T>({
     }
   }, [isEditing]);
 
+  // Register cell ref for measuring
+  useEffect(() => {
+    if (registerCellRef && contentRef.current) {
+      registerCellRef(column.field, row.id, contentRef.current);
+      return () => registerCellRef(column.field, row.id, null);
+    }
+  }, [registerCellRef, column.field, row.id]);
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       onStopEdit(false);
@@ -55,7 +77,6 @@ export function GridCell<T>({
     } else if (e.key === 'Tab') {
       e.preventDefault();
       onStopEdit(false);
-      // Could trigger edit on next cell
     }
   };
 
@@ -177,7 +198,11 @@ export function GridCell<T>({
         isFocused && !isEditing && 'ring-2 ring-primary/50 ring-inset',
         cellClass
       )}
-      style={{ width: column.computedWidth, minWidth: column.minWidth || 50 }}
+      style={{ 
+        width: column.computedWidth, 
+        minWidth: column.minWidth || 50,
+        paddingLeft: indent > 0 ? `${indent + 12}px` : undefined,
+      }}
       onClick={onClick}
       onDoubleClick={(e) => {
         onDoubleClick(e);
@@ -188,7 +213,24 @@ export function GridCell<T>({
       onMouseDown={onMouseDown}
       onMouseEnter={onMouseEnter}
     >
-      {renderContent()}
+      {showExpandIcon && (
+        <button
+          className="mr-1 p-0.5 rounded hover:bg-muted-foreground/20 flex-shrink-0"
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleExpand?.();
+          }}
+        >
+          {isExpanded ? (
+            <ChevronDown className="h-4 w-4" />
+          ) : (
+            <ChevronRight className="h-4 w-4" />
+          )}
+        </button>
+      )}
+      <div ref={contentRef} className="flex-1 overflow-hidden">
+        {renderContent()}
+      </div>
     </div>
   );
 }
