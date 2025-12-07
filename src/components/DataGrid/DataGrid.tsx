@@ -1,5 +1,5 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { DataGridProps, ProcessedColumn, SortModel, FilterModel, ContextMenuItem } from './types';
+import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
+import { DataGridProps, ProcessedColumn, SortModel, FilterModel, ContextMenuItem, RowNode } from './types';
 import { useGridState } from './hooks/useGridState';
 import { useVirtualization } from './hooks/useVirtualization';
 import { useColumnResize } from './hooks/useColumnResize';
@@ -7,14 +7,18 @@ import { useColumnDrag } from './hooks/useColumnDrag';
 import { useRowDrag } from './hooks/useRowDrag';
 import { useRangeSelection } from './hooks/useRangeSelection';
 import { useKeyboardNavigation } from './hooks/useKeyboardNavigation';
+import { useGrouping } from './hooks/useGrouping';
+import { useGridContext } from './context/GridContext';
 import { GridHeader } from './components/GridHeader';
 import { GridRow } from './components/GridRow';
+import { GroupRow } from './components/GroupRow';
 import { GridPagination } from './components/GridPagination';
 import { GridOverlay } from './components/GridOverlay';
 import { FilterPopover } from './components/FilterPopover';
 import { GridContextMenu } from './components/ContextMenu';
 import { GridToolbar } from './components/GridToolbar';
 import { GridStatusBar } from './components/GridStatusBar';
+import { isGroupNode, GroupRowNode } from './utils/grouping';
 import { cn } from '@/lib/utils';
 import { Copy, Download, Trash2 } from 'lucide-react';
 
@@ -38,6 +42,15 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
     showToolbar = true,
     showStatusBar = true,
     height,
+    gridId,
+    // Grouping
+    groupByFields: initialGroupByFields,
+    splitByField,
+    groupAggregations,
+    // Tree data
+    treeData,
+    getChildRows,
+    childRowsField,
     // Events
     onRowSelected,
     onSelectionChanged,
@@ -58,6 +71,7 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
   } = props;
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const cellContentRefs = useRef<Map<string, Map<string, HTMLElement>>>(new Map());
   const [containerWidth, setContainerWidth] = useState(0);
   const [containerHeight, setContainerHeight] = useState(0);
   const [filterColumn, setFilterColumn] = useState<ProcessedColumn<T> | null>(null);
@@ -101,6 +115,44 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
     setColumnWidths,
   } = useGridState({ ...props, quickFilterText: quickFilterValue }, containerWidth);
 
+  // Grouping
+  const {
+    displayRows: groupedDisplayRows,
+    groupedRows,
+    splitPoints,
+    expandedGroups,
+    toggleGroupExpand,
+    expandAllGroups,
+    collapseAllGroups,
+    setGroupByFields,
+    groupByFields,
+    isGroupRow,
+    addChildToRow,
+    expandedRows,
+    toggleRowExpand,
+  } = useGrouping({
+    rows: displayedRows,
+    groupByFields: initialGroupByFields,
+    splitByField,
+    aggregations: groupAggregations,
+    getRowId: props.getRowId,
+  });
+
+  // Use grouped rows if grouping is enabled
+  const finalDisplayedRows = useMemo(() => {
+    return groupByFields.length > 0 || splitByField ? groupedDisplayRows : displayedRows;
+  }, [groupByFields, splitByField, groupedDisplayRows, displayedRows]);
+
+  // Grid context for shared state
+  const gridContext = useGridContext<T>();
+  
+  useEffect(() => {
+    if (gridContext && gridId) {
+      gridContext.registerGrid(gridId, api);
+      return () => gridContext.unregisterGrid(gridId);
+    }
+  }, [gridContext, gridId, api]);
+
   // Fire grid ready event
   useEffect(() => {
     onGridReady?.({ api });
@@ -119,14 +171,14 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
     offsetTop,
     handleScroll,
     containerRef: scrollContainerRef,
-  } = useVirtualization(displayedRows, {
+  } = useVirtualization(finalDisplayedRows as RowNode<T>[], {
     rowHeight,
     overscan: rowBuffer,
     containerHeight: Math.max(bodyHeight, 100),
   });
 
-  // Column resize
-  const { isResizing, resizingColumn, handleResizeStart } = useColumnResize(
+  // Column resize with double-click support
+  const { isResizing, resizingColumn, handleResizeStart, handleResizeDoubleClick } = useColumnResize(
     (field, width) => {
       setColumnWidths((prev) => ({ ...prev, [field]: width }));
       const column = columns.find((c) => c.field === field);
@@ -136,6 +188,32 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
     }
   );
 
+  // Measure column content width
+  const measureColumnContent = useCallback((field: string): number => {
+    const columnCells = cellContentRefs.current.get(field);
+    if (!columnCells) return 100;
+    
+    let maxWidth = 0;
+    columnCells.forEach((cell) => {
+      const width = cell.scrollWidth + 24; // padding
+      if (width > maxWidth) maxWidth = width;
+    });
+    
+    return Math.max(50, maxWidth);
+  }, []);
+
+  // Register cell refs for measuring
+  const registerCellRef = useCallback((field: string, rowId: string, element: HTMLElement | null) => {
+    if (!cellContentRefs.current.has(field)) {
+      cellContentRefs.current.set(field, new Map());
+    }
+    const fieldMap = cellContentRefs.current.get(field)!;
+    if (element) {
+      fieldMap.set(rowId, element);
+    } else {
+      fieldMap.delete(rowId);
+    }
+  }, []);
   // Column drag
   const {
     draggedColumn,
@@ -372,6 +450,7 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
         sortModel={sortModel}
         onSort={handleSort}
         onResizeStart={handleResizeStart}
+        onResizeDoubleClick={handleResizeDoubleClick}
         resizingColumn={resizingColumn}
         onDragStart={handleColumnDragStart}
         onDragOver={handleColumnDragOver}
@@ -385,6 +464,7 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
         onSelectAll={() => (allSelected ? deselectAll() : selectAll())}
         onFilterClick={(col) => setFilterColumn(col)}
         headerHeight={headerHeight}
+        measureColumnContent={measureColumnContent}
       />
 
       {/* Body */}
@@ -396,81 +476,141 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
       >
         <div style={{ height: totalHeight, position: 'relative' }}>
           <div style={{ transform: `translateY(${offsetTop}px)` }}>
-            {virtualRows.map((row, index) => (
-              <GridRow
-                key={row.id}
-                row={row}
-                columns={columns}
-                rowHeight={rowHeight}
-                isSelected={selection.selectedRows.has(row.id)}
-                onRowClick={(e) => {
-                  handleRowClick(row.id, e);
-                  focusCell(row.id, columns[0]?.field || '');
-                  onRowClicked?.({ rowNode: row, event: e, api });
-                }}
-                onRowDoubleClick={(e) => {
-                  onRowDoubleClicked?.({ rowNode: row, event: e, api });
-                }}
-                onCellClick={(col, e) => {
-                  focusCell(row.id, col.field);
-                  onCellClicked?.({
-                    rowNode: row,
-                    column: col,
-                    value: (row.data as any)[col.field],
-                    event: e,
-                    api,
-                  });
-                }}
-                onCellDoubleClick={(col, e) => {
-                  if (col.editable) {
-                    api.startEditingCell(row.id, col.field);
-                  }
-                  onCellDoubleClicked?.({
-                    rowNode: row,
-                    column: col,
-                    value: (row.data as any)[col.field],
-                    event: e,
-                    api,
-                  });
-                }}
-                showCheckboxColumn={!!rowSelection}
-                onCheckboxChange={(checked) => {
-                  selectRow(row.id, checked);
-                  onRowSelected?.({ rowNode: row, selected: checked, api });
-                }}
-                editingCell={editingCell}
-                onStartEdit={(field) => api.startEditingCell(row.id, field)}
-                onEditChange={(value) =>
-                  setEditingCell((prev) => (prev ? { ...prev, value } : null))
-                }
-                onStopEdit={(cancel) => {
-                  if (editingCell && !cancel) {
-                    onCellValueChanged?.({
-                      rowNode: row,
-                      column: columns.find((c) => c.field === editingCell.field)!,
-                      oldValue: editingCell.originalValue,
-                      newValue: editingCell.value,
-                      api,
-                    });
-                  }
-                  api.stopEditing(cancel);
-                }}
-                rowDragEnabled={rowDragEnabled}
-                onRowDragStart={(e) => handleRowDragStart(e, row)}
-                onRowDragOver={(e) => handleRowDragOver(e, row)}
-                onRowDragEnd={handleRowDragEnd}
-                onRowDrop={(e) => handleRowDrop(e, row)}
-                isDragging={draggedRow === row.id}
-                isDropTarget={dropTargetRow === row.id}
-                dropPosition={dropTargetRow === row.id ? dropPosition : null}
-                isCellSelected={isCellSelected}
-                isCellFocused={isCellFocused}
-                onCellMouseDown={handleCellMouseDown}
-                onCellMouseEnter={handleCellMouseEnter}
-                api={api}
-                isEven={index % 2 === 0}
-              />
-            ))}
+            {virtualRows.map((row, index) => {
+              // Check if this is a split point
+              const isSplitPoint = splitPoints.includes(index);
+              
+              // Check if this is a group row
+              if (isGroupRow(row)) {
+                const groupRow = row as unknown as GroupRowNode<T>;
+                const isExpanded = expandedGroups.has(row.id);
+                const allChildrenSelected = groupRow.groupChildren.every(
+                  (child) => selection.selectedRows.has(child.id)
+                );
+                const someChildrenSelected = groupRow.groupChildren.some(
+                  (child) => selection.selectedRows.has(child.id)
+                );
+                
+                return (
+                  <React.Fragment key={row.id}>
+                    {isSplitPoint && (
+                      <div className="h-2 bg-muted border-y border-border" />
+                    )}
+                    <GroupRow
+                      row={groupRow}
+                      columns={columns}
+                      rowHeight={rowHeight}
+                      isExpanded={isExpanded}
+                      onToggleExpand={() => toggleGroupExpand(row.id)}
+                      showCheckboxColumn={!!rowSelection}
+                      allChildrenSelected={allChildrenSelected}
+                      someChildrenSelected={someChildrenSelected}
+                      onSelectAll={(selected) => {
+                        groupRow.groupChildren.forEach((child) => {
+                          selectRow(child.id, selected);
+                        });
+                      }}
+                    />
+                  </React.Fragment>
+                );
+              }
+              
+              // Check if this is a child row
+              const regularRow = row as any;
+              const isChildRow = regularRow.isChildRow || (regularRow.level && regularRow.level > 0);
+              const hasChildren = regularRow.childRows && regularRow.childRows.length > 0;
+              const isRowExpanded = expandedRows.has(row.id);
+              
+              return (
+                <React.Fragment key={row.id}>
+                  {isSplitPoint && (
+                    <div className="h-2 bg-muted border-y border-border" />
+                  )}
+                  <GridRow
+                    row={row}
+                    columns={columns}
+                    rowHeight={rowHeight}
+                    isSelected={selection.selectedRows.has(row.id)}
+                    onRowClick={(e) => {
+                      handleRowClick(row.id, e);
+                      focusCell(row.id, columns[0]?.field || '');
+                      onRowClicked?.({ rowNode: row, event: e, api });
+                      
+                      // Notify grid context for shared state
+                      if (gridContext && gridId) {
+                        gridContext.onRowSelect(gridId, row);
+                      }
+                    }}
+                    onRowDoubleClick={(e) => {
+                      onRowDoubleClicked?.({ rowNode: row, event: e, api });
+                    }}
+                    onCellClick={(col, e) => {
+                      focusCell(row.id, col.field);
+                      onCellClicked?.({
+                        rowNode: row,
+                        column: col,
+                        value: (row.data as any)[col.field],
+                        event: e,
+                        api,
+                      });
+                    }}
+                    onCellDoubleClick={(col, e) => {
+                      if (col.editable) {
+                        api.startEditingCell(row.id, col.field);
+                      }
+                      onCellDoubleClicked?.({
+                        rowNode: row,
+                        column: col,
+                        value: (row.data as any)[col.field],
+                        event: e,
+                        api,
+                      });
+                    }}
+                    showCheckboxColumn={!!rowSelection}
+                    onCheckboxChange={(checked) => {
+                      selectRow(row.id, checked);
+                      onRowSelected?.({ rowNode: row, selected: checked, api });
+                    }}
+                    editingCell={editingCell}
+                    onStartEdit={(field) => api.startEditingCell(row.id, field)}
+                    onEditChange={(value) =>
+                      setEditingCell((prev) => (prev ? { ...prev, value } : null))
+                    }
+                    onStopEdit={(cancel) => {
+                      if (editingCell && !cancel) {
+                        onCellValueChanged?.({
+                          rowNode: row,
+                          column: columns.find((c) => c.field === editingCell.field)!,
+                          oldValue: editingCell.originalValue,
+                          newValue: editingCell.value,
+                          api,
+                        });
+                      }
+                      api.stopEditing(cancel);
+                    }}
+                    rowDragEnabled={rowDragEnabled}
+                    onRowDragStart={(e) => handleRowDragStart(e, row)}
+                    onRowDragOver={(e) => handleRowDragOver(e, row)}
+                    onRowDragEnd={handleRowDragEnd}
+                    onRowDrop={(e) => handleRowDrop(e, row)}
+                    isDragging={draggedRow === row.id}
+                    isDropTarget={dropTargetRow === row.id}
+                    dropPosition={dropTargetRow === row.id ? dropPosition : null}
+                    isCellSelected={isCellSelected}
+                    isCellFocused={isCellFocused}
+                    onCellMouseDown={handleCellMouseDown}
+                    onCellMouseEnter={handleCellMouseEnter}
+                    api={api}
+                    isEven={index % 2 === 0}
+                    level={regularRow.level || 0}
+                    hasChildren={hasChildren}
+                    isExpanded={isRowExpanded}
+                    onToggleExpand={() => toggleRowExpand(row.id)}
+                    registerCellRef={registerCellRef}
+                  />
+                </React.Fragment>
+              );
+            })}
           </div>
         </div>
       </div>

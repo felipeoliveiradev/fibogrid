@@ -1,10 +1,11 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { ProcessedColumn } from '../types';
 
 interface ColumnResizeResult {
   isResizing: boolean;
   resizingColumn: string | null;
   handleResizeStart: (e: React.MouseEvent, column: ProcessedColumn) => void;
+  handleResizeDoubleClick: (column: ProcessedColumn, measureContent: () => number) => void;
 }
 
 export function useColumnResize(
@@ -18,11 +19,15 @@ export function useColumnResize(
   const columnField = useRef<string>('');
   const minWidth = useRef(50);
   const maxWidth = useRef(Infinity);
+  const onResizeRef = useRef(onResize);
+  
+  // Keep onResize ref updated
+  useEffect(() => {
+    onResizeRef.current = onResize;
+  }, [onResize]);
 
   const handleMouseMove = useCallback(
     (e: MouseEvent) => {
-      if (!isResizing) return;
-      
       const diff = e.clientX - startX.current;
       let newWidth = startWidth.current + diff;
       
@@ -30,9 +35,9 @@ export function useColumnResize(
       newWidth = Math.max(minWidth.current, newWidth);
       newWidth = Math.min(maxWidth.current, newWidth);
       
-      onResize(columnField.current, newWidth);
+      onResizeRef.current(columnField.current, newWidth);
     },
-    [isResizing, onResize]
+    []
   );
 
   const handleMouseUp = useCallback(() => {
@@ -66,9 +71,24 @@ export function useColumnResize(
     [handleMouseMove, handleMouseUp]
   );
 
+  // Double-click to auto-fit column width to content
+  const handleResizeDoubleClick = useCallback(
+    (column: ProcessedColumn, measureContent: () => number) => {
+      const contentWidth = measureContent();
+      const headerWidth = column.headerName.length * 10 + 60; // Approximate header width
+      const newWidth = Math.max(
+        column.minWidth || 50,
+        Math.min(column.maxWidth || Infinity, Math.max(contentWidth, headerWidth))
+      );
+      onResizeRef.current(column.field, newWidth);
+    },
+    []
+  );
+
   return {
     isResizing,
     resizingColumn,
     handleResizeStart,
+    handleResizeDoubleClick,
   };
 }

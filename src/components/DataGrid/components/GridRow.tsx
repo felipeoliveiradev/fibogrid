@@ -2,7 +2,7 @@ import React, { memo } from 'react';
 import { ProcessedColumn, RowNode, EditingCell, GridApi } from '../types';
 import { GridCell } from './GridCell';
 import { cn } from '@/lib/utils';
-import { GripVertical } from 'lucide-react';
+import { GripVertical, ChevronRight, ChevronDown } from 'lucide-react';
 
 interface GridRowProps<T> {
   row: RowNode<T>;
@@ -39,6 +39,13 @@ interface GridRowProps<T> {
   api: GridApi<T>;
   // Striping
   isEven: boolean;
+  // Tree/hierarchy
+  level?: number;
+  hasChildren?: boolean;
+  isExpanded?: boolean;
+  onToggleExpand?: () => void;
+  // Cell ref registration for auto-size
+  registerCellRef?: (field: string, rowId: string, element: HTMLElement | null) => void;
 }
 
 function GridRowInner<T>({
@@ -70,8 +77,14 @@ function GridRowInner<T>({
   onCellMouseEnter,
   api,
   isEven,
+  level = 0,
+  hasChildren,
+  isExpanded,
+  onToggleExpand,
+  registerCellRef,
 }: GridRowProps<T>) {
   const visibleColumns = columns.filter((col) => !col.hide);
+  const indentWidth = level * 20;
 
   return (
     <div
@@ -116,6 +129,7 @@ function GridRowInner<T>({
           editingCell?.rowId === row.id && editingCell?.field === column.field;
         const cellSelected = isCellSelected?.(row.rowIndex, colIndex);
         const cellFocused = isCellFocused?.(row.id, column.field);
+        const isFirstColumn = colIndex === 0;
         
         return (
           <GridCell
@@ -134,6 +148,11 @@ function GridRowInner<T>({
             isFocused={cellFocused}
             onMouseDown={(e) => onCellMouseDown?.(row.rowIndex, colIndex, e)}
             onMouseEnter={() => onCellMouseEnter?.(row.rowIndex, colIndex)}
+            indent={isFirstColumn ? indentWidth : 0}
+            showExpandIcon={isFirstColumn && hasChildren}
+            isExpanded={isExpanded}
+            onToggleExpand={onToggleExpand}
+            registerCellRef={registerCellRef}
           />
         );
       })}

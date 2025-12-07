@@ -289,6 +289,9 @@ export interface DataGridProps<T = any> extends GridEvents<T> {
   columnDefs: ColumnDef<T>[];
   getRowId?: (data: T) => string;
   
+  // Grid identification for shared state
+  gridId?: string;
+  
   // Features
   pagination?: boolean;
   paginationPageSize?: number;
@@ -325,6 +328,16 @@ export interface DataGridProps<T = any> extends GridEvents<T> {
   // Context menu
   contextMenu?: boolean;
   getContextMenuItems?: (params: CellRendererParams<T>) => ContextMenuItem[];
+  
+  // Grouping
+  groupByFields?: string[];
+  splitByField?: string;
+  groupAggregations?: Record<string, 'sum' | 'avg' | 'min' | 'max' | 'count'>;
+  
+  // Tree data / Child rows
+  treeData?: boolean;
+  getChildRows?: (parentData: T) => T[] | Promise<T[]>;
+  childRowsField?: string;
 }
 
 export interface ContextMenuItem {
