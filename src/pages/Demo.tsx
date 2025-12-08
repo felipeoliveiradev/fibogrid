@@ -778,6 +778,13 @@ export default function Demo() {
               paginationPageSize={1000}
               groupByFields={groupByField ? [groupByField] : undefined}
               onGridReady={(e) => setGridApi(e.api)}
+              onCellValueChanged={(e) => {
+                setRowData(prev => prev.map(row => 
+                  row.id === e.rowNode.id 
+                    ? { ...row, [e.column.field]: e.newValue }
+                    : row
+                ));
+              }}
             />
           </Card>
         </div>
