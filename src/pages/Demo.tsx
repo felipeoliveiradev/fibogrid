@@ -570,51 +570,79 @@ export default function Demo() {
     toast({ title: 'Data Refreshed' });
   }, [rowCount]);
 
+  // FiboGrid Logo Component
+  const FiboLogo = ({ className = "h-8 w-8" }: { className?: string }) => (
+    <svg viewBox="0 0 100 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="hsl(42 70% 55%)" />
+          <stop offset="50%" stopColor="hsl(40 65% 45%)" />
+          <stop offset="100%" stopColor="hsl(38 60% 35%)" />
+        </linearGradient>
+      </defs>
+      <rect x="10" y="10" width="34" height="34" stroke="url(#goldGradient)" strokeWidth="2" fill="none" rx="2"/>
+      <rect x="44" y="10" width="21" height="21" stroke="url(#goldGradient)" strokeWidth="2" fill="none" rx="1"/>
+      <rect x="44" y="31" width="13" height="13" stroke="url(#goldGradient)" strokeWidth="2" fill="none" rx="1"/>
+      <rect x="57" y="31" width="8" height="8" stroke="url(#goldGradient)" strokeWidth="2" fill="none" rx="1"/>
+      <rect x="10" y="50" width="55" height="40" stroke="url(#goldGradient)" strokeWidth="2" fill="none" rx="3"/>
+      <line x1="10" y1="60" x2="65" y2="60" stroke="url(#goldGradient)" strokeWidth="1.5"/>
+      <line x1="10" y1="70" x2="65" y2="70" stroke="url(#goldGradient)" strokeWidth="1"/>
+      <line x1="10" y1="80" x2="65" y2="80" stroke="url(#goldGradient)" strokeWidth="1"/>
+      <line x1="30" y1="50" x2="30" y2="90" stroke="url(#goldGradient)" strokeWidth="1"/>
+      <line x1="50" y1="50" x2="50" y2="90" stroke="url(#goldGradient)" strokeWidth="1"/>
+      <circle cx="80" cy="70" r="12" stroke="url(#goldGradient)" strokeWidth="2" fill="none"/>
+      <circle cx="80" cy="70" r="7" stroke="url(#goldGradient)" strokeWidth="1.5" fill="hsl(40 65% 45% / 0.2)"/>
+    </svg>
+  );
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative">
+      {/* Texture overlay */}
+      <div className="fixed inset-0 texture-overlay pointer-events-none" />
+      
       {/* Header */}
-      <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-20">
+      <header className="border-b border-primary/10 bg-card/80 backdrop-blur-sm sticky top-0 z-20">
         <div className="max-w-[1900px] mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Link to="/" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
+              <Link to="/" className="flex items-center gap-3 text-muted-foreground hover:text-foreground transition-colors">
                 <ArrowLeft className="h-4 w-4" />
-                <Table2 className="h-6 w-6 text-primary" />
-                <span className="font-bold">LovGrid</span>
+                <FiboLogo className="h-8 w-8" />
+                <span className="font-display font-bold text-xl">FiboGrid</span>
               </Link>
-              <Badge variant="secondary">Interactive Demo</Badge>
+              <Badge className="bg-primary/10 text-primary border-primary/30 font-body">Interactive Demo</Badge>
             </div>
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted">
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted/50 border border-primary/10">
                 {isRealTimeEnabled ? (
-                  <Pause className="h-4 w-4 text-red-500" />
+                  <Pause className="h-4 w-4 text-destructive" />
                 ) : (
-                  <Play className="h-4 w-4 text-green-500" />
+                  <Play className="h-4 w-4 text-primary" />
                 )}
-                <span className="text-sm">Real-time</span>
+                <span className="text-sm font-body">Real-time</span>
                 <Switch checked={isRealTimeEnabled} onCheckedChange={setIsRealTimeEnabled} />
               </div>
               
               {isRealTimeEnabled && (
-                <Badge variant="outline" className="font-mono">
+                <Badge variant="outline" className="font-mono border-primary/30">
                   {renderTime}ms render
                 </Badge>
               )}
               
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={handleAddRow}>
+                <Button variant="outline" size="sm" className="border-primary/30 hover:border-primary hover:bg-primary/5 font-body" onClick={handleAddRow}>
                   <Plus className="h-4 w-4 mr-1" />
                   Add
                 </Button>
-                <Button variant="outline" size="sm" onClick={handleDeleteSelected}>
+                <Button variant="outline" size="sm" className="border-primary/30 hover:border-primary hover:bg-primary/5 font-body" onClick={handleDeleteSelected}>
                   <Trash2 className="h-4 w-4 mr-1" />
                   Delete
                 </Button>
-                <Button variant="outline" size="sm" onClick={handleExport}>
+                <Button variant="outline" size="sm" className="border-primary/30 hover:border-primary hover:bg-primary/5 font-body" onClick={handleExport}>
                   <FileSpreadsheet className="h-4 w-4 mr-1" />
                   Excel
                 </Button>
-                <Button variant="outline" size="sm" onClick={handleRefresh}>
+                <Button variant="outline" size="sm" className="border-primary/30 hover:border-primary hover:bg-primary/5 font-body" onClick={handleRefresh}>
                   <RefreshCw className="h-4 w-4 mr-1" />
                   Refresh
                 </Button>
@@ -629,19 +657,19 @@ export default function Demo() {
         <div className="grid lg:grid-cols-[280px_1fr] gap-6">
           {/* Settings Panel */}
           <div className="space-y-4">
-            <Card>
+            <Card className="paper-aged border-primary/10">
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <Settings className="h-4 w-4" />
+                <CardTitle className="text-sm flex items-center gap-2 font-display">
+                  <Settings className="h-4 w-4 text-primary" />
                   Settings
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Row Count */}
                 <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
+                  <div className="flex justify-between text-sm font-body">
                     <span>Row Count</span>
-                    <Badge variant="outline">{rowCount.toLocaleString()}</Badge>
+                    <Badge variant="outline" className="border-primary/30 font-mono">{rowCount.toLocaleString()}</Badge>
                   </div>
                   <div className="flex gap-2 flex-wrap">
                     {[100, 1000, 10000, 50000, 100000].map((count) => (
@@ -649,6 +677,7 @@ export default function Demo() {
                         key={count}
                         size="sm"
                         variant={rowCount === count ? "default" : "outline"}
+                        className={rowCount === count ? "bg-gradient-gold text-primary-foreground shadow-gold" : "border-primary/30 hover:border-primary font-body"}
                         onClick={() => handleRowCountChange(count)}
                       >
                         {count >= 1000 ? `${count / 1000}k` : count}
@@ -659,9 +688,9 @@ export default function Demo() {
 
                 {/* Update Interval */}
                 <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
+                  <div className="flex justify-between text-sm font-body">
                     <span>Update Interval</span>
-                    <Badge variant="outline">{updateInterval}ms</Badge>
+                    <Badge variant="outline" className="border-primary/30 font-mono">{updateInterval}ms</Badge>
                   </div>
                   <Slider
                     value={[updateInterval]}
@@ -669,16 +698,18 @@ export default function Demo() {
                     min={50}
                     max={1000}
                     step={50}
+                    className="[&_[role=slider]]:bg-gradient-gold [&_[role=slider]]:border-primary"
                   />
                 </div>
 
                 {/* Grouping */}
                 <div className="space-y-2">
-                  <span className="text-sm">Group By</span>
+                  <span className="text-sm font-body">Group By</span>
                   <div className="flex gap-2 flex-wrap">
                     <Button
                       size="sm"
                       variant={groupByField === undefined ? "default" : "outline"}
+                      className={groupByField === undefined ? "bg-gradient-gold text-primary-foreground shadow-gold" : "border-primary/30 hover:border-primary font-body"}
                       onClick={() => setGroupByField(undefined)}
                     >
                       <Layers className="h-3 w-3 mr-1" />
@@ -687,6 +718,7 @@ export default function Demo() {
                     <Button
                       size="sm"
                       variant={groupByField === 'sector' ? "default" : "outline"}
+                      className={groupByField === 'sector' ? "bg-gradient-gold text-primary-foreground shadow-gold" : "border-primary/30 hover:border-primary font-body"}
                       onClick={() => setGroupByField('sector')}
                     >
                       Sector
@@ -696,31 +728,33 @@ export default function Demo() {
 
                 {/* Row Numbers */}
                 <div className="flex items-center justify-between">
-                  <span className="text-sm">Row Numbers</span>
+                  <span className="text-sm font-body">Row Numbers</span>
                   <Switch checked={showRowNumbers} onCheckedChange={setShowRowNumbers} />
                 </div>
               </CardContent>
             </Card>
 
             {/* Info Card */}
-            <Card>
+            <Card className="paper-aged border-primary/10">
               <CardContent className="pt-6">
-                <div className="space-y-2 text-sm">
+                <div className="space-y-2 text-sm font-body">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Total Rows</span>
-                    <span className="font-medium">{rowData.length.toLocaleString()}</span>
+                    <span className="font-semibold font-mono">{rowData.length.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Visible</span>
-                    <span className="font-medium">{visibleRowData.length.toLocaleString()}</span>
+                    <span className="font-semibold font-mono">{visibleRowData.length.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Columns</span>
-                    <span className="font-medium">{columns.length}</span>
+                    <span className="font-semibold font-mono">{columns.length}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Real-time</span>
-                    <span className="font-medium">{isRealTimeEnabled ? 'Active' : 'Paused'}</span>
+                    <span className={`font-semibold ${isRealTimeEnabled ? 'text-primary' : 'text-muted-foreground'}`}>
+                      {isRealTimeEnabled ? 'Active' : 'Paused'}
+                    </span>
                   </div>
                 </div>
               </CardContent>
@@ -729,7 +763,7 @@ export default function Demo() {
           </div>
 
           {/* Data Grid */}
-          <Card className="overflow-hidden">
+          <Card className="overflow-hidden border-primary/20 shadow-parchment glow-gold">
             <DataGrid
               rowData={visibleRowData}
               columnDefs={columns}
