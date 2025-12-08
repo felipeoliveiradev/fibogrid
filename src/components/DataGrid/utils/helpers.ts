@@ -53,33 +53,69 @@ export function processColumns<T>(
   });
 }
 
-// Sort rows
+// Sort rows - optimized with pre-computed comparators
 export function sortRows<T>(
   rows: RowNode<T>[],
   sortModel: SortModel[],
   columns: ProcessedColumn<T>[]
 ): RowNode<T>[] {
-  if (sortModel.length === 0) return rows;
+  if (sortModel.length === 0 || rows.length === 0) return rows;
 
-  return [...rows].sort((a, b) => {
-    for (const sort of sortModel) {
-      const column = columns.find((c) => c.field === sort.field);
-      const valueA = getValueFromPath(a.data, sort.field);
-      const valueB = getValueFromPath(b.data, sort.field);
+  // Pre-compute column map for O(1) lookups
+  const columnMap = new Map<string, ProcessedColumn<T>>();
+  for (let i = 0; i < columns.length; i++) {
+    columnMap.set(columns[i].field, columns[i]);
+  }
+
+  // Pre-compute sort config for each sort model entry
+  const sortConfigs = sortModel.map(sort => ({
+    field: sort.field,
+    direction: sort.direction,
+    column: columnMap.get(sort.field),
+  }));
+
+  // Create shallow copy and sort
+  const result = rows.slice();
+  
+  result.sort((a, b) => {
+    const dataA = a.data as Record<string, unknown>;
+    const dataB = b.data as Record<string, unknown>;
+    
+    for (let i = 0; i < sortConfigs.length; i++) {
+      const { field, direction, column } = sortConfigs[i];
+      const valueA = dataA[field];
+      const valueB = dataB[field];
 
       let comparison: number;
       if (column?.comparator) {
         comparison = column.comparator(valueA, valueB);
       } else {
-        comparison = defaultComparator(valueA, valueB);
+        comparison = fastComparator(valueA, valueB);
       }
 
       if (comparison !== 0) {
-        return sort.direction === 'desc' ? -comparison : comparison;
+        return direction === 'desc' ? -comparison : comparison;
       }
     }
     return 0;
   });
+
+  return result;
+}
+
+// Fast comparator optimized for numbers (most common in real-time grids)
+export function fastComparator(a: unknown, b: unknown): number {
+  if (a === b) return 0;
+  if (a == null) return -1;
+  if (b == null) return 1;
+
+  // Fast path for numbers - most common case in real-time data
+  if (typeof a === 'number' && typeof b === 'number') {
+    return a - b;
+  }
+
+  // Fallback for strings and other types
+  return String(a).localeCompare(String(b));
 }
 
 // Default value comparator
@@ -99,41 +135,79 @@ export function defaultComparator(a: any, b: any): number {
   return String(a).localeCompare(String(b));
 }
 
-// Filter rows
+// Filter rows - optimized with pre-computed column map
 export function filterRows<T>(
   rows: RowNode<T>[],
   filterModel: FilterModel[],
   columns: ProcessedColumn<T>[],
   quickFilterText?: string
 ): RowNode<T>[] {
-  let filtered = rows;
+  if (rows.length === 0) return rows;
+  if (filterModel.length === 0 && !quickFilterText) return rows;
 
-  // Apply column filters
-  for (const filter of filterModel) {
-    const column = columns.find((c) => c.field === filter.field);
-    filtered = filtered.filter((row) => {
-      const value = getValueFromPath(row.data, filter.field);
-      
-      if (column?.filterComparator) {
-        return column.filterComparator(filter.value, value);
-      }
-
-      return defaultFilterComparator(filter, value);
-    });
+  // Pre-compute column map
+  const columnMap = new Map<string, ProcessedColumn<T>>();
+  for (let i = 0; i < columns.length; i++) {
+    columnMap.set(columns[i].field, columns[i]);
   }
 
-  // Apply quick filter
+  // Pre-compute filter functions for each filter
+  const filterFns = filterModel.map(filter => {
+    const column = columnMap.get(filter.field);
+    return {
+      field: filter.field,
+      filter,
+      column,
+      customFn: column?.filterComparator,
+    };
+  });
+
+  // Pre-allocate result array (estimate)
+  const result: RowNode<T>[] = [];
+  
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    const data = row.data as Record<string, unknown>;
+    let passes = true;
+
+    // Check each filter
+    for (let j = 0; j < filterFns.length && passes; j++) {
+      const { field, filter, customFn } = filterFns[j];
+      const value = data[field];
+      
+      if (customFn) {
+        passes = customFn(filter.value, value);
+      } else {
+        passes = defaultFilterComparator(filter, value);
+      }
+    }
+
+    if (passes) {
+      result.push(row);
+    }
+  }
+
+  // Apply quick filter if needed
   if (quickFilterText) {
     const lowerFilter = quickFilterText.toLowerCase();
-    filtered = filtered.filter((row) => {
-      return columns.some((col) => {
-        const value = getValueFromPath(row.data, col.field);
-        return String(value).toLowerCase().includes(lowerFilter);
-      });
-    });
+    const quickFiltered: RowNode<T>[] = [];
+    
+    for (let i = 0; i < result.length; i++) {
+      const row = result[i];
+      const data = row.data as Record<string, unknown>;
+      
+      for (let j = 0; j < columns.length; j++) {
+        const value = data[columns[j].field];
+        if (value != null && String(value).toLowerCase().includes(lowerFilter)) {
+          quickFiltered.push(row);
+          break;
+        }
+      }
+    }
+    return quickFiltered;
   }
 
-  return filtered;
+  return result;
 }
 
 // Default filter comparator - Fixed for select filter type
