@@ -97,12 +97,12 @@ function GridRowInner<T>({
   const isChildRow = (row as any).isChildRow;
 
   // Calculate sticky positions for pinned columns
-  const { leftPinnedColumns, centerColumns, rightPinnedColumns, leftPinnedWidth, rightPinnedWidth } = useMemo(() => {
+  const { leftPinnedColumns, centerColumns, rightPinnedColumns } = useMemo(() => {
     const left = visibleColumns.filter(c => c.pinned === 'left');
     const center = visibleColumns.filter(c => !c.pinned);
     const right = visibleColumns.filter(c => c.pinned === 'right');
     
-    // Calculate cumulative left positions
+    // Calculate cumulative left positions (start after row numbers and checkbox columns)
     let leftOffset = (showRowNumbers ? 50 : 0) + (showCheckboxColumn ? 48 : 0);
     const leftWithPositions = left.map((col, idx) => {
       const pos = leftOffset;
@@ -122,8 +122,6 @@ function GridRowInner<T>({
       leftPinnedColumns: leftWithPositions,
       centerColumns: center,
       rightPinnedColumns: rightWithPositions,
-      leftPinnedWidth: leftOffset,
-      rightPinnedWidth: rightOffset,
     };
   }, [visibleColumns, showRowNumbers, showCheckboxColumn]);
 
@@ -215,24 +213,28 @@ function GridRowInner<T>({
       onDragEnd={onRowDragEnd}
       onDrop={onRowDrop}
     >
-      {/* Row Number Column - Sticky */}
+      {/* Row Number Column */}
       {showRowNumbers && (
         <div
-          className="flex items-center justify-center border-r border-border px-2 text-xs text-muted-foreground bg-muted/30 flex-shrink-0 sticky left-0 z-[2]"
-          style={{ width: 50, minWidth: 50 }}
+          className="flex items-center justify-center border-r border-border px-2 text-xs text-muted-foreground flex-shrink-0"
+          style={{ 
+            width: 50, 
+            minWidth: 50,
+            backgroundColor: isSelected ? 'hsl(var(--primary) / 0.15)' : isEven ? 'hsl(var(--muted))' : 'hsl(var(--background))',
+          }}
         >
           {rowNumber}
         </div>
       )}
       
-      {/* Checkbox Column - Sticky */}
+      {/* Checkbox Column */}
       {showCheckboxColumn && (
         <div
-          className="flex items-center justify-center border-r border-border px-2 bg-muted/30 flex-shrink-0 sticky z-[2]"
+          className="flex items-center justify-center border-r border-border px-2 flex-shrink-0"
           style={{ 
             width: 48, 
             minWidth: 48,
-            left: showRowNumbers ? 50 : 0,
+            backgroundColor: isSelected ? 'hsl(var(--primary) / 0.15)' : isEven ? 'hsl(var(--muted))' : 'hsl(var(--background))',
           }}
         >
           {rowDragEnabled && (
