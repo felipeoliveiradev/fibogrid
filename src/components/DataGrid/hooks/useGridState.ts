@@ -82,12 +82,18 @@ export function useGridState<T>(props: DataGridProps<T>, containerWidth: number)
     });
 
     const processed = processColumns(
-      orderedDefs.map((col) => ({
-        ...col,
-        width: columnWidths[col.field] ?? col.width,
-        hide: hiddenColumns.has(col.field) || col.hide,
-        pinned: pinnedColumns[col.field] ?? col.pinned,
-      })),
+      orderedDefs.map((col) => {
+        // Get pinned state - check if it's explicitly set in state, otherwise use default
+        const pinnedState = pinnedColumns[col.field];
+        const pinned = pinnedState !== undefined ? pinnedState : col.pinned;
+        
+        return {
+          ...col,
+          width: columnWidths[col.field] ?? col.width,
+          hide: hiddenColumns.has(col.field) || col.hide,
+          pinned: pinned || undefined, // Convert null to undefined
+        };
+      }),
       containerWidth,
       defaultColDef
     );
@@ -105,150 +111,208 @@ export function useGridState<T>(props: DataGridProps<T>, containerWidth: number)
     return localRowData.map((data, index) => createRowNode(data, index, getRowId));
   }, [localRowData, getRowId]);
 
-  // Apply sorting and filtering
-  const processedRows = useMemo(() => {
-    let result = rows;
-    result = filterRows(result, filterModel, columns, internalQuickFilter || quickFilterText);
-    result = sortRows(result, sortModel, columns);
-    return result;
-  }, [rows, filterModel, sortModel, columns, internalQuickFilter, quickFilterText]);
-
-  // Apply pagination
-  const displayedRows = useMemo(() => {
-    if (!pagination) {
-      return processedRows;
-    }
-    return paginateRows(processedRows, paginationState.currentPage, paginationState.pageSize);
-  }, [processedRows, pagination, paginationState.currentPage, paginationState.pageSize]);
-
-  // Update pagination state
-  useEffect(() => {
-    const totalRows = processedRows.length;
-    const totalPages = Math.ceil(totalRows / paginationState.pageSize);
-    setPaginationState((prev) => ({
-      ...prev,
-      totalRows,
-      totalPages,
-      currentPage: Math.min(prev.currentPage, Math.max(0, totalPages - 1)),
-    }));
-  }, [processedRows.length, paginationState.pageSize]);
-
   // Update refs
   useEffect(() => {
     rowsRef.current = rows;
+  }, [rows]);
+
+  // Filter rows
+  const filteredRows = useMemo(() => {
+    let result = [...rows];
+
+    // Apply column filters
+    if (filterModel.length > 0) {
+      result = filterRows(result, filterModel, columns);
+    }
+
+    // Apply quick filter
+    const quickFilter = quickFilterText || internalQuickFilter;
+    if (quickFilter) {
+      const searchLower = quickFilter.toLowerCase();
+      result = result.filter((row) => {
+        return columns.some((col) => {
+          const value = (row.data as any)[col.field];
+          if (value == null) return false;
+          return String(value).toLowerCase().includes(searchLower);
+        });
+      });
+    }
+
+    return result;
+  }, [rows, filterModel, columns, quickFilterText, internalQuickFilter]);
+
+  // Sort rows
+  const sortedRows = useMemo(() => {
+    if (sortModel.length === 0) return filteredRows;
+    return sortRows(filteredRows, sortModel, columns);
+  }, [filteredRows, sortModel, columns]);
+
+  // Paginate rows
+  const { displayedRows, paginationInfo } = useMemo(() => {
+    if (!pagination) {
+      return {
+        displayedRows: sortedRows,
+        paginationInfo: {
+          currentPage: 0,
+          pageSize: sortedRows.length,
+          totalRows: sortedRows.length,
+          totalPages: 1,
+        },
+      };
+    }
+
+    const totalRows = sortedRows.length;
+    const pageSize = paginationState.pageSize;
+    const totalPages = Math.ceil(totalRows / pageSize) || 1;
+    const currentPage = Math.min(paginationState.currentPage, totalPages - 1);
+    const start = currentPage * pageSize;
+    const paginatedRows = sortedRows.slice(start, start + pageSize);
+
+    return {
+      displayedRows: paginatedRows,
+      paginationInfo: {
+        currentPage,
+        pageSize,
+        totalRows,
+        totalPages,
+      },
+    };
+  }, [sortedRows, pagination, paginationState.currentPage, paginationState.pageSize]);
+
+  // Update pagination state when data changes
+  useEffect(() => {
+    setPaginationState((prev) => ({
+      ...prev,
+      totalRows: paginationInfo.totalRows,
+      totalPages: paginationInfo.totalPages,
+      currentPage: Math.min(prev.currentPage, Math.max(0, paginationInfo.totalPages - 1)),
+    }));
+  }, [paginationInfo.totalRows, paginationInfo.totalPages]);
+
+  // Update displayed rows ref
+  useEffect(() => {
     displayedRowsRef.current = displayedRows;
-  }, [rows, displayedRows]);
+  }, [displayedRows]);
 
   // Selection handlers
   const selectRow = useCallback(
-    (id: string, selected = true, shiftKey = false, ctrlKey = false) => {
+    (rowId: string, selected: boolean, shift = false, ctrl = false) => {
+      if (!rowSelection) return;
+
       setSelection((prev) => {
         const newSelected = new Set(prev.selectedRows);
-        const rowIndex = displayedRows.findIndex((r) => r.id === id);
+        const rowIndex = displayedRows.findIndex((r) => r.id === rowId);
 
         if (rowSelection === 'single') {
           newSelected.clear();
           if (selected) {
-            newSelected.add(id);
-          }
-          return {
-            selectedRows: newSelected,
-            lastSelectedIndex: rowIndex,
-            anchorIndex: rowIndex,
-          };
-        }
-
-        if (shiftKey && prev.anchorIndex !== null && rowSelection === 'multiple') {
-          // Range selection
-          const start = Math.min(prev.anchorIndex, rowIndex);
-          const end = Math.max(prev.anchorIndex, rowIndex);
-          for (let i = start; i <= end; i++) {
-            newSelected.add(displayedRows[i].id);
-          }
-        } else if (ctrlKey && rowSelection === 'multiple') {
-          // Toggle selection
-          if (newSelected.has(id)) {
-            newSelected.delete(id);
-          } else {
-            newSelected.add(id);
+            newSelected.add(rowId);
           }
         } else {
-          // Single click
-          if (!ctrlKey) {
+          // Multiple selection
+          if (shift && prev.anchorIndex !== null) {
+            // Range selection
+            const start = Math.min(prev.anchorIndex, rowIndex);
+            const end = Math.max(prev.anchorIndex, rowIndex);
+            for (let i = start; i <= end; i++) {
+              if (displayedRows[i]) {
+                newSelected.add(displayedRows[i].id);
+              }
+            }
+          } else if (ctrl) {
+            // Toggle single
+            if (newSelected.has(rowId)) {
+              newSelected.delete(rowId);
+            } else {
+              newSelected.add(rowId);
+            }
+          } else {
+            // Replace selection
             newSelected.clear();
-          }
-          if (selected) {
-            newSelected.add(id);
+            if (selected) {
+              newSelected.add(rowId);
+            }
           }
         }
 
         return {
           selectedRows: newSelected,
           lastSelectedIndex: rowIndex,
-          anchorIndex: shiftKey ? prev.anchorIndex : rowIndex,
+          anchorIndex: shift ? prev.anchorIndex : rowIndex,
         };
       });
     },
-    [displayedRows, rowSelection]
+    [rowSelection, displayedRows]
   );
 
   const selectAll = useCallback(() => {
     if (rowSelection !== 'multiple') return;
-    setSelection({
+    setSelection((prev) => ({
+      ...prev,
       selectedRows: new Set(displayedRows.map((r) => r.id)),
-      lastSelectedIndex: displayedRows.length - 1,
-      anchorIndex: 0,
-    });
-  }, [displayedRows, rowSelection]);
+    }));
+  }, [rowSelection, displayedRows]);
 
   const deselectAll = useCallback(() => {
-    setSelection({
+    setSelection((prev) => ({
+      ...prev,
       selectedRows: new Set(),
-      lastSelectedIndex: null,
-      anchorIndex: null,
-    });
+    }));
   }, []);
 
-  // API implementation
-  const api = useMemo<GridApi<T>>(() => ({
+  // API object
+  const api = useMemo((): GridApi<T> => ({
     // Data
-    setRowData: (data) => setLocalRowData(data),
     getRowData: () => localRowData,
-    getDisplayedRows: () => displayedRowsRef.current,
-    getRowNode: (id) => rowsRef.current.find((r) => r.id === id),
-    updateRowData: ({ add, update, remove }) => {
+    setRowData: (data) => setLocalRowData(data),
+    updateRowData: ({ add, remove, update }) => {
       setLocalRowData((prev) => {
         let newData = [...prev];
-        
+
         if (remove) {
-          const removeIds = new Set(remove.map((d, i) => getRowId?.(d) ?? `row-${i}`));
-          newData = newData.filter((d, i) => !removeIds.has(getRowId?.(d) ?? `row-${i}`));
+          const removeIds = new Set(
+            remove.map((d, i) => getRowId?.(d) ?? `row-${i}`)
+          );
+          newData = newData.filter(
+            (d, i) => !removeIds.has(getRowId?.(d) ?? `row-${i}`)
+          );
         }
-        
+
         if (update) {
-          const updateMap = new Map(update.map((d, i) => [getRowId?.(d) ?? `row-${i}`, d]));
-          newData = newData.map((d, i) => {
-            const id = getRowId?.(d) ?? `row-${i}`;
-            return updateMap.get(id) ?? d;
+          update.forEach((updateData) => {
+            const updateId = getRowId?.(updateData);
+            const index = newData.findIndex(
+              (d, i) => (getRowId?.(d) ?? `row-${i}`) === updateId
+            );
+            if (index >= 0) {
+              newData[index] = { ...newData[index], ...updateData };
+            }
           });
         }
-        
+
         if (add) {
           newData = [...newData, ...add];
         }
-        
+
         return newData;
       });
     },
+    getRowNode: (id) => rowsRef.current.find((r) => r.id === id) || null,
+    forEachNode: (callback) => rowsRef.current.forEach(callback),
+    getDisplayedRowCount: () => displayedRowsRef.current.length,
+    getDisplayedRowAtIndex: (index) => displayedRowsRef.current[index] || null,
+    getDisplayedRows: () => displayedRowsRef.current,
 
     // Selection
-    selectAll,
-    deselectAll,
+    getSelectedRows: () => displayedRowsRef.current.filter((r) => selection.selectedRows.has(r.id)),
+    getSelectedNodes: () => displayedRowsRef.current.filter((r) => selection.selectedRows.has(r.id)),
+    selectAll: () => selectAll(),
+    deselectAll: () => deselectAll(),
     selectRow: (id, selected = true) => selectRow(id, selected),
-    selectRows: (ids, selected = true) => {
+    selectRows: (rowIds, selected = true) => {
       setSelection((prev) => {
         const newSelected = new Set(prev.selectedRows);
-        ids.forEach((id) => {
+        rowIds.forEach((id) => {
           if (selected) {
             newSelected.add(id);
           } else {
@@ -258,20 +322,8 @@ export function useGridState<T>(props: DataGridProps<T>, containerWidth: number)
         return { ...prev, selectedRows: newSelected };
       });
     },
-    getSelectedRows: () => displayedRowsRef.current.filter((r) => selection.selectedRows.has(r.id)),
-    getSelectedRowIds: () => Array.from(selection.selectedRows),
-
-    // Sorting
-    setSortModel: (model) => setSortModel(model),
-    getSortModel: () => sortModel,
-
-    // Filtering
-    setFilterModel: (model) => setFilterModel(model),
-    getFilterModel: () => filterModel,
-    setQuickFilter: (text) => setInternalQuickFilter(text),
 
     // Columns
-    setColumnDefs: () => {}, // Controlled by props
     getColumnDefs: () => columnDefs,
     setColumnVisible: (field, visible) => {
       setHiddenColumns((prev) => {
@@ -298,7 +350,7 @@ export function useGridState<T>(props: DataGridProps<T>, containerWidth: number)
     resizeColumn: (field, width) => {
       setColumnWidths((prev) => ({ ...prev, [field]: width }));
     },
-    autoSizeColumn: () => {}, // Would need DOM measurement
+    autoSizeColumn: () => {},
     autoSizeAllColumns: () => {},
 
     // Pagination
@@ -327,19 +379,17 @@ export function useGridState<T>(props: DataGridProps<T>, containerWidth: number)
         currentPage: Math.max(prev.currentPage - 1, 0),
       }));
     },
-    firstPage: () => {
-      setPaginationState((prev) => ({ ...prev, currentPage: 0 }));
-    },
-    lastPage: () => {
-      setPaginationState((prev) => ({
-        ...prev,
-        currentPage: prev.totalPages - 1,
-      }));
-    },
+
+    // Sort & Filter
+    setSortModel: (model) => setSortModel(model),
+    getSortModel: () => sortModel,
+    setFilterModel: (model) => setFilterModel(model),
+    getFilterModel: () => filterModel,
+    setQuickFilter: (text) => setInternalQuickFilter(text),
 
     // Editing
     startEditingCell: (rowId, field) => {
-      const row = rowsRef.current.find((r) => r.id === rowId);
+      const row = displayedRowsRef.current.find((r) => r.id === rowId);
       if (row) {
         const value = (row.data as any)[field];
         setEditingCell({
@@ -401,7 +451,6 @@ export function useGridState<T>(props: DataGridProps<T>, containerWidth: number)
     editingCell,
     selectAll,
     deselectAll,
-    selectRow,
     getRowId,
   ]);
 

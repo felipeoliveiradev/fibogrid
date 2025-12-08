@@ -80,6 +80,27 @@ export function GridCell<T>({
     }
   };
 
+  const handleCellClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent row click
+    onClick(e);
+  };
+
+  const handleCellDoubleClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent row double click
+    onDoubleClick(e);
+    if (column.editable) {
+      onStartEdit();
+    }
+  };
+
+  const handleMouseDownInternal = (e: React.MouseEvent) => {
+    // Don't trigger range selection on normal clicks
+    // Range selection requires Shift key
+    if (onMouseDown) {
+      onMouseDown(e);
+    }
+  };
+
   const formattedValue = column.valueFormatter
     ? column.valueFormatter(value, row.data)
     : value;
@@ -203,14 +224,9 @@ export function GridCell<T>({
         minWidth: column.minWidth || 50,
         paddingLeft: indent > 0 ? `${indent + 12}px` : undefined,
       }}
-      onClick={onClick}
-      onDoubleClick={(e) => {
-        onDoubleClick(e);
-        if (column.editable) {
-          onStartEdit();
-        }
-      }}
-      onMouseDown={onMouseDown}
+      onClick={handleCellClick}
+      onDoubleClick={handleCellDoubleClick}
+      onMouseDown={handleMouseDownInternal}
       onMouseEnter={onMouseEnter}
     >
       {showExpandIcon && (
