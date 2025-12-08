@@ -1,39 +1,40 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { ProcessedColumn, FilterModel, RowNode } from '../types';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { ProcessedColumn, FilterModel } from '../types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Filter, X, Search, Check, SortAsc, SortDesc } from 'lucide-react';
+import { Filter, X, Search, SortAsc, SortDesc } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface FilterPopoverProps<T> {
   column: ProcessedColumn<T>;
   currentFilter?: FilterModel;
   onFilterChange: (filter: FilterModel | null) => void;
-  children: React.ReactNode;
-  // For value list
+  onClose: () => void;
   allValues?: any[];
   onSort?: (direction: 'asc' | 'desc') => void;
+  anchorRect?: DOMRect | null;
 }
 
 export function FilterPopover<T>({
   column,
   currentFilter,
   onFilterChange,
-  children,
+  onClose,
   allValues = [],
   onSort,
+  anchorRect,
 }: FilterPopoverProps<T>) {
-  const [isOpen, setIsOpen] = useState(true); // Open by default when rendered
+  const popoverRef = useRef<HTMLDivElement>(null);
   const [value, setValue] = useState(currentFilter?.value ?? '');
   const [operator, setOperator] = useState<string>(currentFilter?.operator ?? 'contains');
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedValues, setSelectedValues] = useState<Set<string>>(new Set());
+  const [selectedValues, setSelectedValues] = useState<Set<string>>(() => new Set());
   const [selectAll, setSelectAll] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const filterType = column.filterType || 'text';
   const operators = getOperatorsForType(filterType);
@@ -57,8 +58,10 @@ export function FilterPopover<T>({
     );
   }, [uniqueValues, searchTerm]);
 
-  // Initialize selected values
+  // Initialize selected values once
   useEffect(() => {
+    if (isInitialized || uniqueValues.length === 0) return;
+    
     if (currentFilter?.value && Array.isArray(currentFilter.value)) {
       setSelectedValues(new Set(currentFilter.value.map(String)));
       setSelectAll(false);
@@ -66,7 +69,27 @@ export function FilterPopover<T>({
       setSelectedValues(new Set(uniqueValues));
       setSelectAll(true);
     }
-  }, [uniqueValues, currentFilter]);
+    setIsInitialized(true);
+  }, [uniqueValues, currentFilter, isInitialized]);
+
+  // Handle click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+        onClose();
+      }
+    };
+    
+    // Delay to prevent immediate close
+    const timer = setTimeout(() => {
+      document.addEventListener('mousedown', handleClickOutside);
+    }, 100);
+    
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [onClose]);
 
   const handleApplyCondition = () => {
     if (value === '' || value == null) {
@@ -79,14 +102,13 @@ export function FilterPopover<T>({
         operator: operator as any,
       });
     }
-    setIsOpen(false);
+    onClose();
   };
 
   const handleApplyValues = () => {
     if (selectAll || selectedValues.size === uniqueValues.length) {
       onFilterChange(null);
     } else if (selectedValues.size === 0) {
-      // Filter everything out
       onFilterChange({
         field: column.field,
         filterType: 'select',
@@ -101,7 +123,7 @@ export function FilterPopover<T>({
         operator: 'equals',
       });
     }
-    setIsOpen(false);
+    onClose();
   };
 
   const handleClear = () => {
@@ -109,18 +131,20 @@ export function FilterPopover<T>({
     setSelectedValues(new Set(uniqueValues));
     setSelectAll(true);
     onFilterChange(null);
-    setIsOpen(false);
+    onClose();
   };
 
   const toggleValue = (val: string) => {
-    const newSelected = new Set(selectedValues);
-    if (newSelected.has(val)) {
-      newSelected.delete(val);
-    } else {
-      newSelected.add(val);
-    }
-    setSelectedValues(newSelected);
-    setSelectAll(newSelected.size === uniqueValues.length);
+    setSelectedValues(prev => {
+      const newSelected = new Set(prev);
+      if (newSelected.has(val)) {
+        newSelected.delete(val);
+      } else {
+        newSelected.add(val);
+      }
+      setSelectAll(newSelected.size === uniqueValues.length);
+      return newSelected;
+    });
   };
 
   const toggleAll = () => {
@@ -133,160 +157,167 @@ export function FilterPopover<T>({
     }
   };
 
+  // Calculate position
+  const style = useMemo(() => {
+    if (!anchorRect) return { top: 0, left: 0 };
+    
+    return {
+      top: anchorRect.bottom + 4,
+      left: Math.max(8, anchorRect.left),
+    };
+  }, [anchorRect]);
+
   return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
-      <PopoverTrigger asChild>{children}</PopoverTrigger>
-      <PopoverContent 
-        className="w-80 p-0 bg-popover border border-border shadow-lg z-50" 
-        align="start"
-        sideOffset={5}
-      >
-        <div className="flex flex-col">
-          {/* Header */}
-          <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-muted/50">
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-muted-foreground" />
-              <span className="font-medium text-sm">{column.headerName}</span>
-            </div>
-            <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={handleClear}>
-              <X className="h-4 w-4" />
+    <div
+      ref={popoverRef}
+      className="fixed w-80 bg-popover border border-border rounded-lg shadow-xl z-[100]"
+      style={style}
+    >
+      <div className="flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-muted/50 rounded-t-lg">
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <span className="font-medium text-sm">{column.headerName}</span>
+          </div>
+          <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={onClose}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {/* Sort Options */}
+        {onSort && (
+          <div className="flex gap-1 px-3 py-2 border-b border-border">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="flex-1 justify-start gap-2"
+              onClick={() => {
+                onSort('asc');
+                onClose();
+              }}
+            >
+              <SortAsc className="h-4 w-4" />
+              Sort A to Z
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="flex-1 justify-start gap-2"
+              onClick={() => {
+                onSort('desc');
+                onClose();
+              }}
+            >
+              <SortDesc className="h-4 w-4" />
+              Sort Z to A
             </Button>
           </div>
+        )}
 
-          {/* Sort Options */}
-          {onSort && (
-            <div className="flex gap-1 px-3 py-2 border-b border-border">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="flex-1 justify-start gap-2"
-                onClick={() => {
-                  onSort('asc');
-                  setIsOpen(false);
-                }}
+        <Tabs defaultValue="values" className="w-full">
+          <TabsList className="w-full rounded-none border-b border-border bg-transparent h-9">
+            <TabsTrigger value="values" className="flex-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent">
+              Values
+            </TabsTrigger>
+            <TabsTrigger value="condition" className="flex-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent">
+              Condition
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Values Tab - Excel-like checkbox list */}
+          <TabsContent value="values" className="mt-0">
+            <div className="p-3 space-y-2">
+              {/* Search */}
+              <div className="relative">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-8 h-8"
+                />
+              </div>
+
+              {/* Select All */}
+              <div 
+                className="flex items-center gap-2 py-1.5 px-2 hover:bg-muted rounded cursor-pointer"
+                onClick={toggleAll}
               >
-                <SortAsc className="h-4 w-4" />
-                Sort A to Z
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="flex-1 justify-start gap-2"
-                onClick={() => {
-                  onSort('desc');
-                  setIsOpen(false);
-                }}
-              >
-                <SortDesc className="h-4 w-4" />
-                Sort Z to A
-              </Button>
+                <Checkbox 
+                  checked={selectAll} 
+                  onCheckedChange={() => toggleAll()}
+                />
+                <span className="text-sm font-medium">(Select All)</span>
+              </div>
+
+              {/* Value List */}
+              <ScrollArea className="h-48 border border-border rounded bg-background">
+                <div className="p-1">
+                  {filteredValues.map((val) => (
+                    <div
+                      key={val}
+                      className="flex items-center gap-2 py-1.5 px-2 hover:bg-muted rounded cursor-pointer"
+                      onClick={() => toggleValue(val)}
+                    >
+                      <Checkbox 
+                        checked={selectedValues.has(val)}
+                        onCheckedChange={() => toggleValue(val)}
+                      />
+                      <span className="text-sm truncate">{val || '(Blank)'}</span>
+                    </div>
+                  ))}
+                  {filteredValues.length === 0 && (
+                    <div className="text-sm text-muted-foreground text-center py-4">
+                      No values found
+                    </div>
+                  )}
+                </div>
+              </ScrollArea>
+
+              {/* Apply Button */}
+              <div className="flex gap-2 pt-2">
+                <Button variant="outline" className="flex-1" onClick={handleClear}>
+                  Clear
+                </Button>
+                <Button className="flex-1" onClick={handleApplyValues}>
+                  Apply
+                </Button>
+              </div>
             </div>
-          )}
+          </TabsContent>
 
-          <Tabs defaultValue="values" className="w-full">
-            <TabsList className="w-full rounded-none border-b border-border bg-transparent h-9">
-              <TabsTrigger value="values" className="flex-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary">
-                Values
-              </TabsTrigger>
-              <TabsTrigger value="condition" className="flex-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary">
-                Condition
-              </TabsTrigger>
-            </TabsList>
+          {/* Condition Tab - Traditional filter */}
+          <TabsContent value="condition" className="mt-0">
+            <div className="p-3 space-y-3">
+              <Select value={operator} onValueChange={setOperator}>
+                <SelectTrigger className="h-8">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border border-border z-[110]">
+                  {operators.map((op) => (
+                    <SelectItem key={op.value} value={op.value}>
+                      {op.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-            {/* Values Tab - Excel-like checkbox list */}
-            <TabsContent value="values" className="mt-0">
-              <div className="p-3 space-y-2">
-                {/* Search */}
-                <div className="relative">
-                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-8 h-8"
-                  />
-                </div>
+              {renderInput(filterType, value, setValue)}
 
-                {/* Select All */}
-                <div 
-                  className="flex items-center gap-2 py-1.5 px-2 hover:bg-muted rounded cursor-pointer"
-                  onClick={toggleAll}
-                >
-                  <Checkbox 
-                    checked={selectAll} 
-                    onCheckedChange={toggleAll}
-                  />
-                  <span className="text-sm font-medium">(Select All)</span>
-                </div>
-
-                {/* Value List */}
-                <ScrollArea className="h-48 border border-border rounded">
-                  <div className="p-1">
-                    {filteredValues.map((val) => (
-                      <div
-                        key={val}
-                        className="flex items-center gap-2 py-1.5 px-2 hover:bg-muted rounded cursor-pointer"
-                        onClick={() => toggleValue(val)}
-                      >
-                        <Checkbox 
-                          checked={selectedValues.has(val)}
-                          onCheckedChange={() => toggleValue(val)}
-                        />
-                        <span className="text-sm truncate">{val || '(Blank)'}</span>
-                      </div>
-                    ))}
-                    {filteredValues.length === 0 && (
-                      <div className="text-sm text-muted-foreground text-center py-4">
-                        No values found
-                      </div>
-                    )}
-                  </div>
-                </ScrollArea>
-
-                {/* Apply Button */}
-                <div className="flex gap-2 pt-2">
-                  <Button variant="outline" className="flex-1" onClick={handleClear}>
-                    Clear
-                  </Button>
-                  <Button className="flex-1" onClick={handleApplyValues}>
-                    Apply
-                  </Button>
-                </div>
+              <div className="flex gap-2 pt-2">
+                <Button variant="outline" className="flex-1" onClick={handleClear}>
+                  Clear
+                </Button>
+                <Button className="flex-1" onClick={handleApplyCondition}>
+                  Apply
+                </Button>
               </div>
-            </TabsContent>
-
-            {/* Condition Tab - Traditional filter */}
-            <TabsContent value="condition" className="mt-0">
-              <div className="p-3 space-y-3">
-                <Select value={operator} onValueChange={setOperator}>
-                  <SelectTrigger className="h-8">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover border border-border z-50">
-                    {operators.map((op) => (
-                      <SelectItem key={op.value} value={op.value}>
-                        {op.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                {renderInput(filterType, value, setValue)}
-
-                <div className="flex gap-2 pt-2">
-                  <Button variant="outline" className="flex-1" onClick={handleClear}>
-                    Clear
-                  </Button>
-                  <Button className="flex-1" onClick={handleApplyCondition}>
-                    Apply
-                  </Button>
-                </div>
-              </div>
-            </TabsContent>
-          </Tabs>
-        </div>
-      </PopoverContent>
-    </Popover>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
   );
 }
 
@@ -347,7 +378,7 @@ function renderInput(
           <SelectTrigger className="h-8">
             <SelectValue placeholder="Select..." />
           </SelectTrigger>
-          <SelectContent className="bg-popover border border-border z-50">
+          <SelectContent className="bg-popover border border-border z-[110]">
             <SelectItem value="true">Yes</SelectItem>
             <SelectItem value="false">No</SelectItem>
           </SelectContent>

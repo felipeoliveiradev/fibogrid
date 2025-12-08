@@ -22,6 +22,11 @@ import { isGroupNode, GroupRowNode } from './utils/grouping';
 import { cn } from '@/lib/utils';
 import { Copy, Download, Trash2 } from 'lucide-react';
 
+interface FilterState<T> {
+  column: ProcessedColumn<T>;
+  anchorRect: DOMRect;
+}
+
 export function DataGrid<T extends object>(props: DataGridProps<T>) {
   const {
     rowHeight = 40,
@@ -41,6 +46,7 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
     getContextMenuItems,
     showToolbar = true,
     showStatusBar = true,
+    showRowNumbers = false,
     height,
     gridId,
     // Grouping
@@ -74,7 +80,7 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
   const cellContentRefs = useRef<Map<string, Map<string, HTMLElement>>>(new Map());
   const [containerWidth, setContainerWidth] = useState(0);
   const [containerHeight, setContainerHeight] = useState(0);
-  const [filterColumn, setFilterColumn] = useState<ProcessedColumn<T> | null>(null);
+  const [filterState, setFilterState] = useState<FilterState<T> | null>(null);
   const [quickFilterValue, setQuickFilterValue] = useState('');
 
   // Resize observer
@@ -113,6 +119,7 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
     api,
     setColumnOrder,
     setColumnWidths,
+    setColumnPinned,
   } = useGridState({ ...props, quickFilterText: quickFilterValue }, containerWidth);
 
   // Grouping
@@ -214,6 +221,7 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
       fieldMap.delete(rowId);
     }
   }, []);
+
   // Column drag
   const {
     draggedColumn,
@@ -322,7 +330,7 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
       setFilterModel((prev) => {
         let newModel: FilterModel[];
         if (filter === null) {
-          newModel = prev.filter((f) => f.field !== filterColumn?.field);
+          newModel = prev.filter((f) => f.field !== filterState?.column.field);
         } else {
           const existing = prev.findIndex((f) => f.field === filter.field);
           if (existing >= 0) {
@@ -335,10 +343,24 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
         onFilterChanged?.({ filterModel: newModel });
         return newModel;
       });
-      setFilterColumn(null);
     },
-    [setFilterModel, filterColumn, onFilterChanged]
+    [setFilterModel, filterState, onFilterChanged]
   );
+
+  // Handle filter click from header
+  const handleFilterClick = useCallback((column: ProcessedColumn<T>, anchorRect: DOMRect) => {
+    setFilterState({ column, anchorRect });
+  }, []);
+
+  // Close filter
+  const handleCloseFilter = useCallback(() => {
+    setFilterState(null);
+  }, []);
+
+  // Column pin handler
+  const handlePinColumn = useCallback((field: string, pinned: 'left' | 'right' | null) => {
+    setColumnPinned(field, pinned);
+  }, [setColumnPinned]);
 
   // Selection handlers
   const handleRowClick = useCallback(
@@ -420,6 +442,16 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
     [api]
   );
 
+  // Add child row handler
+  const handleAddChildRow = useCallback((parentId: string) => {
+    // Create a sample child row - in real usage, this would be customized
+    const parentRow = displayedRows.find(r => r.id === parentId);
+    if (parentRow) {
+      const childData = { ...parentRow.data, id: `${parentId}-child-${Date.now()}` } as T;
+      addChildToRow(parentId, [childData]);
+    }
+  }, [displayedRows, addChildToRow]);
+
   const gridContent = (
     <div
       ref={containerRef}
@@ -462,9 +494,11 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
         allSelected={allSelected}
         someSelected={someSelected}
         onSelectAll={() => (allSelected ? deselectAll() : selectAll())}
-        onFilterClick={(col) => setFilterColumn(col)}
+        onFilterClick={handleFilterClick}
         headerHeight={headerHeight}
         measureColumnContent={measureColumnContent}
+        showRowNumbers={showRowNumbers}
+        onPinColumn={handlePinColumn}
       />
 
       {/* Body */}
@@ -607,6 +641,9 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
                     isExpanded={isRowExpanded}
                     onToggleExpand={() => toggleRowExpand(row.id)}
                     registerCellRef={registerCellRef}
+                    showRowNumbers={showRowNumbers}
+                    rowNumber={row.rowIndex + 1}
+                    onAddChildRow={handleAddChildRow}
                   />
                 </React.Fragment>
               );
@@ -641,20 +678,20 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
         <GridOverlay type="noRows" customComponent={noRowsOverlayComponent} />
       )}
 
-      {/* Filter Popover */}
-      {filterColumn && (
+      {/* Filter Popover - Fixed position */}
+      {filterState && (
         <FilterPopover
-          column={filterColumn}
-          currentFilter={filterModel.find((f) => f.field === filterColumn.field)}
+          column={filterState.column}
+          currentFilter={filterModel.find((f) => f.field === filterState.column.field)}
           onFilterChange={handleFilterChange}
-          allValues={displayedRows.map((r) => (r.data as any)[filterColumn.field])}
+          onClose={handleCloseFilter}
+          allValues={displayedRows.map((r) => (r.data as any)[filterState.column.field])}
           onSort={(direction) => {
-            setSortModel([{ field: filterColumn.field, direction }]);
-            setFilterColumn(null);
+            setSortModel([{ field: filterState.column.field, direction }]);
+            handleCloseFilter();
           }}
-        >
-          <div className="hidden" />
-        </FilterPopover>
+          anchorRect={filterState.anchorRect}
+        />
       )}
     </div>
   );
