@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect, startTransition } from 'react';
 import { Link } from 'react-router-dom';
 import { DataGrid } from '@/components/DataGrid';
 import { ColumnDef, GridApi, RowNode } from '@/components/DataGrid/types';
@@ -202,36 +202,38 @@ export default function Demo() {
       intervalRef.current = setInterval(() => {
         const start = performance.now();
         
-        setRowData(prev => {
-          const len = prev.length;
-          const updated: StockRow[] = new Array(len);
-          
-          // Batch random generation for better performance
-          for (let i = 0; i < len; i++) {
-            const stock = prev[i];
-            const rand = Math.random();
-            const priceChange = (rand - 0.5) * 2;
-            const newPrice = stock.price + priceChange;
-            const newChange = stock.change + priceChange;
+        // Use startTransition for non-blocking updates
+        startTransition(() => {
+          setRowData(prev => {
+            const len = prev.length;
+            const updated: StockRow[] = new Array(len);
             
-            // Direct property assignment - faster than spread
-            updated[i] = {
-              id: stock.id,
-              ticker: stock.ticker,
-              name: stock.name,
-              price: (newPrice * 100 + 0.5) | 0 / 100, // Faster rounding
-              change: (newChange * 100 + 0.5) | 0 / 100,
-              changePercent: ((newChange / newPrice) * 10000 + 0.5) | 0 / 100,
-              volume: stock.volume + ((rand * 10000) | 0),
-              marketCap: stock.marketCap,
-              sector: stock.sector,
-              pe: stock.pe,
-            };
-          }
-          
-          setRenderTime(performance.now() - start | 0);
-          return updated;
+            for (let i = 0; i < len; i++) {
+              const stock = prev[i];
+              const rand = Math.random();
+              const priceChange = (rand - 0.5) * 2;
+              const newPrice = stock.price + priceChange;
+              const newChange = stock.change + priceChange;
+              
+              updated[i] = {
+                id: stock.id,
+                ticker: stock.ticker,
+                name: stock.name,
+                price: ((newPrice * 100) | 0) / 100,
+                change: ((newChange * 100) | 0) / 100,
+                changePercent: ((newChange / newPrice * 10000) | 0) / 100,
+                volume: stock.volume + ((rand * 10000) | 0),
+                marketCap: stock.marketCap,
+                sector: stock.sector,
+                pe: stock.pe,
+              };
+            }
+            
+            return updated;
+          });
         });
+        
+        setRenderTime((performance.now() - start) | 0);
       }, updateInterval);
     } else if (intervalRef.current) {
       clearInterval(intervalRef.current);

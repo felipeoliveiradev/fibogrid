@@ -607,94 +607,27 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
             <div style={{ height: totalHeight, position: 'relative' }}>
               <div style={{ transform: `translateY(${offsetTop}px)` }}>
                 {virtualRows.map((row, index) => {
-                  // Check if this is a split point
-                  const isSplitPoint = splitPoints.includes(index);
-                  
-                  // Check if this is a group row
-                  if (isGroupRow(row)) {
-                    const groupRow = row as unknown as GroupRowNode<T>;
-                    const isExpanded = expandedGroups.has(row.id);
-                    const allChildrenSelected = groupRow.groupChildren.every(
-                      (child) => selection.selectedRows.has(child.id)
-                    );
-                    const someChildrenSelected = groupRow.groupChildren.some(
-                      (child) => selection.selectedRows.has(child.id)
-                    );
+                  // Fast path for regular rows (most common case)
+                  if (!isGroupRow(row)) {
+                    const isSelected = selection.selectedRows.has(row.id);
+                    const regularRow = row as any;
                     
                     return (
-                      <React.Fragment key={row.id}>
-                        {isSplitPoint && (
-                          <div className="h-2 bg-muted border-y border-border" />
-                        )}
-                        <GroupRow
-                          row={groupRow}
-                          columns={columns}
-                          rowHeight={rowHeight}
-                          isExpanded={isExpanded}
-                          onToggleExpand={() => toggleGroupExpand(row.id)}
-                          showCheckboxColumn={!!rowSelection}
-                          allChildrenSelected={allChildrenSelected}
-                          someChildrenSelected={someChildrenSelected}
-                          onSelectAll={(selected) => {
-                            groupRow.groupChildren.forEach((child) => {
-                              selectRow(child.id, selected);
-                            });
-                          }}
-                        />
-                      </React.Fragment>
-                    );
-                  }
-                  
-                  // Check if this is a child row
-                  const regularRow = row as any;
-                  const isChildRow = regularRow.isChildRow || (regularRow.level && regularRow.level > 0);
-                  const hasChildren = regularRow.childRows && regularRow.childRows.length > 0;
-                  const isRowExpanded = expandedRows.has(row.id);
-                  
-                  return (
-                    <React.Fragment key={row.id}>
-                      {isSplitPoint && (
-                        <div className="h-2 bg-muted border-y border-border" />
-                      )}
                       <GridRow
+                        key={row.id}
                         row={row}
                         columns={columns}
                         rowHeight={rowHeight}
-                        isSelected={selection.selectedRows.has(row.id)}
-                        onRowClick={(e) => {
-                          handleRowClick(row.id, e);
-                          focusCell(row.id, columns[0]?.field || '');
-                          onRowClicked?.({ rowNode: row, event: e, api });
-                          
-                          // Notify grid context for shared state
-                          if (gridContext && gridId) {
-                            gridContext.onRowSelect(gridId, row);
-                          }
-                        }}
-                        onRowDoubleClick={(e) => {
-                          onRowDoubleClicked?.({ rowNode: row, event: e, api });
-                        }}
+                        isSelected={isSelected}
+                        onRowClick={(e) => handleRowClick(row.id, e)}
+                        onRowDoubleClick={onRowDoubleClicked ? (e) => onRowDoubleClicked({ rowNode: row, event: e, api }) : () => {}}
                         onCellClick={(col, e) => {
                           focusCell(row.id, col.field);
-                          onCellClicked?.({
-                            rowNode: row,
-                            column: col,
-                            value: (row.data as any)[col.field],
-                            event: e,
-                            api,
-                          });
+                          onCellClicked?.({ rowNode: row, column: col, value: (row.data as any)[col.field], event: e, api });
                         }}
                         onCellDoubleClick={(col, e) => {
-                          if (col.editable) {
-                            api.startEditingCell(row.id, col.field);
-                          }
-                          onCellDoubleClicked?.({
-                            rowNode: row,
-                            column: col,
-                            value: (row.data as any)[col.field],
-                            event: e,
-                            api,
-                          });
+                          if (col.editable) api.startEditingCell(row.id, col.field);
+                          onCellDoubleClicked?.({ rowNode: row, column: col, value: (row.data as any)[col.field], event: e, api });
                         }}
                         showCheckboxColumn={!!rowSelection}
                         onCheckboxChange={(checked) => {
@@ -703,9 +636,7 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
                         }}
                         editingCell={editingCell}
                         onStartEdit={(field) => api.startEditingCell(row.id, field)}
-                        onEditChange={(value) =>
-                          setEditingCell((prev) => (prev ? { ...prev, value } : null))
-                        }
+                        onEditChange={(value) => setEditingCell((prev) => (prev ? { ...prev, value } : null))}
                         onStopEdit={(cancel) => {
                           if (editingCell && !cancel) {
                             onCellValueChanged?.({
@@ -733,15 +664,36 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
                         api={api}
                         isEven={index % 2 === 0}
                         level={regularRow.level || 0}
-                        hasChildren={hasChildren}
-                        isExpanded={isRowExpanded}
+                        hasChildren={regularRow.childRows?.length > 0}
+                        isExpanded={expandedRows.has(row.id)}
                         onToggleExpand={() => toggleRowExpand(row.id)}
                         registerCellRef={registerCellRef}
                         showRowNumbers={showRowNumbers}
                         rowNumber={row.rowIndex + 1}
                         onAddChildRow={handleAddChildRow}
                       />
-                    </React.Fragment>
+                    );
+                  }
+                  
+                  // Group row handling
+                  const groupRow = row as unknown as GroupRowNode<T>;
+                  const isExpanded = expandedGroups.has(row.id);
+                  
+                  return (
+                    <GroupRow
+                      key={row.id}
+                      row={groupRow}
+                      columns={columns}
+                      rowHeight={rowHeight}
+                      isExpanded={isExpanded}
+                      onToggleExpand={() => toggleGroupExpand(row.id)}
+                      showCheckboxColumn={!!rowSelection}
+                      allChildrenSelected={groupRow.groupChildren.every((child) => selection.selectedRows.has(child.id))}
+                      someChildrenSelected={groupRow.groupChildren.some((child) => selection.selectedRows.has(child.id))}
+                      onSelectAll={(selected) => {
+                        groupRow.groupChildren.forEach((child) => selectRow(child.id, selected));
+                      }}
+                    />
                   );
                 })}
               </div>
