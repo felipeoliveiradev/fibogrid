@@ -182,6 +182,7 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
 
   // Virtualization - ensure minimum height for proper row calculation
   const virtualizationHeight = Math.max(bodyHeight, 400);
+  
   const {
     virtualRows,
     totalHeight,

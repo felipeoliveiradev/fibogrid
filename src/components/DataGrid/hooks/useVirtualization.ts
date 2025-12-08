@@ -19,26 +19,6 @@ interface VirtualizationResult<T> {
   containerRef: React.RefObject<HTMLDivElement>;
 }
 
-// Optimized throttle for high-performance scrolling
-function throttleRAF<T extends (...args: any[]) => void>(fn: T): T {
-  let rafId: number | null = null;
-  let lastArgs: Parameters<T> | null = null;
-
-  const throttled = (...args: Parameters<T>) => {
-    lastArgs = args;
-    if (rafId === null) {
-      rafId = requestAnimationFrame(() => {
-        if (lastArgs) {
-          fn(...lastArgs);
-        }
-        rafId = null;
-      });
-    }
-  };
-
-  return throttled as T;
-}
-
 export function useVirtualization<T>(
   rows: RowNode<T>[],
   options: VirtualizationOptions
@@ -47,6 +27,7 @@ export function useVirtualization<T>(
   
   const [scrollTop, setScrollTop] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const rafIdRef = useRef<number | null>(null);
 
   // Memoize total height calculation
   const totalHeight = useMemo(() => rows.length * rowHeight, [rows.length, rowHeight]);
@@ -67,13 +48,21 @@ export function useVirtualization<T>(
     };
   }, [rows, scrollTop, rowHeight, containerHeight, overscan]);
 
-  // Use RAF-throttled scroll handler for smooth 60fps scrolling
-  const handleScroll = useCallback(
-    throttleRAF((e: React.UIEvent<HTMLDivElement>) => {
-      setScrollTop(e.currentTarget.scrollTop);
-    }),
-    []
-  );
+  // Optimized scroll handler - directly update without RAF for immediate response
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    const newScrollTop = e.currentTarget.scrollTop;
+    
+    // Cancel pending RAF
+    if (rafIdRef.current !== null) {
+      cancelAnimationFrame(rafIdRef.current);
+    }
+    
+    // Use RAF for batching but update immediately for responsiveness
+    rafIdRef.current = requestAnimationFrame(() => {
+      setScrollTop(newScrollTop);
+      rafIdRef.current = null;
+    });
+  }, []);
 
   const scrollToRow = useCallback(
     (index: number) => {
