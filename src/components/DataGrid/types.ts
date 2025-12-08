@@ -122,8 +122,11 @@ export interface GridApi<T = any> {
   setRowData: (data: T[]) => void;
   getRowData: () => T[];
   getDisplayedRows: () => RowNode<T>[];
-  getRowNode: (id: string) => RowNode<T> | undefined;
+  getRowNode: (id: string) => RowNode<T> | null;
   updateRowData: (updates: { add?: T[]; update?: T[]; remove?: T[] }) => void;
+  forEachNode: (callback: (node: RowNode<T>) => void) => void;
+  getDisplayedRowCount: () => number;
+  getDisplayedRowAtIndex: (index: number) => RowNode<T> | null;
   
   // Selection
   selectAll: () => void;
@@ -131,7 +134,7 @@ export interface GridApi<T = any> {
   selectRow: (id: string, selected?: boolean) => void;
   selectRows: (ids: string[], selected?: boolean) => void;
   getSelectedRows: () => RowNode<T>[];
-  getSelectedRowIds: () => string[];
+  getSelectedNodes: () => RowNode<T>[];
   
   // Sorting
   setSortModel: (model: SortModel[]) => void;
@@ -143,7 +146,6 @@ export interface GridApi<T = any> {
   setQuickFilter: (text: string) => void;
   
   // Columns
-  setColumnDefs: (columns: ColumnDef<T>[]) => void;
   getColumnDefs: () => ColumnDef<T>[];
   setColumnVisible: (field: string, visible: boolean) => void;
   setColumnPinned: (field: string, pinned: 'left' | 'right' | null) => void;
@@ -157,8 +159,6 @@ export interface GridApi<T = any> {
   setPageSize: (size: number) => void;
   nextPage: () => void;
   previousPage: () => void;
-  firstPage: () => void;
-  lastPage: () => void;
   
   // Editing
   startEditingCell: (rowId: string, field: string) => void;
@@ -171,7 +171,7 @@ export interface GridApi<T = any> {
   
   // Export
   exportToCsv: (params?: ExportParams) => void;
-  copyToClipboard: (includeHeaders?: boolean) => void;
+  copyToClipboard: (includeHeaders?: boolean) => Promise<void>;
   
   // Events
   refreshCells: () => void;

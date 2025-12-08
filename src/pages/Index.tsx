@@ -353,11 +353,12 @@ const Index = () => {
 
   const handleDeleteSelected = useCallback(() => {
     if (!gridApi) return;
-    const selectedIds = gridApi.getSelectedRowIds();
-    if (selectedIds.length === 0) {
+    const selectedRows = gridApi.getSelectedRows();
+    if (selectedRows.length === 0) {
       toast({ title: 'No Selection', description: 'Please select rows to delete.', variant: 'destructive' });
       return;
     }
+    const selectedIds = selectedRows.map(r => r.id);
     setRowData(prev => prev.filter(row => !selectedIds.includes(row.id)));
     toast({ title: 'Deleted', description: `${selectedIds.length} stock(s) removed.` });
   }, [gridApi]);

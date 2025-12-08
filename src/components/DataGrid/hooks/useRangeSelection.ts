@@ -24,6 +24,7 @@ export function useRangeSelection(): RangeSelectionResult {
   const [selectedCells, setSelectedCells] = useState<Set<string>>(new Set());
   
   const isSelectingRef = useRef(false);
+  const startPosRef = useRef<CellPosition | null>(null);
 
   // Calculate selected cells based on start and end positions
   const calculateSelectedCells = useCallback(
@@ -49,30 +50,53 @@ export function useRangeSelection(): RangeSelectionResult {
 
   const handleCellMouseDown = useCallback(
     (rowIndex: number, colIndex: number, e: React.MouseEvent) => {
-      // Only handle left click
+      // Only handle left click and require Shift key for range selection
+      // or clicking directly on a cell (not propagated from row)
       if (e.button !== 0) return;
       
+      // Check if Shift is held for range selection
+      if (!e.shiftKey) {
+        // Without shift, just select single cell
+        const position = { rowIndex, colIndex };
+        setSelectionStart(position);
+        setSelectionEnd(position);
+        setSelectedCells(new Set([`${rowIndex}-${colIndex}`]));
+        startPosRef.current = position;
+        // Don't start drag selection without shift
+        return;
+      }
+      
       e.preventDefault();
+      e.stopPropagation();
       
       const position = { rowIndex, colIndex };
-      setSelectionStart(position);
-      setSelectionEnd(position);
-      setSelectedCells(new Set([`${rowIndex}-${colIndex}`]));
+      
+      // If shift is held and we have a start, extend selection
+      if (startPosRef.current) {
+        setSelectionEnd(position);
+        setSelectedCells(calculateSelectedCells(startPosRef.current, position));
+      } else {
+        setSelectionStart(position);
+        setSelectionEnd(position);
+        setSelectedCells(new Set([`${rowIndex}-${colIndex}`]));
+        startPosRef.current = position;
+      }
+      
       setIsSelecting(true);
       isSelectingRef.current = true;
     },
-    []
+    [calculateSelectedCells]
   );
 
   const handleCellMouseEnter = useCallback(
     (rowIndex: number, colIndex: number) => {
-      if (!isSelectingRef.current || !selectionStart) return;
+      if (!isSelectingRef.current || !startPosRef.current) return;
       
       const position = { rowIndex, colIndex };
       setSelectionEnd(position);
-      setSelectedCells(calculateSelectedCells(selectionStart, position));
+      setSelectedCells(calculateSelectedCells(startPosRef.current, position));
     },
-    [selectionStart, calculateSelectedCells]
+    [calculateSelectedCells]
   );
 
   const handleMouseUp = useCallback(() => {
@@ -86,6 +110,7 @@ export function useRangeSelection(): RangeSelectionResult {
     setSelectedCells(new Set());
     setIsSelecting(false);
     isSelectingRef.current = false;
+    startPosRef.current = null;
   }, []);
 
   const isCellSelected = useCallback(
