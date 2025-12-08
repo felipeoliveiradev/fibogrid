@@ -779,8 +779,9 @@ export default function Demo() {
               groupByFields={groupByField ? [groupByField] : undefined}
               onGridReady={(e) => setGridApi(e.api)}
               onCellValueChanged={(e) => {
+                const editedRowId = (e.rowNode.data as StockRow).id;
                 setRowData(prev => prev.map(row => 
-                  row.id === e.rowNode.id 
+                  row.id === editedRowId 
                     ? { ...row, [e.column.field]: e.newValue }
                     : row
                 ));
