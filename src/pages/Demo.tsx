@@ -288,54 +288,28 @@ export default function Demo() {
     {
       field: 'name',
       headerName: 'Company',
-      width: 400,
+      width: 220,
       sortable: true,
       filterable: true,
       editable: true,
       cellRenderer: (params) => {
         const row = params.data as StockRow;
         
-        // Detail row - render full company info card
+        // Detail row - show indicator
         if (row.isDetailRow) {
           return (
-            <div className="absolute left-0 right-0 py-3 px-4 bg-muted/50 border-y border-border -my-2" style={{ width: '100vw', marginLeft: '-50vw', left: '50%' }}>
-              <div className="max-w-4xl mx-auto">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <div className="text-muted-foreground text-xs">Founded</div>
-                      <div className="font-medium">{row.founded}</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <div className="text-muted-foreground text-xs">Employees</div>
-                      <div className="font-medium">{row.employees?.toLocaleString()}</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Building2 className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <div className="text-muted-foreground text-xs">Headquarters</div>
-                      <div className="font-medium">{row.headquarters}</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <User className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <div className="text-muted-foreground text-xs">CEO</div>
-                      <div className="font-medium">{row.ceo}</div>
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-2 flex items-center gap-2 text-sm">
-                  <Globe className="h-4 w-4 text-muted-foreground" />
-                  <a href={row.website} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                    {row.website}
-                  </a>
-                </div>
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <div className="flex items-center gap-1">
+                <Calendar className="h-3 w-3" />
+                <span>{row.founded}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Users className="h-3 w-3" />
+                <span>{row.employees?.toLocaleString()}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Building2 className="h-3 w-3" />
+                <span>{row.headquarters}</span>
               </div>
             </div>
           );
@@ -346,6 +320,48 @@ export default function Demo() {
             {params.value || (row.isChild ? '—' : '')}
           </span>
         );
+      },
+    },
+    {
+      field: 'ceo',
+      headerName: 'CEO',
+      width: 140,
+      sortable: true,
+      cellRenderer: (params) => {
+        const row = params.data as StockRow;
+        if (row.isDetailRow) {
+          return (
+            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+              <User className="h-3 w-3" />
+              <span>{row.ceo}</span>
+            </div>
+          );
+        }
+        return <span className="text-muted-foreground">{params.value}</span>;
+      },
+    },
+    {
+      field: 'website',
+      headerName: 'Website',
+      width: 180,
+      sortable: false,
+      cellRenderer: (params) => {
+        const row = params.data as StockRow;
+        if (row.isDetailRow || params.value) {
+          return (
+            <a 
+              href={row.website} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="flex items-center gap-1 text-sm text-primary hover:underline"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Globe className="h-3 w-3" />
+              <span className="truncate">{row.website?.replace('https://', '')}</span>
+            </a>
+          );
+        }
+        return null;
       },
     },
     {
