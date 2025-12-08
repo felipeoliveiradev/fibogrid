@@ -213,16 +213,16 @@ export default function Demo() {
       cellRenderer: (params) => {
         const row = params.data as StockRow;
         
-        // Detail row - render the master-detail header
+        // Detail row - show avatar + name + sector
         if (row.isDetailRow) {
           return (
-            <div className="flex items-center gap-3 pl-6">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground font-bold text-sm">
+            <div className="flex items-center gap-2 pl-6">
+              <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-muted-foreground font-bold text-xs flex-shrink-0">
                 {row.ticker?.slice(0, 2) || '??'}
               </div>
-              <div>
-                <div className="font-semibold">{row.name}</div>
-                <Badge variant="secondary" className="text-xs">{row.sector}</Badge>
+              <div className="flex flex-col min-w-0">
+                <span className="font-medium text-sm truncate">{row.name}</span>
+                <Badge variant="secondary" className="text-xs w-fit">{row.sector}</Badge>
               </div>
             </div>
           );
@@ -240,18 +240,18 @@ export default function Demo() {
                   e.stopPropagation();
                   toggleRowExpand(row.id);
                 }}
-                className={`p-0.5 hover:bg-accent rounded transition-colors ${isExpanded ? 'bg-primary/20' : ''}`}
+                className={`p-0.5 hover:bg-accent rounded transition-colors`}
                 title="Show details"
               >
                 {isExpanded ? (
-                  <ChevronDown className="h-4 w-4 text-primary" />
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
                 ) : (
                   <ChevronRight className="h-4 w-4 text-muted-foreground" />
                 )}
               </button>
             )}
             {isChild && <span className="w-5 ml-5" />}
-            <span className={`font-bold ${isChild ? 'text-muted-foreground' : 'text-primary'}`}>
+            <span className={`font-bold ${isChild ? 'text-muted-foreground' : 'text-foreground'}`}>
               {params.value || (isChild ? '—' : '')}
             </span>
           </div>
@@ -268,7 +268,7 @@ export default function Demo() {
       cellRenderer: (params) => {
         const row = params.data as StockRow;
         
-        // Detail row - year info
+        // Detail row - "Founded YEAR"
         if (row.isDetailRow) {
           return (
             <div className="flex items-center gap-2 text-sm">
@@ -294,9 +294,10 @@ export default function Demo() {
       filterType: 'number',
       cellRenderer: (params) => {
         const row = params.data as StockRow;
+        // Detail row - show "Active" badge
         if (row.isDetailRow) {
           return (
-            <Badge variant="outline" className="text-green-500 border-green-500/30">
+            <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/30 font-medium">
               Active
             </Badge>
           );
@@ -307,16 +308,17 @@ export default function Demo() {
     {
       field: 'volume',
       headerName: 'Volume',
-      width: 130,
+      width: 110,
       sortable: true,
       filterType: 'number',
       aggFunc: 'sum',
       cellRenderer: (params) => {
         const row = params.data as StockRow;
+        // Detail row - show employees count
         if (row.isDetailRow) {
           return (
             <div className="flex items-center gap-1 text-sm">
-              <Users className="h-3 w-3 text-muted-foreground" />
+              <Users className="h-3.5 w-3.5 text-muted-foreground" />
               <span>{row.employees?.toLocaleString()}</span>
             </div>
           );
@@ -330,17 +332,18 @@ export default function Demo() {
     {
       field: 'marketCap',
       headerName: 'Market Cap',
-      width: 120,
+      width: 110,
       sortable: true,
       filterType: 'number',
       aggFunc: 'sum',
       cellRenderer: (params) => {
         const row = params.data as StockRow;
+        // Detail row - show market cap with increase
         if (row.isDetailRow) {
           return (
-            <div className="flex flex-col text-xs">
-              <span className="font-semibold">${row.marketCap}B</span>
-              <span className="text-green-500">5% increase</span>
+            <div className="flex flex-col leading-tight">
+              <span className="font-semibold text-sm">${row.marketCap}B</span>
+              <span className="text-green-500 text-xs">5% increase</span>
             </div>
           );
         }
@@ -355,10 +358,9 @@ export default function Demo() {
       filterType: 'number',
       cellRenderer: (params) => {
         const row = params.data as StockRow;
+        // Detail row - show price
         if (row.isDetailRow) {
-          return (
-            <span className="font-mono font-semibold">${row.price.toFixed(2)}</span>
-          );
+          return <span className="font-mono font-semibold">${row.price.toFixed(2)}</span>;
         }
         const value = params.value as number;
         const isPositive = value >= 0;
@@ -373,15 +375,18 @@ export default function Demo() {
     {
       field: 'changePercent',
       headerName: '%',
-      width: 80,
+      width: 90,
       sortable: true,
       cellRenderer: (params) => {
         const row = params.data as StockRow;
-        if (row.isDetailRow) return null;
+        // Detail row - empty or can show something else
+        if (row.isDetailRow) {
+          return null;
+        }
         const value = params.value as number;
         const isPositive = value >= 0;
         return (
-          <span className={`px-2 py-0.5 rounded text-xs font-medium ${isPositive ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+          <span className={`px-2 py-0.5 rounded text-xs font-medium ${isPositive ? 'bg-green-500/20 text-green-500' : 'bg-red-500/20 text-red-500'}`}>
             {isPositive ? '+' : ''}{value.toFixed(2)}%
           </span>
         );
@@ -400,13 +405,7 @@ export default function Demo() {
       },
       cellRenderer: (params) => {
         const row = params.data as StockRow;
-        if (row.isDetailRow) {
-          return (
-            <Button variant="outline" size="sm" className="h-7 text-xs">
-              Hold Trading
-            </Button>
-          );
-        }
+        if (row.isDetailRow) return null;
         return <span>{params.value}</span>;
       },
     },
@@ -419,13 +418,7 @@ export default function Demo() {
       aggFunc: 'avg',
       cellRenderer: (params) => {
         const row = params.data as StockRow;
-        if (row.isDetailRow) {
-          return (
-            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive hover:text-destructive">
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          );
-        }
+        if (row.isDetailRow) return null;
         return <span>{(params.value as number).toFixed(2)}</span>;
       },
     },
