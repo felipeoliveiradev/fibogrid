@@ -50,38 +50,26 @@ export function useRangeSelection(): RangeSelectionResult {
 
   const handleCellMouseDown = useCallback(
     (rowIndex: number, colIndex: number, e: React.MouseEvent) => {
-      // Only handle left click and require Shift key for range selection
-      // or clicking directly on a cell (not propagated from row)
+      // Only handle left click
       if (e.button !== 0) return;
       
-      // Check if Shift is held for range selection
-      if (!e.shiftKey) {
-        // Without shift, just select single cell
-        const position = { rowIndex, colIndex };
-        setSelectionStart(position);
-        setSelectionEnd(position);
-        setSelectedCells(new Set([`${rowIndex}-${colIndex}`]));
-        startPosRef.current = position;
-        // Don't start drag selection without shift
-        return;
-      }
-      
       e.preventDefault();
-      e.stopPropagation();
       
       const position = { rowIndex, colIndex };
       
-      // If shift is held and we have a start, extend selection
-      if (startPosRef.current) {
+      // Shift-click extends selection from anchor
+      if (e.shiftKey && startPosRef.current) {
         setSelectionEnd(position);
         setSelectedCells(calculateSelectedCells(startPosRef.current, position));
       } else {
+        // Start new selection and enable drag
         setSelectionStart(position);
         setSelectionEnd(position);
         setSelectedCells(new Set([`${rowIndex}-${colIndex}`]));
         startPosRef.current = position;
       }
       
+      // Always enable drag selection on mouse down
       setIsSelecting(true);
       isSelectingRef.current = true;
     },

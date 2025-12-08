@@ -97,28 +97,42 @@ function GridRowInner<T>({
   const isChildRow = (row as any).isChildRow;
 
   // Calculate sticky positions for pinned columns
-  const { leftPinnedColumns, centerColumns, rightPinnedColumns, leftPinnedWidth } = useMemo(() => {
+  const { leftPinnedColumns, centerColumns, rightPinnedColumns, leftPinnedWidth, rightPinnedWidth } = useMemo(() => {
     const left = visibleColumns.filter(c => c.pinned === 'left');
     const center = visibleColumns.filter(c => !c.pinned);
     const right = visibleColumns.filter(c => c.pinned === 'right');
     
     // Calculate cumulative left positions
     let leftOffset = (showRowNumbers ? 50 : 0) + (showCheckboxColumn ? 48 : 0);
-    const leftWithPositions = left.map(col => {
+    const leftWithPositions = left.map((col, idx) => {
       const pos = leftOffset;
       leftOffset += col.computedWidth;
-      return { ...col, stickyLeft: pos };
+      return { ...col, stickyLeft: pos, isLastPinned: idx === left.length - 1 };
     });
+    
+    // Calculate cumulative right positions
+    let rightOffset = 0;
+    const rightWithPositions = [...right].reverse().map((col, idx) => {
+      const pos = rightOffset;
+      rightOffset += col.computedWidth;
+      return { ...col, stickyRight: pos, isFirstPinned: idx === right.length - 1 };
+    }).reverse();
     
     return {
       leftPinnedColumns: leftWithPositions,
       centerColumns: center,
-      rightPinnedColumns: right,
+      rightPinnedColumns: rightWithPositions,
       leftPinnedWidth: leftOffset,
+      rightPinnedWidth: rightOffset,
     };
   }, [visibleColumns, showRowNumbers, showCheckboxColumn]);
 
-  const renderCell = (column: ProcessedColumn<T> & { stickyLeft?: number }, isPinned: boolean, stickyLeft?: number) => {
+  const renderCell = (
+    column: ProcessedColumn<T> & { stickyLeft?: number; stickyRight?: number; isLastPinned?: boolean; isFirstPinned?: boolean }, 
+    isPinned: boolean, 
+    stickyLeft?: number,
+    stickyRight?: number
+  ) => {
     const isEditing = editingCell?.rowId === row.id && editingCell?.field === column.field;
     const globalColIndex = columns.findIndex(c => c.field === column.field);
     const cellSelected = isCellSelected?.(row.rowIndex, globalColIndex);
@@ -131,11 +145,15 @@ function GridRowInner<T>({
         key={column.field}
         className={cn(
           isPinned && 'sticky z-[1]',
-          isPinned && (isSelected ? 'bg-primary/10' : isEven ? 'bg-muted/40' : 'bg-background')
+          isPinned && (isSelected ? 'bg-primary/10' : isEven ? 'bg-muted/40' : 'bg-background'),
+          // Add shadow to last left-pinned column
+          column.isLastPinned && column.pinned === 'left' && 'shadow-[2px_0_5px_-2px_rgba(0,0,0,0.15)]',
+          // Add shadow to first right-pinned column  
+          column.isFirstPinned && column.pinned === 'right' && 'shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.15)]'
         )}
         style={{
           left: stickyLeft !== undefined ? stickyLeft : undefined,
-          right: column.pinned === 'right' ? 0 : undefined,
+          right: stickyRight !== undefined ? stickyRight : undefined,
         }}
       >
         <GridCell
@@ -218,13 +236,13 @@ function GridRowInner<T>({
       )}
 
       {/* Left Pinned Columns */}
-      {leftPinnedColumns.map((column) => renderCell(column, true, column.stickyLeft))}
+      {leftPinnedColumns.map((column) => renderCell(column, true, column.stickyLeft, undefined))}
 
       {/* Center (non-pinned) Columns */}
-      {centerColumns.map((column) => renderCell(column, false))}
+      {centerColumns.map((column) => renderCell(column, false, undefined, undefined))}
 
       {/* Right Pinned Columns */}
-      {rightPinnedColumns.map((column) => renderCell(column, true))}
+      {rightPinnedColumns.map((column) => renderCell(column, true, undefined, column.stickyRight))}
 
       {/* Add Child Row Button */}
       {onAddChildRow && !isChildRow && (
