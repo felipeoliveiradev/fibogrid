@@ -191,7 +191,7 @@ export function GridCell<T>({
   return (
     <div
       className={cn(
-        'flex items-center border-r border-border px-3 overflow-hidden text-sm',
+        'flex items-center border-r border-border px-3 overflow-hidden text-sm flex-shrink-0',
         column.editable && !isEditing && 'cursor-pointer hover:bg-muted/50',
         isEditing && 'ring-2 ring-primary ring-inset p-0',
         isSelected && 'bg-primary/20',
