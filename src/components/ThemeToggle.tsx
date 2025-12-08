@@ -29,14 +29,11 @@ export function ThemeToggle() {
       variant="ghost"
       size="icon"
       onClick={toggleTheme}
-      className="h-9 w-9 border border-primary/20 hover:border-primary/40 hover:bg-primary/5"
+      className="h-9 w-9 border border-primary/20 hover:border-primary/40 hover:bg-primary/5 transition-all duration-300"
       title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
     >
-      {isDark ? (
-        <Sun className="h-4 w-4 text-primary" />
-      ) : (
-        <Moon className="h-4 w-4 text-primary" />
-      )}
+      <Sun className={`h-4 w-4 text-primary absolute transition-all duration-300 ${isDark ? 'rotate-0 scale-100' : 'rotate-90 scale-0'}`} />
+      <Moon className={`h-4 w-4 text-primary transition-all duration-300 ${isDark ? 'rotate-90 scale-0' : 'rotate-0 scale-100'}`} />
     </Button>
   );
 }
