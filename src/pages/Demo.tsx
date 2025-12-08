@@ -20,7 +20,10 @@ import {
   TrendingUp,
   TrendingDown,
   Layers,
-  Settings
+  Settings,
+  Split,
+  ChevronRight,
+  ChevronDown
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
@@ -35,6 +38,8 @@ interface StockRow {
   marketCap: number;
   sector: string;
   pe: number;
+  parentId?: string;
+  isChild?: boolean;
 }
 
 // Pre-computed data for faster generation
@@ -82,22 +87,125 @@ export default function Demo() {
   const [updateInterval, setUpdateInterval] = useState(100);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const [renderTime, setRenderTime] = useState(0);
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+
+  // Split row handler - clones row as child with empty ticker/name
+  const handleSplitRow = useCallback((rowId: string) => {
+    setRowData(prev => {
+      const parentIndex = prev.findIndex(r => r.id === rowId);
+      if (parentIndex === -1) return prev;
+      
+      const parent = prev[parentIndex];
+      const childId = `${rowId}-child-${Date.now()}`;
+      const childRow: StockRow = {
+        ...parent,
+        id: childId,
+        ticker: '',
+        name: '',
+        parentId: rowId,
+        isChild: true,
+      };
+      
+      // Insert child right after parent
+      const result = [...prev];
+      result.splice(parentIndex + 1, 0, childRow);
+      
+      // Auto-expand parent
+      setExpandedRows(p => new Set([...p, rowId]));
+      
+      return result;
+    });
+    toast({ title: 'Row Split', description: 'Child row created' });
+  }, []);
+
+  // Toggle row expand/collapse
+  const toggleRowExpand = useCallback((rowId: string) => {
+    setExpandedRows(prev => {
+      const next = new Set(prev);
+      if (next.has(rowId)) {
+        next.delete(rowId);
+      } else {
+        next.add(rowId);
+      }
+      return next;
+    });
+  }, []);
+
+  // Get visible rows (respecting expand/collapse state)
+  const visibleRowData = useMemo(() => {
+    const result: StockRow[] = [];
+    const childrenByParent = new Map<string, StockRow[]>();
+    
+    // Group children by parent
+    rowData.forEach(row => {
+      if (row.parentId) {
+        const children = childrenByParent.get(row.parentId) || [];
+        children.push(row);
+        childrenByParent.set(row.parentId, children);
+      }
+    });
+    
+    // Build visible rows
+    rowData.forEach(row => {
+      if (!row.parentId) {
+        result.push(row);
+        const children = childrenByParent.get(row.id);
+        if (children && expandedRows.has(row.id)) {
+          children.forEach(child => result.push(child));
+        }
+      }
+    });
+    
+    return result;
+  }, [rowData, expandedRows]);
+
+  // Check if row has children
+  const hasChildren = useCallback((rowId: string) => {
+    return rowData.some(r => r.parentId === rowId);
+  }, [rowData]);
 
   // Stable getRowId
   const getRowId = useCallback((row: StockRow) => row.id, []);
 
-  // Memoized columns
+  // Memoized columns with Actions
   const columns: ColumnDef<StockRow>[] = useMemo(() => [
     {
       field: 'ticker',
       headerName: 'Ticker',
-      width: 100,
+      width: 140,
       sortable: true,
       filterable: true,
       pinned: 'left',
-      cellRenderer: (params) => (
-        <span className="font-bold text-primary">{params.value}</span>
-      ),
+      cellRenderer: (params) => {
+        const row = params.data as StockRow;
+        const isParent = hasChildren(row.id);
+        const isExpanded = expandedRows.has(row.id);
+        const isChild = row.isChild;
+        
+        return (
+          <div className="flex items-center gap-1">
+            {isParent && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleRowExpand(row.id);
+                }}
+                className="p-0.5 hover:bg-accent rounded"
+              >
+                {isExpanded ? (
+                  <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                ) : (
+                  <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                )}
+              </button>
+            )}
+            {isChild && <span className="w-4 ml-4" />}
+            <span className={`font-bold ${isChild ? 'text-muted-foreground' : 'text-primary'}`}>
+              {params.value || (isChild ? '—' : '')}
+            </span>
+          </div>
+        );
+      },
     },
     {
       field: 'name',
@@ -106,6 +214,14 @@ export default function Demo() {
       sortable: true,
       filterable: true,
       editable: true,
+      cellRenderer: (params) => {
+        const row = params.data as StockRow;
+        return (
+          <span className={row.isChild ? 'text-muted-foreground italic' : ''}>
+            {params.value || (row.isChild ? '—' : '')}
+          </span>
+        );
+      },
     },
     {
       field: 'price',
@@ -194,7 +310,34 @@ export default function Demo() {
       aggFunc: 'avg',
       valueFormatter: (value) => (value as number).toFixed(2),
     },
-  ], []);
+    {
+      field: 'actions',
+      headerName: 'Actions',
+      width: 100,
+      sortable: false,
+      filterable: false,
+      pinned: 'right',
+      cellRenderer: (params) => {
+        const row = params.data as StockRow;
+        if (row.isChild) return null;
+        
+        return (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2 text-xs"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleSplitRow(row.id);
+            }}
+          >
+            <Split className="h-3 w-3 mr-1" />
+            Split
+          </Button>
+        );
+      },
+    },
+  ], [hasChildren, expandedRows, toggleRowExpand, handleSplitRow]);
 
   // Ultra-optimized real-time updates - target <16ms for 60fps
   useEffect(() => {
@@ -456,6 +599,10 @@ export default function Demo() {
                     <span className="font-medium">{rowData.length.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between">
+                    <span className="text-muted-foreground">Visible</span>
+                    <span className="font-medium">{visibleRowData.length.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
                     <span className="text-muted-foreground">Columns</span>
                     <span className="font-medium">{columns.length}</span>
                   </div>
@@ -471,7 +618,7 @@ export default function Demo() {
           {/* Data Grid */}
           <Card className="overflow-hidden">
             <DataGrid
-              rowData={rowData}
+              rowData={visibleRowData}
               columnDefs={columns}
               getRowId={getRowId}
               rowSelection="multiple"
