@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { DataGrid } from '@/components/DataGrid';
 import { ColumnDef, GridApi } from '@/components/DataGrid/types';
@@ -7,7 +7,6 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { 
   Zap, 
-  Table2, 
   Filter, 
   ArrowUpDown, 
   Columns, 
@@ -22,11 +21,41 @@ import {
   Github,
   BookOpen,
   Play,
-  Sparkles,
   BarChart3,
   Clock,
-  Shield
+  Shield,
+  Hexagon
 } from 'lucide-react';
+
+// FiboGrid Logo Component
+const FiboLogo = ({ className = "h-8 w-8" }: { className?: string }) => (
+  <svg viewBox="0 0 100 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+    {/* Golden spiral based on Fibonacci */}
+    <defs>
+      <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="hsl(42 70% 55%)" />
+        <stop offset="50%" stopColor="hsl(40 65% 45%)" />
+        <stop offset="100%" stopColor="hsl(38 60% 35%)" />
+      </linearGradient>
+    </defs>
+    {/* Fibonacci spiral squares */}
+    <rect x="10" y="10" width="34" height="34" stroke="url(#goldGradient)" strokeWidth="2" fill="none" rx="2"/>
+    <rect x="44" y="10" width="21" height="21" stroke="url(#goldGradient)" strokeWidth="2" fill="none" rx="1"/>
+    <rect x="44" y="31" width="13" height="13" stroke="url(#goldGradient)" strokeWidth="2" fill="none" rx="1"/>
+    <rect x="57" y="31" width="8" height="8" stroke="url(#goldGradient)" strokeWidth="2" fill="none" rx="1"/>
+    <rect x="57" y="39" width="5" height="5" stroke="url(#goldGradient)" strokeWidth="2" fill="none" rx="0.5"/>
+    {/* Grid representation */}
+    <rect x="10" y="50" width="55" height="40" stroke="url(#goldGradient)" strokeWidth="2" fill="none" rx="3"/>
+    <line x1="10" y1="60" x2="65" y2="60" stroke="url(#goldGradient)" strokeWidth="1.5"/>
+    <line x1="10" y1="70" x2="65" y2="70" stroke="url(#goldGradient)" strokeWidth="1"/>
+    <line x1="10" y1="80" x2="65" y2="80" stroke="url(#goldGradient)" strokeWidth="1"/>
+    <line x1="30" y1="50" x2="30" y2="90" stroke="url(#goldGradient)" strokeWidth="1"/>
+    <line x1="50" y1="50" x2="50" y2="90" stroke="url(#goldGradient)" strokeWidth="1"/>
+    {/* Golden circle accent */}
+    <circle cx="80" cy="70" r="12" stroke="url(#goldGradient)" strokeWidth="2" fill="none"/>
+    <circle cx="80" cy="70" r="7" stroke="url(#goldGradient)" strokeWidth="1.5" fill="hsl(40 65% 45% / 0.2)"/>
+  </svg>
+);
 
 // Demo data
 const generateDemoData = (count: number) => {
@@ -65,12 +94,12 @@ const stats = [
   { value: '100k+', label: 'Rows Supported' },
   { value: '60fps', label: 'Scroll Performance' },
   { value: '<16ms', label: 'Render Time' },
-  { value: '0', label: 'Dependencies' },
+  { value: 'φ', label: 'Golden Ratio' },
 ];
 
 export default function Home() {
   const [demoData] = useState(() => generateDemoData(50));
-  const [gridApi, setGridApi] = useState<GridApi<any> | null>(null);
+  const [, setGridApi] = useState<GridApi<any> | null>(null);
 
   const columns: ColumnDef<any>[] = useMemo(() => [
     { 
@@ -113,9 +142,9 @@ export default function Home() {
       width: 110,
       cellRenderer: (params) => {
         const colors: Record<string, string> = {
-          'In Stock': 'bg-green-500/20 text-green-400',
-          'Low Stock': 'bg-yellow-500/20 text-yellow-400',
-          'Out of Stock': 'bg-red-500/20 text-red-400',
+          'In Stock': 'bg-green-600/20 text-green-700 dark:text-green-400',
+          'Low Stock': 'bg-amber-600/20 text-amber-700 dark:text-amber-400',
+          'Out of Stock': 'bg-red-600/20 text-red-700 dark:text-red-400',
         };
         return (
           <span className={`px-2 py-0.5 rounded text-xs font-medium ${colors[params.value as string]}`}>
@@ -129,7 +158,7 @@ export default function Home() {
       headerName: 'Rating', 
       width: 80,
       cellRenderer: (params) => (
-        <span className="text-yellow-500">★ {params.value}</span>
+        <span className="text-primary">★ {params.value}</span>
       ),
     },
     { 
@@ -142,27 +171,30 @@ export default function Home() {
   ], []);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative">
+      {/* Texture overlay for parchment effect */}
+      <div className="fixed inset-0 texture-overlay pointer-events-none" />
+      
       {/* Hero Section */}
       <header className="relative overflow-hidden">
-        {/* Background gradient */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-accent/10" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/20 via-transparent to-transparent" />
+        {/* Background - Da Vinci inspired */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/5" />
+        <div className="absolute inset-0 grid-fibonacci opacity-30" />
         
         {/* Navigation */}
-        <nav className="relative z-10 max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Table2 className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold">LovGrid</span>
+        <nav className="relative z-10 max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <FiboLogo className="h-10 w-10" />
+            <span className="text-2xl font-display font-bold tracking-tight">FiboGrid</span>
           </div>
-          <div className="flex items-center gap-4">
-            <Link to="/docs" className="text-muted-foreground hover:text-foreground transition-colors">
+          <div className="flex items-center gap-6">
+            <Link to="/docs" className="text-muted-foreground hover:text-foreground transition-colors font-body">
               Docs
             </Link>
-            <Link to="/demo" className="text-muted-foreground hover:text-foreground transition-colors">
+            <Link to="/demo" className="text-muted-foreground hover:text-foreground transition-colors font-body">
               Demo
             </Link>
-            <Button variant="outline" size="sm" asChild>
+            <Button variant="outline" size="sm" className="border-primary/30 hover:border-primary hover:bg-primary/5" asChild>
               <a href="https://github.com" target="_blank" rel="noopener">
                 <Github className="h-4 w-4 mr-2" />
                 GitHub
@@ -172,27 +204,30 @@ export default function Home() {
         </nav>
 
         {/* Hero Content */}
-        <div className="relative z-10 max-w-7xl mx-auto px-6 pt-16 pb-24">
-          <div className="text-center max-w-4xl mx-auto mb-12">
-            <Badge variant="secondary" className="mb-4 px-4 py-1">
-              <Sparkles className="h-3 w-3 mr-1" />
-              Open Source React Data Grid
+        <div className="relative z-10 max-w-7xl mx-auto px-6 pt-20 pb-28">
+          <div className="text-center max-w-4xl mx-auto mb-16">
+            <Badge className="mb-6 px-4 py-1.5 bg-primary/10 text-primary border-primary/30 font-body">
+              <Hexagon className="h-3 w-3 mr-2" />
+              The Renaissance of Data Grids
             </Badge>
-            <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 bg-gradient-to-r from-foreground via-foreground to-muted-foreground bg-clip-text">
-              The Best React Data Grid
+            
+            <h1 className="text-5xl md:text-7xl lg:text-8xl font-display font-bold tracking-tight mb-8 leading-[0.95]">
+              <span className="text-gradient-gold">FiboGrid</span>
             </h1>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-              A powerful, performant, and feature-rich data grid built with React. 
-              Handle 100k+ rows with ease, real-time updates, and AG Grid-like functionality.
+            
+            <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto mb-10 font-body leading-relaxed">
+              A high-performance React data grid inspired by Da Vinci's pursuit of perfection. 
+              Handle <span className="text-primary font-semibold">100,000+ rows</span> with mathematical elegance.
             </p>
-            <div className="flex items-center justify-center gap-4">
-              <Button size="lg" asChild>
+            
+            <div className="flex items-center justify-center gap-4 flex-wrap">
+              <Button size="lg" className="bg-gradient-gold text-primary-foreground shadow-gold hover:shadow-gold-lg transition-shadow font-body" asChild>
                 <Link to="/demo">
                   <Play className="h-4 w-4 mr-2" />
-                  Live Demo
+                  Experience the Demo
                 </Link>
               </Button>
-              <Button size="lg" variant="outline" asChild>
+              <Button size="lg" variant="outline" className="border-primary/30 hover:border-primary hover:bg-primary/5 font-body" asChild>
                 <Link to="/docs">
                   <BookOpen className="h-4 w-4 mr-2" />
                   Documentation
@@ -201,19 +236,19 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-3xl mx-auto mb-16">
+          {/* Stats - Golden ratio inspired */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto mb-20">
             {stats.map((stat, i) => (
-              <div key={i} className="text-center">
-                <div className="text-3xl md:text-4xl font-bold text-primary mb-1">{stat.value}</div>
-                <div className="text-sm text-muted-foreground">{stat.label}</div>
+              <div key={i} className="text-center animate-fade-up" style={{ animationDelay: `${i * 100}ms` }}>
+                <div className="text-4xl md:text-5xl font-display font-bold text-gradient-gold mb-2">{stat.value}</div>
+                <div className="text-sm text-muted-foreground font-body uppercase tracking-wider">{stat.label}</div>
               </div>
             ))}
           </div>
 
           {/* Interactive Demo Grid */}
-          <div className="relative rounded-xl overflow-hidden border border-border/50 shadow-2xl shadow-primary/10">
-            <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent pointer-events-none z-10" />
+          <div className="relative rounded-xl overflow-hidden border border-primary/20 shadow-parchment glow-gold">
+            <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-transparent pointer-events-none z-10" />
             <DataGrid
               rowData={demoData}
               columnDefs={columns}
@@ -230,24 +265,30 @@ export default function Home() {
       </header>
 
       {/* Features Section */}
-      <section className="py-24 bg-muted/30">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Everything You Need</h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Built with performance and developer experience in mind. Every feature you'd expect from a premium data grid.
+      <section className="py-28 relative">
+        <div className="absolute inset-0 bg-card/50" />
+        <div className="relative max-w-7xl mx-auto px-6">
+          <div className="text-center mb-20">
+            <h2 className="text-4xl md:text-5xl font-display font-bold mb-6">Crafted with Precision</h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto font-body">
+              Every feature engineered with the precision of a Renaissance master. 
+              No detail overlooked, no performance compromised.
             </p>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {features.map((feature, i) => (
-              <Card key={i} className="group hover:shadow-lg transition-all duration-300 hover:border-primary/50">
+              <Card 
+                key={i} 
+                className="group paper-aged border-primary/10 hover:border-primary/30 transition-all duration-300 hover:shadow-gold animate-fade-up"
+                style={{ animationDelay: `${i * 50}ms` }}
+              >
                 <CardContent className="p-6">
-                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-                    <feature.icon className="h-5 w-5 text-primary" />
+                  <div className="h-11 w-11 rounded-lg bg-gradient-gold flex items-center justify-center mb-5 shadow-gold group-hover:scale-105 transition-transform">
+                    <feature.icon className="h-5 w-5 text-primary-foreground" />
                   </div>
-                  <h3 className="font-semibold mb-2">{feature.title}</h3>
-                  <p className="text-sm text-muted-foreground">{feature.description}</p>
+                  <h3 className="font-display font-semibold text-lg mb-2">{feature.title}</h3>
+                  <p className="text-sm text-muted-foreground font-body">{feature.description}</p>
                 </CardContent>
               </Card>
             ))}
@@ -256,63 +297,62 @@ export default function Home() {
       </section>
 
       {/* Performance Section */}
-      <section className="py-24">
+      <section className="py-28">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
+          <div className="grid md:grid-cols-2 gap-16 items-center">
             <div>
-              <Badge variant="secondary" className="mb-4">
-                <Clock className="h-3 w-3 mr-1" />
+              <Badge className="mb-6 bg-primary/10 text-primary border-primary/30 font-body">
+                <Clock className="h-3 w-3 mr-2" />
                 Performance
               </Badge>
-              <h2 className="text-3xl md:text-4xl font-bold mb-6">Built for Scale</h2>
-              <p className="text-lg text-muted-foreground mb-8">
-                Optimized virtual scrolling and intelligent memoization ensure smooth 60fps scrolling 
-                even with 100,000+ rows. Real-time data updates are seamlessly handled without 
-                performance degradation.
+              <h2 className="text-4xl md:text-5xl font-display font-bold mb-8">Built for Scale</h2>
+              <p className="text-lg text-muted-foreground mb-10 font-body leading-relaxed">
+                Like Da Vinci's flying machines, FiboGrid was designed for what seems impossible. 
+                Smooth 60fps scrolling with 100,000+ rows. Real-time updates without breaking a sweat.
               </p>
-              <ul className="space-y-4">
-                <li className="flex items-start gap-3">
-                  <div className="h-6 w-6 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <Zap className="h-3 w-3 text-green-500" />
+              <ul className="space-y-5">
+                <li className="flex items-start gap-4">
+                  <div className="h-8 w-8 rounded-lg bg-gradient-gold flex items-center justify-center flex-shrink-0 mt-0.5 shadow-gold">
+                    <Zap className="h-4 w-4 text-primary-foreground" />
                   </div>
                   <div>
-                    <div className="font-medium">Virtual Scrolling</div>
-                    <div className="text-sm text-muted-foreground">Only renders visible rows for maximum performance</div>
+                    <div className="font-display font-semibold text-lg">Virtual Scrolling</div>
+                    <div className="text-sm text-muted-foreground font-body">Only renders visible rows for maximum performance</div>
                   </div>
                 </li>
-                <li className="flex items-start gap-3">
-                  <div className="h-6 w-6 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <BarChart3 className="h-3 w-3 text-blue-500" />
+                <li className="flex items-start gap-4">
+                  <div className="h-8 w-8 rounded-lg bg-gradient-gold flex items-center justify-center flex-shrink-0 mt-0.5 shadow-gold">
+                    <BarChart3 className="h-4 w-4 text-primary-foreground" />
                   </div>
                   <div>
-                    <div className="font-medium">Smart Memoization</div>
-                    <div className="text-sm text-muted-foreground">Minimizes re-renders with optimized memo comparisons</div>
+                    <div className="font-display font-semibold text-lg">Smart Memoization</div>
+                    <div className="text-sm text-muted-foreground font-body">Minimizes re-renders with optimized memo comparisons</div>
                   </div>
                 </li>
-                <li className="flex items-start gap-3">
-                  <div className="h-6 w-6 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <Shield className="h-3 w-3 text-purple-500" />
+                <li className="flex items-start gap-4">
+                  <div className="h-8 w-8 rounded-lg bg-gradient-gold flex items-center justify-center flex-shrink-0 mt-0.5 shadow-gold">
+                    <Shield className="h-4 w-4 text-primary-foreground" />
                   </div>
                   <div>
-                    <div className="font-medium">Zero Dependencies</div>
-                    <div className="text-sm text-muted-foreground">No external runtime dependencies for minimal bundle size</div>
+                    <div className="font-display font-semibold text-lg">Zero Dependencies</div>
+                    <div className="text-sm text-muted-foreground font-body">No external runtime dependencies for minimal bundle size</div>
                   </div>
                 </li>
               </ul>
             </div>
             <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20 rounded-2xl blur-3xl" />
-              <div className="relative bg-card rounded-xl border p-6 font-mono text-sm">
-                <div className="text-muted-foreground mb-4">// Easy to use</div>
+              <div className="absolute inset-0 bg-gradient-gold rounded-2xl blur-3xl opacity-20" />
+              <div className="relative paper-aged rounded-xl border border-primary/20 p-8 font-mono text-sm shadow-parchment">
+                <div className="text-muted-foreground mb-4 font-body italic">// Elegantly simple</div>
                 <div className="space-y-2">
-                  <div><span className="text-blue-400">import</span> {'{'} DataGrid {'}'} <span className="text-blue-400">from</span> <span className="text-green-400">'@/components/DataGrid'</span>;</div>
-                  <div className="mt-4"><span className="text-purple-400">{'<DataGrid'}</span></div>
-                  <div className="pl-4"><span className="text-yellow-400">rowData</span>={'{data}'}</div>
-                  <div className="pl-4"><span className="text-yellow-400">columnDefs</span>={'{columns}'}</div>
-                  <div className="pl-4"><span className="text-yellow-400">rowSelection</span>=<span className="text-green-400">"multiple"</span></div>
-                  <div className="pl-4"><span className="text-yellow-400">pagination</span></div>
-                  <div className="pl-4"><span className="text-yellow-400">height</span>={'{600}'}</div>
-                  <div><span className="text-purple-400">{'/>'}</span></div>
+                  <div><span className="text-primary">import</span> {'{'} DataGrid {'}'} <span className="text-primary">from</span> <span className="text-accent">'fibogrid'</span>;</div>
+                  <div className="mt-6"><span className="text-accent">{'<FiboGrid'}</span></div>
+                  <div className="pl-4"><span className="text-primary">rowData</span>={'{data}'}</div>
+                  <div className="pl-4"><span className="text-primary">columnDefs</span>={'{columns}'}</div>
+                  <div className="pl-4"><span className="text-primary">rowSelection</span>=<span className="text-accent">"multiple"</span></div>
+                  <div className="pl-4"><span className="text-primary">pagination</span></div>
+                  <div className="pl-4"><span className="text-primary">height</span>={'{600}'}</div>
+                  <div><span className="text-accent">{'/>'}</span></div>
                 </div>
               </div>
             </div>
@@ -321,20 +361,24 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-24 bg-gradient-to-r from-primary/10 via-background to-accent/10">
-        <div className="max-w-4xl mx-auto px-6 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to Get Started?</h2>
-          <p className="text-lg text-muted-foreground mb-8">
-            Start building powerful data-driven applications today with LovGrid.
+      <section className="py-28 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-background to-accent/5" />
+        <div className="absolute inset-0 grid-fibonacci opacity-20" />
+        <div className="relative max-w-4xl mx-auto px-6 text-center">
+          <h2 className="text-4xl md:text-5xl font-display font-bold mb-8">
+            Ready to Create Your <span className="text-gradient-gold">Masterpiece</span>?
+          </h2>
+          <p className="text-lg text-muted-foreground mb-10 font-body max-w-xl mx-auto">
+            Join the renaissance of data visualization. Start building with FiboGrid today.
           </p>
-          <div className="flex items-center justify-center gap-4">
-            <Button size="lg" asChild>
+          <div className="flex items-center justify-center gap-4 flex-wrap">
+            <Button size="lg" className="bg-gradient-gold text-primary-foreground shadow-gold hover:shadow-gold-lg transition-shadow font-body" asChild>
               <Link to="/demo">
                 Try the Demo
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Link>
             </Button>
-            <Button size="lg" variant="outline" asChild>
+            <Button size="lg" variant="outline" className="border-primary/30 hover:border-primary hover:bg-primary/5 font-body" asChild>
               <Link to="/docs">Read the Docs</Link>
             </Button>
           </div>
@@ -342,15 +386,17 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t py-12">
+      <footer className="border-t border-primary/10 py-16 relative">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <Table2 className="h-6 w-6 text-primary" />
-              <span className="font-semibold">LovGrid</span>
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex items-center gap-3">
+              <FiboLogo className="h-8 w-8" />
+              <span className="font-display font-semibold text-xl">FiboGrid</span>
             </div>
-            <div className="text-sm text-muted-foreground">
-              Built with ❤️ using React, TypeScript, and Tailwind CSS
+            <div className="text-sm text-muted-foreground font-body text-center md:text-right">
+              Inspired by Leonardo da Vinci's pursuit of mathematical perfection.
+              <br />
+              Built with React, TypeScript, and Tailwind CSS.
             </div>
           </div>
         </div>
