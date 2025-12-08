@@ -130,13 +130,34 @@ export function useGridState<T>(props: DataGridProps<T>, containerWidth: number)
     return filterRows(rows, filterModel, columns, quickFilter);
   }, [rows, filterModel, columns, quickFilterText, internalQuickFilter]);
 
-  // Sort rows and update rowIndex - optimized
+  // Sort rows - avoid rowIndex reassignment when possible
   const sortedRows = useMemo(() => {
-    const source = sortModel.length === 0 ? filteredRows : sortRows(filteredRows, sortModel, columns);
-    const len = source.length;
+    if (sortModel.length === 0) {
+      // No sort - just ensure rowIndex is correct
+      let needsUpdate = false;
+      for (let i = 0; i < filteredRows.length; i++) {
+        if (filteredRows[i].rowIndex !== i) {
+          needsUpdate = true;
+          break;
+        }
+      }
+      if (!needsUpdate) return filteredRows;
+      
+      const len = filteredRows.length;
+      const result: RowNode<T>[] = new Array(len);
+      for (let i = 0; i < len; i++) {
+        const row = filteredRows[i];
+        result[i] = { ...row, rowIndex: i };
+      }
+      return result;
+    }
+    
+    // Sort required
+    const sorted = sortRows(filteredRows, sortModel, columns);
+    const len = sorted.length;
     const result: RowNode<T>[] = new Array(len);
     for (let i = 0; i < len; i++) {
-      const row = source[i];
+      const row = sorted[i];
       result[i] = row.rowIndex === i ? row : { ...row, rowIndex: i };
     }
     return result;
