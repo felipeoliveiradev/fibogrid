@@ -196,37 +196,38 @@ export default function Demo() {
     },
   ], []);
 
-  // Optimized real-time updates with batched mutations
+  // Optimized real-time updates - updates ALL rows efficiently for 100k
   useEffect(() => {
     if (isRealTimeEnabled) {
-      // For large datasets, only update visible portion for performance
-      const batchSize = rowCount > 50000 ? 1000 : rowCount;
-      
       intervalRef.current = setInterval(() => {
         const start = performance.now();
+        
         setRowData(prev => {
-          // For very large datasets, only update a subset
-          const updateCount = Math.min(batchSize, prev.length);
-          const updated = new Array(prev.length);
+          // Pre-allocate array for maximum performance
+          const len = prev.length;
+          const updated: StockRow[] = new Array(len);
           
-          for (let i = 0; i < prev.length; i++) {
-            if (i < updateCount) {
-              const stock = prev[i];
-              const priceChange = (Math.random() - 0.5) * 2;
-              const newPrice = Math.max(1, stock.price + priceChange);
-              const newChange = stock.change + priceChange;
-              
-              updated[i] = {
-                ...stock,
-                price: Math.round(newPrice * 100) / 100,
-                change: Math.round(newChange * 100) / 100,
-                changePercent: Math.round((newChange / (newPrice - newChange)) * 10000) / 100,
-                volume: stock.volume + Math.floor(Math.random() * 10000),
-              };
-            } else {
-              updated[i] = prev[i];
-            }
+          // Update all rows with optimized loop
+          for (let i = 0; i < len; i++) {
+            const stock = prev[i];
+            const priceChange = (Math.random() - 0.5) * 2;
+            const newPrice = Math.max(1, stock.price + priceChange);
+            const newChange = stock.change + priceChange;
+            
+            updated[i] = {
+              id: stock.id,
+              ticker: stock.ticker,
+              name: stock.name,
+              price: Math.round(newPrice * 100) / 100,
+              change: Math.round(newChange * 100) / 100,
+              changePercent: Math.round((newChange / (newPrice - newChange)) * 10000) / 100,
+              volume: stock.volume + Math.floor(Math.random() * 10000),
+              marketCap: stock.marketCap,
+              sector: stock.sector,
+              pe: stock.pe,
+            };
           }
+          
           setRenderTime(Math.round(performance.now() - start));
           return updated;
         });
@@ -241,17 +242,12 @@ export default function Demo() {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [isRealTimeEnabled, updateInterval]);
+  }, [isRealTimeEnabled, updateInterval, rowCount]);
 
   const handleRowCountChange = useCallback((count: number) => {
-    // Stop real-time updates during data generation for large datasets
-    if (count >= 50000 && isRealTimeEnabled) {
-      setIsRealTimeEnabled(false);
-    }
-    
     setRowCount(count);
     
-    // Use requestIdleCallback for large datasets to prevent UI freeze
+    // Use requestAnimationFrame for large datasets to prevent UI freeze
     if (count >= 50000) {
       toast({ title: 'Generating data...', description: `Creating ${count.toLocaleString()} rows` });
       requestAnimationFrame(() => {
@@ -264,7 +260,7 @@ export default function Demo() {
     } else {
       setRowData(generateStockData(count));
     }
-  }, [isRealTimeEnabled]);
+  }, []);
 
   const handleAddRow = useCallback(() => {
     const newStock: StockRow = {
