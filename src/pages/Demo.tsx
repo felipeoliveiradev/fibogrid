@@ -23,8 +23,14 @@ import {
   Settings,
   Split,
   ChevronRight,
-  ChevronDown
+  ChevronDown,
+  Building2,
+  Calendar,
+  Users,
+  Globe,
+  User
 } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from '@/hooks/use-toast';
 
 interface StockRow {
@@ -40,6 +46,12 @@ interface StockRow {
   pe: number;
   parentId?: string;
   isChild?: boolean;
+  // Extra company info
+  founded?: number;
+  employees?: number;
+  headquarters?: string;
+  ceo?: string;
+  website?: string;
 }
 
 // Pre-computed data for faster generation
@@ -50,6 +62,10 @@ const NAMES = ['Apple Inc.', 'Alphabet Inc.', 'Microsoft Corp.', 'Amazon.com Inc
                'Walmart Inc.', 'Procter & Gamble', 'Walt Disney', 'Netflix Inc.', 'PayPal Holdings',
                'Adobe Inc.', 'Salesforce Inc.', 'Intel Corp.', 'AMD Inc.', 'Oracle Corp.'];
 const SECTORS = ['Technology', 'Healthcare', 'Financial', 'Consumer', 'Industrial', 'Energy'];
+const HEADQUARTERS = ['Cupertino, CA', 'Mountain View, CA', 'Redmond, WA', 'Seattle, WA', 'Menlo Park, CA',
+                      'Santa Clara, CA', 'Austin, TX', 'New York, NY', 'San Francisco, CA', 'New Brunswick, NJ'];
+const CEOS = ['Tim Cook', 'Sundar Pichai', 'Satya Nadella', 'Andy Jassy', 'Mark Zuckerberg',
+              'Jensen Huang', 'Elon Musk', 'Jamie Dimon', 'Ryan McInerney', 'Joaquin Duato'];
 
 // Optimized batch data generation for 100k+ rows
 const generateStockData = (count: number): StockRow[] => {
@@ -57,6 +73,8 @@ const generateStockData = (count: number): StockRow[] => {
   const tickerLen = TICKERS.length;
   const nameLen = NAMES.length;
   const sectorLen = SECTORS.length;
+  const hqLen = HEADQUARTERS.length;
+  const ceoLen = CEOS.length;
   
   for (let i = 0; i < count; i++) {
     const basePrice = Math.random() * 500 + 50;
@@ -72,6 +90,12 @@ const generateStockData = (count: number): StockRow[] => {
       marketCap: Math.floor(Math.random() * 2000) + 10,
       sector: SECTORS[i % sectorLen],
       pe: Math.round((Math.random() * 50 + 5) * 100) / 100,
+      // Extra company info
+      founded: 1970 + Math.floor(Math.random() * 50),
+      employees: Math.floor(Math.random() * 200000) + 1000,
+      headquarters: HEADQUARTERS[i % hqLen],
+      ceo: i < ceoLen ? CEOS[i] : `CEO ${i + 1}`,
+      website: `https://${(i < tickerLen ? TICKERS[i] : `company${i}`).toLowerCase()}.com`,
     };
   }
   return result;
@@ -613,6 +637,88 @@ export default function Demo() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Company Details Card - Collapsible */}
+            <Collapsible defaultOpen={false}>
+              <Card>
+                <CollapsibleTrigger asChild>
+                  <CardHeader className="pb-3 cursor-pointer hover:bg-accent/50 transition-colors">
+                    <CardTitle className="text-sm flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-4 w-4" />
+                        Company Details
+                      </div>
+                      <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                    </CardTitle>
+                  </CardHeader>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent className="pt-0 space-y-4">
+                    {gridApi?.getSelectedRows()[0] ? (
+                      (() => {
+                        const selected = gridApi.getSelectedRows()[0].data as StockRow;
+                        return (
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-2 text-lg font-semibold">
+                              <span className="text-primary">{selected.ticker}</span>
+                              <span>{selected.name}</span>
+                            </div>
+                            <div className="grid gap-2 text-sm">
+                              <div className="flex items-center gap-2 text-muted-foreground">
+                                <Calendar className="h-3.5 w-3.5" />
+                                <span>Founded: {selected.founded}</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-muted-foreground">
+                                <Users className="h-3.5 w-3.5" />
+                                <span>Employees: {selected.employees?.toLocaleString()}</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-muted-foreground">
+                                <Building2 className="h-3.5 w-3.5" />
+                                <span>HQ: {selected.headquarters}</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-muted-foreground">
+                                <User className="h-3.5 w-3.5" />
+                                <span>CEO: {selected.ceo}</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-muted-foreground">
+                                <Globe className="h-3.5 w-3.5" />
+                                <a href={selected.website} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                                  {selected.website}
+                                </a>
+                              </div>
+                            </div>
+                            <div className="pt-2 border-t border-border">
+                              <div className="grid grid-cols-2 gap-2 text-sm">
+                                <div>
+                                  <span className="text-muted-foreground">Sector</span>
+                                  <div className="font-medium">{selected.sector}</div>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">P/E Ratio</span>
+                                  <div className="font-medium">{selected.pe}</div>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">Market Cap</span>
+                                  <div className="font-medium">${selected.marketCap}B</div>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">Volume</span>
+                                  <div className="font-medium">{(selected.volume / 1000000).toFixed(1)}M</div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()
+                    ) : (
+                      <div className="text-sm text-muted-foreground italic">
+                        Select a row to see company details
+                      </div>
+                    )}
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
           </div>
 
           {/* Data Grid */}
