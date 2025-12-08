@@ -5,6 +5,7 @@ import { ColumnDef, GridApi } from '@/components/DataGrid/types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { 
   Zap, 
   Filter, 
@@ -194,6 +195,7 @@ export default function Home() {
             <Link to="/demo" className="text-muted-foreground hover:text-foreground transition-colors font-body">
               Demo
             </Link>
+            <ThemeToggle />
             <Button variant="outline" size="sm" className="border-primary/30 hover:border-primary hover:bg-primary/5" asChild>
               <a href="https://github.com" target="_blank" rel="noopener">
                 <Github className="h-4 w-4 mr-2" />
