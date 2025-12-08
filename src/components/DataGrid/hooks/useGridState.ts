@@ -106,7 +106,7 @@ export function useGridState<T>(props: DataGridProps<T>, containerWidth: number)
     return [...leftPinned, ...center, ...rightPinned];
   }, [columnDefs, columnOrder, columnWidths, hiddenColumns, pinnedColumns, containerWidth, defaultColDef]);
 
-  // Create row nodes
+  // Create row nodes - update rowIndex after sorting for real-time updates
   const rows = useMemo(() => {
     return localRowData.map((data, index) => createRowNode(data, index, getRowId));
   }, [localRowData, getRowId]);
@@ -141,10 +141,15 @@ export function useGridState<T>(props: DataGridProps<T>, containerWidth: number)
     return result;
   }, [rows, filterModel, columns, quickFilterText, internalQuickFilter]);
 
-  // Sort rows
+  // Sort rows and update rowIndex to reflect new order
   const sortedRows = useMemo(() => {
     if (sortModel.length === 0) return filteredRows;
-    return sortRows(filteredRows, sortModel, columns);
+    const sorted = sortRows(filteredRows, sortModel, columns);
+    // Update rowIndex to reflect sorted order for proper display
+    return sorted.map((row, index) => ({
+      ...row,
+      rowIndex: index,
+    }));
   }, [filteredRows, sortModel, columns]);
 
   // Paginate rows
