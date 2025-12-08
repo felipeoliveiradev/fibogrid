@@ -30,7 +30,7 @@ import {
   Globe,
   User
 } from 'lucide-react';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+
 import { toast } from '@/hooks/use-toast';
 
 interface StockRow {
@@ -46,6 +46,7 @@ interface StockRow {
   pe: number;
   parentId?: string;
   isChild?: boolean;
+  isDetailRow?: boolean;
   // Extra company info
   founded?: number;
   employees?: number;
@@ -155,6 +156,21 @@ export default function Demo() {
     });
   }, []);
 
+  // State for detail row expansion (separate from child rows)
+  const [detailExpandedRows, setDetailExpandedRows] = useState<Set<string>>(new Set());
+
+  const toggleDetailExpand = useCallback((rowId: string) => {
+    setDetailExpandedRows(prev => {
+      const next = new Set(prev);
+      if (next.has(rowId)) {
+        next.delete(rowId);
+      } else {
+        next.add(rowId);
+      }
+      return next;
+    });
+  }, []);
+
   // Get visible rows (respecting expand/collapse state)
   const visibleRowData = useMemo(() => {
     const result: StockRow[] = [];
@@ -169,10 +185,22 @@ export default function Demo() {
       }
     });
     
-    // Build visible rows
+    // Build visible rows with detail rows
     rowData.forEach(row => {
-      if (!row.parentId) {
+      if (!row.parentId && !row.isDetailRow) {
         result.push(row);
+        
+        // Add detail row if expanded
+        if (detailExpandedRows.has(row.id)) {
+          result.push({
+            ...row,
+            id: `${row.id}-detail`,
+            isDetailRow: true,
+            parentId: row.id,
+          });
+        }
+        
+        // Add child rows if expanded
         const children = childrenByParent.get(row.id);
         if (children && expandedRows.has(row.id)) {
           children.forEach(child => result.push(child));
@@ -181,7 +209,7 @@ export default function Demo() {
     });
     
     return result;
-  }, [rowData, expandedRows]);
+  }, [rowData, expandedRows, detailExpandedRows]);
 
   // Check if row has children
   const hasChildren = useCallback((rowId: string) => {
@@ -196,18 +224,43 @@ export default function Demo() {
     {
       field: 'ticker',
       headerName: 'Ticker',
-      width: 140,
+      width: 180,
       sortable: true,
       filterable: true,
       pinned: 'left',
       cellRenderer: (params) => {
         const row = params.data as StockRow;
+        
+        // Detail row - render full company info
+        if (row.isDetailRow) {
+          return null; // Will be handled by a special full-width renderer
+        }
+        
         const isParent = hasChildren(row.id);
-        const isExpanded = expandedRows.has(row.id);
+        const isChildExpanded = expandedRows.has(row.id);
+        const isDetailExpanded = detailExpandedRows.has(row.id);
         const isChild = row.isChild;
         
         return (
           <div className="flex items-center gap-1">
+            {/* Detail expand button (info) */}
+            {!isChild && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleDetailExpand(row.id);
+                }}
+                className={`p-0.5 hover:bg-accent rounded transition-colors ${isDetailExpanded ? 'bg-primary/20' : ''}`}
+                title="Show company details"
+              >
+                {isDetailExpanded ? (
+                  <ChevronDown className="h-3 w-3 text-primary" />
+                ) : (
+                  <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                )}
+              </button>
+            )}
+            {/* Child rows expand button */}
             {isParent && (
               <button
                 onClick={(e) => {
@@ -215,8 +268,9 @@ export default function Demo() {
                   toggleRowExpand(row.id);
                 }}
                 className="p-0.5 hover:bg-accent rounded"
+                title="Show child rows"
               >
-                {isExpanded ? (
+                {isChildExpanded ? (
                   <ChevronDown className="h-3 w-3 text-muted-foreground" />
                 ) : (
                   <ChevronRight className="h-3 w-3 text-muted-foreground" />
@@ -234,12 +288,59 @@ export default function Demo() {
     {
       field: 'name',
       headerName: 'Company',
-      width: 180,
+      width: 400,
       sortable: true,
       filterable: true,
       editable: true,
       cellRenderer: (params) => {
         const row = params.data as StockRow;
+        
+        // Detail row - render full company info card
+        if (row.isDetailRow) {
+          return (
+            <div className="absolute left-0 right-0 py-3 px-4 bg-muted/50 border-y border-border -my-2" style={{ width: '100vw', marginLeft: '-50vw', left: '50%' }}>
+              <div className="max-w-4xl mx-auto">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <div className="text-muted-foreground text-xs">Founded</div>
+                      <div className="font-medium">{row.founded}</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <div className="text-muted-foreground text-xs">Employees</div>
+                      <div className="font-medium">{row.employees?.toLocaleString()}</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Building2 className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <div className="text-muted-foreground text-xs">Headquarters</div>
+                      <div className="font-medium">{row.headquarters}</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <div className="text-muted-foreground text-xs">CEO</div>
+                      <div className="font-medium">{row.ceo}</div>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-2 flex items-center gap-2 text-sm">
+                  <Globe className="h-4 w-4 text-muted-foreground" />
+                  <a href={row.website} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                    {row.website}
+                  </a>
+                </div>
+              </div>
+            </div>
+          );
+        }
+        
         return (
           <span className={row.isChild ? 'text-muted-foreground italic' : ''}>
             {params.value || (row.isChild ? '—' : '')}
@@ -361,7 +462,7 @@ export default function Demo() {
         );
       },
     },
-  ], [hasChildren, expandedRows, toggleRowExpand, handleSplitRow]);
+  ], [hasChildren, expandedRows, detailExpandedRows, toggleRowExpand, toggleDetailExpand, handleSplitRow]);
 
   // Ultra-optimized real-time updates - target <16ms for 60fps
   useEffect(() => {
@@ -638,87 +739,6 @@ export default function Demo() {
               </CardContent>
             </Card>
 
-            {/* Company Details Card - Collapsible */}
-            <Collapsible defaultOpen={false}>
-              <Card>
-                <CollapsibleTrigger asChild>
-                  <CardHeader className="pb-3 cursor-pointer hover:bg-accent/50 transition-colors">
-                    <CardTitle className="text-sm flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Building2 className="h-4 w-4" />
-                        Company Details
-                      </div>
-                      <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                    </CardTitle>
-                  </CardHeader>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <CardContent className="pt-0 space-y-4">
-                    {gridApi?.getSelectedRows()[0] ? (
-                      (() => {
-                        const selected = gridApi.getSelectedRows()[0].data as StockRow;
-                        return (
-                          <div className="space-y-3">
-                            <div className="flex items-center gap-2 text-lg font-semibold">
-                              <span className="text-primary">{selected.ticker}</span>
-                              <span>{selected.name}</span>
-                            </div>
-                            <div className="grid gap-2 text-sm">
-                              <div className="flex items-center gap-2 text-muted-foreground">
-                                <Calendar className="h-3.5 w-3.5" />
-                                <span>Founded: {selected.founded}</span>
-                              </div>
-                              <div className="flex items-center gap-2 text-muted-foreground">
-                                <Users className="h-3.5 w-3.5" />
-                                <span>Employees: {selected.employees?.toLocaleString()}</span>
-                              </div>
-                              <div className="flex items-center gap-2 text-muted-foreground">
-                                <Building2 className="h-3.5 w-3.5" />
-                                <span>HQ: {selected.headquarters}</span>
-                              </div>
-                              <div className="flex items-center gap-2 text-muted-foreground">
-                                <User className="h-3.5 w-3.5" />
-                                <span>CEO: {selected.ceo}</span>
-                              </div>
-                              <div className="flex items-center gap-2 text-muted-foreground">
-                                <Globe className="h-3.5 w-3.5" />
-                                <a href={selected.website} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                                  {selected.website}
-                                </a>
-                              </div>
-                            </div>
-                            <div className="pt-2 border-t border-border">
-                              <div className="grid grid-cols-2 gap-2 text-sm">
-                                <div>
-                                  <span className="text-muted-foreground">Sector</span>
-                                  <div className="font-medium">{selected.sector}</div>
-                                </div>
-                                <div>
-                                  <span className="text-muted-foreground">P/E Ratio</span>
-                                  <div className="font-medium">{selected.pe}</div>
-                                </div>
-                                <div>
-                                  <span className="text-muted-foreground">Market Cap</span>
-                                  <div className="font-medium">${selected.marketCap}B</div>
-                                </div>
-                                <div>
-                                  <span className="text-muted-foreground">Volume</span>
-                                  <div className="font-medium">{(selected.volume / 1000000).toFixed(1)}M</div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })()
-                    ) : (
-                      <div className="text-sm text-muted-foreground italic">
-                        Select a row to see company details
-                      </div>
-                    )}
-                  </CardContent>
-                </CollapsibleContent>
-              </Card>
-            </Collapsible>
           </div>
 
           {/* Data Grid */}
