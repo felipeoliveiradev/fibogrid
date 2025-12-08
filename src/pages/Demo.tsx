@@ -37,32 +37,39 @@ interface StockRow {
   pe: number;
 }
 
-// Optimized data generation
-const generateStockData = (count: number): StockRow[] => {
-  const tickers = ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'META', 'NVDA', 'TSLA', 'JPM', 'V', 'JNJ', 
-                   'WMT', 'PG', 'DIS', 'NFLX', 'PYPL', 'ADBE', 'CRM', 'INTC', 'AMD', 'ORCL'];
-  const names = ['Apple Inc.', 'Alphabet Inc.', 'Microsoft Corp.', 'Amazon.com Inc.', 'Meta Platforms', 
-                 'NVIDIA Corp.', 'Tesla Inc.', 'JPMorgan Chase', 'Visa Inc.', 'Johnson & Johnson',
-                 'Walmart Inc.', 'Procter & Gamble', 'Walt Disney', 'Netflix Inc.', 'PayPal Holdings',
-                 'Adobe Inc.', 'Salesforce Inc.', 'Intel Corp.', 'AMD Inc.', 'Oracle Corp.'];
-  const sectors = ['Technology', 'Healthcare', 'Financial', 'Consumer', 'Industrial', 'Energy'];
+// Pre-computed data for faster generation
+const TICKERS = ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'META', 'NVDA', 'TSLA', 'JPM', 'V', 'JNJ', 
+                 'WMT', 'PG', 'DIS', 'NFLX', 'PYPL', 'ADBE', 'CRM', 'INTC', 'AMD', 'ORCL'];
+const NAMES = ['Apple Inc.', 'Alphabet Inc.', 'Microsoft Corp.', 'Amazon.com Inc.', 'Meta Platforms', 
+               'NVIDIA Corp.', 'Tesla Inc.', 'JPMorgan Chase', 'Visa Inc.', 'Johnson & Johnson',
+               'Walmart Inc.', 'Procter & Gamble', 'Walt Disney', 'Netflix Inc.', 'PayPal Holdings',
+               'Adobe Inc.', 'Salesforce Inc.', 'Intel Corp.', 'AMD Inc.', 'Oracle Corp.'];
+const SECTORS = ['Technology', 'Healthcare', 'Financial', 'Consumer', 'Industrial', 'Energy'];
 
-  return Array.from({ length: count }, (_, i) => {
+// Optimized batch data generation for 100k+ rows
+const generateStockData = (count: number): StockRow[] => {
+  const result: StockRow[] = new Array(count);
+  const tickerLen = TICKERS.length;
+  const nameLen = NAMES.length;
+  const sectorLen = SECTORS.length;
+  
+  for (let i = 0; i < count; i++) {
     const basePrice = Math.random() * 500 + 50;
     const change = (Math.random() - 0.5) * 20;
-    return {
+    result[i] = {
       id: `stock-${i + 1}`,
-      ticker: i < tickers.length ? tickers[i] : `STK${i}`,
-      name: i < names.length ? names[i] : `Company ${i + 1}`,
+      ticker: i < tickerLen ? TICKERS[i] : `STK${i}`,
+      name: i < nameLen ? NAMES[i] : `Company ${i + 1}`,
       price: Math.round(basePrice * 100) / 100,
       change: Math.round(change * 100) / 100,
       changePercent: Math.round((change / basePrice) * 10000) / 100,
       volume: Math.floor(Math.random() * 50000000) + 1000000,
       marketCap: Math.floor(Math.random() * 2000) + 10,
-      sector: sectors[Math.floor(Math.random() * sectors.length)],
+      sector: SECTORS[i % sectorLen],
       pe: Math.round((Math.random() * 50 + 5) * 100) / 100,
     };
-  });
+  }
+  return result;
 };
 
 export default function Demo() {
@@ -189,25 +196,37 @@ export default function Demo() {
     },
   ], []);
 
-  // Optimized real-time updates
+  // Optimized real-time updates with batched mutations
   useEffect(() => {
     if (isRealTimeEnabled) {
+      // For large datasets, only update visible portion for performance
+      const batchSize = rowCount > 50000 ? 1000 : rowCount;
+      
       intervalRef.current = setInterval(() => {
         const start = performance.now();
         setRowData(prev => {
-          const updated = prev.map(stock => {
-            const priceChange = (Math.random() - 0.5) * 2;
-            const newPrice = Math.max(1, stock.price + priceChange);
-            const newChange = stock.change + priceChange;
-            
-            return {
-              ...stock,
-              price: Math.round(newPrice * 100) / 100,
-              change: Math.round(newChange * 100) / 100,
-              changePercent: Math.round((newChange / (newPrice - newChange)) * 10000) / 100,
-              volume: stock.volume + Math.floor(Math.random() * 10000),
-            };
-          });
+          // For very large datasets, only update a subset
+          const updateCount = Math.min(batchSize, prev.length);
+          const updated = new Array(prev.length);
+          
+          for (let i = 0; i < prev.length; i++) {
+            if (i < updateCount) {
+              const stock = prev[i];
+              const priceChange = (Math.random() - 0.5) * 2;
+              const newPrice = Math.max(1, stock.price + priceChange);
+              const newChange = stock.change + priceChange;
+              
+              updated[i] = {
+                ...stock,
+                price: Math.round(newPrice * 100) / 100,
+                change: Math.round(newChange * 100) / 100,
+                changePercent: Math.round((newChange / (newPrice - newChange)) * 10000) / 100,
+                volume: stock.volume + Math.floor(Math.random() * 10000),
+              };
+            } else {
+              updated[i] = prev[i];
+            }
+          }
           setRenderTime(Math.round(performance.now() - start));
           return updated;
         });
@@ -225,9 +244,27 @@ export default function Demo() {
   }, [isRealTimeEnabled, updateInterval]);
 
   const handleRowCountChange = useCallback((count: number) => {
+    // Stop real-time updates during data generation for large datasets
+    if (count >= 50000 && isRealTimeEnabled) {
+      setIsRealTimeEnabled(false);
+    }
+    
     setRowCount(count);
-    setRowData(generateStockData(count));
-  }, []);
+    
+    // Use requestIdleCallback for large datasets to prevent UI freeze
+    if (count >= 50000) {
+      toast({ title: 'Generating data...', description: `Creating ${count.toLocaleString()} rows` });
+      requestAnimationFrame(() => {
+        const start = performance.now();
+        const data = generateStockData(count);
+        const elapsed = Math.round(performance.now() - start);
+        setRowData(data);
+        toast({ title: 'Data ready', description: `${count.toLocaleString()} rows in ${elapsed}ms` });
+      });
+    } else {
+      setRowData(generateStockData(count));
+    }
+  }, [isRealTimeEnabled]);
 
   const handleAddRow = useCallback(() => {
     const newStock: StockRow = {
