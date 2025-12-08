@@ -127,9 +127,9 @@ export default {
         "draw-line": "draw-line 2s ease-out forwards",
       },
       backgroundImage: {
-        'gradient-gold': 'linear-gradient(135deg, hsl(42 70% 55%), hsl(40 65% 45%), hsl(38 60% 35%))',
-        'gradient-parchment': 'linear-gradient(180deg, hsl(40 40% 96%), hsl(35 30% 92%))',
-        'gradient-sepia': 'linear-gradient(135deg, hsl(30 30% 45%), hsl(25 35% 30%))',
+        'gradient-gold': 'linear-gradient(135deg, hsl(var(--gold-light)), hsl(var(--gold)), hsl(var(--gold-dark)))',
+        'gradient-parchment': 'linear-gradient(180deg, hsl(var(--background)), hsl(var(--card)))',
+        'gradient-sepia': 'linear-gradient(135deg, hsl(var(--sepia-light)), hsl(var(--sepia)))',
       },
       boxShadow: {
         'gold': '0 4px 20px hsl(40 65% 45% / 0.25)',

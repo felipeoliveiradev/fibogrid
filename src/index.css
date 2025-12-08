@@ -139,12 +139,18 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-family: 'Crimson Pro', Georgia, serif;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Cormorant Garamond', 'Times New Roman', serif;
     font-weight: 600;
     letter-spacing: -0.01em;
+  }
+
+  /* Theme transition for all elements */
+  *, *::before, *::after {
+    transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
   }
 
   /* Da Vinci sketch texture overlay */
@@ -171,30 +177,52 @@
     background-clip: text;
   }
 
+  .dark .text-gradient-gold {
+    background: linear-gradient(135deg, hsl(44 75% 60%), hsl(42 70% 50%), hsl(40 65% 40%));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
   /* Parchment glow effect */
   .glow-gold {
     box-shadow: 0 0 30px hsl(40 65% 45% / 0.3), 0 0 60px hsl(40 65% 45% / 0.15);
   }
 
-  /* Da Vinci sketch border */
-  .border-sketch {
-    border: 1px solid hsl(25 15% 45% / 0.3);
-    box-shadow: inset 0 1px 2px hsl(25 30% 15% / 0.05);
+  .dark .glow-gold {
+    box-shadow: 0 0 30px hsl(42 70% 50% / 0.25), 0 0 60px hsl(42 70% 50% / 0.1);
   }
 
-  /* Aged paper effect */
+  /* Da Vinci sketch border */
+  .border-sketch {
+    border: 1px solid hsl(var(--border));
+    box-shadow: inset 0 1px 2px hsl(var(--foreground) / 0.05);
+  }
+
+  /* Aged paper effect - uses CSS variables for dark mode support */
   .paper-aged {
-    background: linear-gradient(135deg, hsl(40 40% 96%), hsl(38 35% 93%), hsl(35 30% 91%));
+    background: hsl(var(--card));
     box-shadow: 
-      inset 0 2px 4px hsl(25 30% 15% / 0.03),
-      0 4px 12px hsl(25 30% 15% / 0.08);
+      inset 0 2px 4px hsl(var(--foreground) / 0.03),
+      0 4px 12px hsl(var(--foreground) / 0.08);
   }
 
   /* Golden ratio grid lines */
   .grid-fibonacci {
     background-image: 
-      linear-gradient(90deg, hsl(40 65% 45% / 0.1) 1px, transparent 1px),
-      linear-gradient(hsl(40 65% 45% / 0.1) 1px, transparent 1px);
+      linear-gradient(90deg, hsl(var(--primary) / 0.1) 1px, transparent 1px),
+      linear-gradient(hsl(var(--primary) / 0.1) 1px, transparent 1px);
     background-size: 61.8px 61.8px;
+  }
+
+  /* Texture overlay - lighter in dark mode */
+  .texture-overlay {
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    opacity: 0.03;
+    pointer-events: none;
+  }
+
+  .dark .texture-overlay {
+    opacity: 0.02;
   }
 }
