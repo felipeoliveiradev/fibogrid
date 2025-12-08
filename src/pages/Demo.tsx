@@ -208,6 +208,7 @@ export default function Demo() {
       width: 180,
       sortable: true,
       filterable: true,
+      editable: true,
       pinned: 'left',
       cellRenderer: (params) => {
         const row = params.data as StockRow;
