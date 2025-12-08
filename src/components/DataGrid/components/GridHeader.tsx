@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { ProcessedColumn, SortModel, SortDirection, FilterModel } from '../types';
 import { cn } from '@/lib/utils';
 import { ArrowUp, ArrowDown, MoreVertical, Filter } from 'lucide-react';
@@ -89,6 +89,27 @@ export function GridHeader<T>({
 
   const visibleColumns = columns.filter((col) => !col.hide);
 
+  // Calculate sticky positions for pinned columns
+  const { leftPinnedColumns, centerColumns, rightPinnedColumns } = useMemo(() => {
+    const left = visibleColumns.filter(c => c.pinned === 'left');
+    const center = visibleColumns.filter(c => !c.pinned);
+    const right = visibleColumns.filter(c => c.pinned === 'right');
+    
+    // Calculate cumulative left positions
+    let leftOffset = (showRowNumbers ? 50 : 0) + (showCheckboxColumn ? 48 : 0);
+    const leftWithPositions = left.map(col => {
+      const pos = leftOffset;
+      leftOffset += col.computedWidth;
+      return { ...col, stickyLeft: pos };
+    });
+    
+    return {
+      leftPinnedColumns: leftWithPositions,
+      centerColumns: center,
+      rightPinnedColumns: right,
+    };
+  }, [visibleColumns, showRowNumbers, showCheckboxColumn]);
+
   const handleFilterClick = useCallback((e: React.MouseEvent, column: ProcessedColumn<T>) => {
     e.stopPropagation();
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
@@ -106,6 +127,144 @@ export function GridHeader<T>({
 
   const filterRowHeight = showFilterRow ? 36 : 0;
 
+  const renderColumnHeader = (column: ProcessedColumn<T> & { stickyLeft?: number }, isPinned: boolean) => {
+    const sortDirection = getSortDirection(column.field);
+    const sortIndex = getSortIndex(column.field);
+    const hasFilter = !!getActiveFilter(column.field);
+    const isDragging = draggedColumn === column.field;
+    const isDragOver = dragOverColumn === column.field;
+    
+    return (
+      <div
+        key={column.field}
+        className={cn(
+          'relative flex items-center border-r border-border px-3 select-none group flex-shrink-0',
+          column.sortable !== false && 'cursor-pointer hover:bg-muted',
+          isDragging && 'opacity-50',
+          isDragOver && 'bg-primary/10',
+          isPinned && 'sticky z-[2] bg-muted/70'
+        )}
+        style={{ 
+          width: column.computedWidth, 
+          minWidth: column.minWidth || 50,
+          left: column.stickyLeft !== undefined ? column.stickyLeft : undefined,
+          right: column.pinned === 'right' ? 0 : undefined,
+        }}
+        onClick={() => column.sortable !== false && onSort(column.field)}
+        draggable={column.draggable !== false && !isPinned}
+        onDragStart={(e) => !isPinned && onDragStart(e, column)}
+        onDragOver={(e) => onDragOver(e, column)}
+        onDragEnd={onDragEnd}
+        onDrop={(e) => onDrop(e, column)}
+      >
+        <span className="flex-1 truncate font-medium text-sm">
+          {column.headerRenderer
+            ? column.headerRenderer({ colDef: column, column, api: {} as any })
+            : column.headerName}
+        </span>
+        
+        {sortDirection && (
+          <div className="flex items-center ml-1 flex-shrink-0">
+            {sortDirection === 'asc' ? (
+              <ArrowUp className="h-4 w-4" />
+            ) : (
+              <ArrowDown className="h-4 w-4" />
+            )}
+            {sortModel.length > 1 && (
+              <span className="text-xs text-muted-foreground ml-0.5">
+                {sortIndex}
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Filter indicator - only show when column has active filter */}
+        {hasFilter && (
+          <Filter className="h-3 w-3 ml-1 text-primary flex-shrink-0" />
+        )}
+        
+        {/* Column Menu Button - appears on hover */}
+        <ColumnMenu
+          column={column}
+          onSort={onSort}
+          onHide={onHideColumn}
+          onPin={onPinColumn}
+          onAutoSize={onAutoSize}
+          onAutoSizeAll={onAutoSizeAll}
+          onFilterClick={(col, rect) => onFilterClick?.(col, rect)}
+        >
+          <button
+            onClick={(e) => e.stopPropagation()}
+            className="ml-1 p-0.5 opacity-0 group-hover:opacity-100 hover:bg-muted-foreground/20 rounded flex-shrink-0"
+          >
+            <MoreVertical className="h-4 w-4" />
+          </button>
+        </ColumnMenu>
+        
+        {/* Resize Handle */}
+        {column.resizable !== false && (
+          <div
+            className={cn(
+              'absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-primary group/resize',
+              resizingColumn === column.field && 'bg-primary'
+            )}
+            onMouseDown={(e) => onResizeStart(e, column)}
+            onDoubleClick={(e) => handleResizeDoubleClick(e, column)}
+          >
+            <div className="absolute right-0 top-0 bottom-0 w-1 group-hover/resize:bg-primary transition-colors" />
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderFilterCell = (column: ProcessedColumn<T> & { stickyLeft?: number }, isPinned: boolean) => {
+    const activeFilter = getActiveFilter(column.field);
+    const hasActiveFilter = !!activeFilter;
+    
+    return (
+      <div
+        key={`filter-${column.field}`}
+        className={cn(
+          'flex items-center border-r border-border px-1 flex-shrink-0',
+          isPinned && 'sticky z-[2] bg-background'
+        )}
+        style={{ 
+          width: column.computedWidth, 
+          minWidth: column.minWidth || 50,
+          left: column.stickyLeft !== undefined ? column.stickyLeft : undefined,
+          right: column.pinned === 'right' ? 0 : undefined,
+        }}
+      >
+        {column.filterable !== false ? (
+          <div className="flex items-center w-full gap-1">
+            <Input
+              placeholder=""
+              className={cn(
+                "h-7 text-xs border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-primary",
+                hasActiveFilter && "bg-primary/10"
+              )}
+              onClick={(e) => e.stopPropagation()}
+              onChange={(e) => onQuickColumnFilter?.(column.field, e.target.value)}
+            />
+            <button
+              onClick={(e) => handleFilterClick(e, column)}
+              className={cn(
+                "p-1 rounded hover:bg-muted flex-shrink-0",
+                hasActiveFilter && "text-primary"
+              )}
+              title="Advanced filter"
+            >
+              <Filter className="h-3 w-3" />
+            </button>
+          </div>
+        ) : (
+          <div className="w-full" />
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="flex flex-col border-b border-border bg-muted/50">
       {/* Main Header Row */}
@@ -113,21 +272,25 @@ export function GridHeader<T>({
         className="flex"
         style={{ height: headerHeight }}
       >
-        {/* Row Numbers Header */}
+        {/* Row Numbers Header - Sticky */}
         {showRowNumbers && (
           <div
-            className="flex items-center justify-center border-r border-border px-2 bg-muted/70 flex-shrink-0"
+            className="flex items-center justify-center border-r border-border px-2 bg-muted/70 flex-shrink-0 sticky left-0 z-[3]"
             style={{ width: 50, minWidth: 50 }}
           >
             <span className="text-xs text-muted-foreground font-medium">#</span>
           </div>
         )}
         
-        {/* Checkbox Header */}
+        {/* Checkbox Header - Sticky */}
         {showCheckboxColumn && (
           <div
-            className="flex items-center justify-center border-r border-border px-2 bg-muted/70 flex-shrink-0"
-            style={{ width: 48, minWidth: 48 }}
+            className="flex items-center justify-center border-r border-border px-2 bg-muted/70 flex-shrink-0 sticky z-[3]"
+            style={{ 
+              width: 48, 
+              minWidth: 48,
+              left: showRowNumbers ? 50 : 0,
+            }}
           >
             <input
               type="checkbox"
@@ -141,95 +304,14 @@ export function GridHeader<T>({
           </div>
         )}
         
-        {/* Column Headers */}
-        {visibleColumns.map((column) => {
-          const sortDirection = getSortDirection(column.field);
-          const sortIndex = getSortIndex(column.field);
-          const hasFilter = !!getActiveFilter(column.field);
-          const isDragging = draggedColumn === column.field;
-          const isDragOver = dragOverColumn === column.field;
-          
-          return (
-            <div
-              key={column.field}
-              className={cn(
-                'relative flex items-center border-r border-border px-3 select-none group flex-shrink-0',
-                column.sortable !== false && 'cursor-pointer hover:bg-muted',
-                isDragging && 'opacity-50',
-                isDragOver && 'bg-primary/10',
-                column.pinned && 'bg-muted/70'
-              )}
-              style={{ 
-                width: column.computedWidth, 
-                minWidth: column.minWidth || 50,
-              }}
-              onClick={() => column.sortable !== false && onSort(column.field)}
-              draggable={column.draggable !== false}
-              onDragStart={(e) => onDragStart(e, column)}
-              onDragOver={(e) => onDragOver(e, column)}
-              onDragEnd={onDragEnd}
-              onDrop={(e) => onDrop(e, column)}
-            >
-              <span className="flex-1 truncate font-medium text-sm">
-                {column.headerRenderer
-                  ? column.headerRenderer({ colDef: column, column, api: {} as any })
-                  : column.headerName}
-              </span>
-              
-              {sortDirection && (
-                <div className="flex items-center ml-1 flex-shrink-0">
-                  {sortDirection === 'asc' ? (
-                    <ArrowUp className="h-4 w-4" />
-                  ) : (
-                    <ArrowDown className="h-4 w-4" />
-                  )}
-                  {sortModel.length > 1 && (
-                    <span className="text-xs text-muted-foreground ml-0.5">
-                      {sortIndex}
-                    </span>
-                  )}
-                </div>
-              )}
-
-              {/* Filter indicator - only show when column has active filter */}
-              {hasFilter && (
-                <Filter className="h-3 w-3 ml-1 text-primary flex-shrink-0" />
-              )}
-              
-              {/* Column Menu Button - appears on hover */}
-              <ColumnMenu
-                column={column}
-                onSort={onSort}
-                onHide={onHideColumn}
-                onPin={onPinColumn}
-                onAutoSize={onAutoSize}
-                onAutoSizeAll={onAutoSizeAll}
-                onFilterClick={(col, rect) => onFilterClick?.(col, rect)}
-              >
-                <button
-                  onClick={(e) => e.stopPropagation()}
-                  className="ml-1 p-0.5 opacity-0 group-hover:opacity-100 hover:bg-muted-foreground/20 rounded flex-shrink-0"
-                >
-                  <MoreVertical className="h-4 w-4" />
-                </button>
-              </ColumnMenu>
-              
-              {/* Resize Handle */}
-              {column.resizable !== false && (
-                <div
-                  className={cn(
-                    'absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-primary group/resize',
-                    resizingColumn === column.field && 'bg-primary'
-                  )}
-                  onMouseDown={(e) => onResizeStart(e, column)}
-                  onDoubleClick={(e) => handleResizeDoubleClick(e, column)}
-                >
-                  <div className="absolute right-0 top-0 bottom-0 w-1 group-hover/resize:bg-primary transition-colors" />
-                </div>
-              )}
-            </div>
-          );
-        })}
+        {/* Left Pinned Column Headers */}
+        {leftPinnedColumns.map((column) => renderColumnHeader(column, true))}
+        
+        {/* Center Column Headers */}
+        {centerColumns.map((column) => renderColumnHeader(column, false))}
+        
+        {/* Right Pinned Column Headers */}
+        {rightPinnedColumns.map((column) => renderColumnHeader(column, true))}
       </div>
 
       {/* Filter Row - Like AG Grid */}
@@ -238,64 +320,34 @@ export function GridHeader<T>({
           className="flex border-t border-border bg-background"
           style={{ height: filterRowHeight }}
         >
-          {/* Row Numbers placeholder */}
+          {/* Row Numbers placeholder - Sticky */}
           {showRowNumbers && (
             <div
-              className="border-r border-border flex-shrink-0"
+              className="border-r border-border flex-shrink-0 sticky left-0 z-[3] bg-background"
               style={{ width: 50, minWidth: 50 }}
             />
           )}
           
-          {/* Checkbox placeholder */}
+          {/* Checkbox placeholder - Sticky */}
           {showCheckboxColumn && (
             <div
-              className="border-r border-border flex-shrink-0"
-              style={{ width: 48, minWidth: 48 }}
+              className="border-r border-border flex-shrink-0 sticky z-[3] bg-background"
+              style={{ 
+                width: 48, 
+                minWidth: 48,
+                left: showRowNumbers ? 50 : 0,
+              }}
             />
           )}
           
-          {/* Column Filter Inputs */}
-          {visibleColumns.map((column) => {
-            const activeFilter = getActiveFilter(column.field);
-            const hasActiveFilter = !!activeFilter;
-            
-            return (
-              <div
-                key={`filter-${column.field}`}
-                className="flex items-center border-r border-border px-1 flex-shrink-0"
-                style={{ 
-                  width: column.computedWidth, 
-                  minWidth: column.minWidth || 50,
-                }}
-              >
-                {column.filterable !== false ? (
-                  <div className="flex items-center w-full gap-1">
-                    <Input
-                      placeholder=""
-                      className={cn(
-                        "h-7 text-xs border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-primary",
-                        hasActiveFilter && "bg-primary/10"
-                      )}
-                      onClick={(e) => e.stopPropagation()}
-                      onChange={(e) => onQuickColumnFilter?.(column.field, e.target.value)}
-                    />
-                    <button
-                      onClick={(e) => handleFilterClick(e, column)}
-                      className={cn(
-                        "p-1 rounded hover:bg-muted flex-shrink-0",
-                        hasActiveFilter && "text-primary"
-                      )}
-                      title="Advanced filter"
-                    >
-                      <Filter className="h-3 w-3" />
-                    </button>
-                  </div>
-                ) : (
-                  <div className="w-full" />
-                )}
-              </div>
-            );
-          })}
+          {/* Left Pinned Filter Cells */}
+          {leftPinnedColumns.map((column) => renderFilterCell(column, true))}
+          
+          {/* Center Filter Cells */}
+          {centerColumns.map((column) => renderFilterCell(column, false))}
+          
+          {/* Right Pinned Filter Cells */}
+          {rightPinnedColumns.map((column) => renderFilterCell(column, true))}
         </div>
       )}
     </div>
