@@ -1,6 +1,5 @@
-import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { RowNode } from '../types';
-import { throttle } from '../utils/helpers';
 
 interface VirtualizationOptions {
   rowHeight: number;
@@ -20,21 +19,45 @@ interface VirtualizationResult<T> {
   containerRef: React.RefObject<HTMLDivElement>;
 }
 
+// Optimized throttle for high-performance scrolling
+function throttleRAF<T extends (...args: any[]) => void>(fn: T): T {
+  let rafId: number | null = null;
+  let lastArgs: Parameters<T> | null = null;
+
+  const throttled = (...args: Parameters<T>) => {
+    lastArgs = args;
+    if (rafId === null) {
+      rafId = requestAnimationFrame(() => {
+        if (lastArgs) {
+          fn(...lastArgs);
+        }
+        rafId = null;
+      });
+    }
+  };
+
+  return throttled as T;
+}
+
 export function useVirtualization<T>(
   rows: RowNode<T>[],
   options: VirtualizationOptions
 ): VirtualizationResult<T> {
-  const { rowHeight, overscan = 5, containerHeight } = options;
+  const { rowHeight, overscan = 10, containerHeight } = options;
   
   const [scrollTop, setScrollTop] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const totalHeight = rows.length * rowHeight;
+  // Memoize total height calculation
+  const totalHeight = useMemo(() => rows.length * rowHeight, [rows.length, rowHeight]);
   
+  // Optimized virtual rows calculation with larger overscan for smoother scrolling
   const { startIndex, endIndex, virtualRows, offsetTop } = useMemo(() => {
     const visibleRowCount = Math.ceil(containerHeight / rowHeight);
-    const start = Math.max(0, Math.floor(scrollTop / rowHeight) - overscan);
-    const end = Math.min(rows.length, start + visibleRowCount + overscan * 2);
+    // Increase overscan for 100k rows to prevent flicker
+    const dynamicOverscan = Math.min(overscan * 2, 30);
+    const start = Math.max(0, Math.floor(scrollTop / rowHeight) - dynamicOverscan);
+    const end = Math.min(rows.length, start + visibleRowCount + dynamicOverscan * 2);
     
     return {
       startIndex: start,
@@ -44,10 +67,11 @@ export function useVirtualization<T>(
     };
   }, [rows, scrollTop, rowHeight, containerHeight, overscan]);
 
+  // Use RAF-throttled scroll handler for smooth 60fps scrolling
   const handleScroll = useCallback(
-    throttle((e: React.UIEvent<HTMLDivElement>) => {
+    throttleRAF((e: React.UIEvent<HTMLDivElement>) => {
       setScrollTop(e.currentTarget.scrollTop);
-    }, 16),
+    }),
     []
   );
 
