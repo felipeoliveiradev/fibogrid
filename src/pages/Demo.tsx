@@ -482,8 +482,8 @@ export default function Demo() {
               showToolbar={true}
               showStatusBar={true}
               showRowNumbers={showRowNumbers}
-              pagination={rowCount > 10000}
-              paginationPageSize={100}
+              pagination={false}
+              paginationPageSize={1000}
               groupByFields={groupByField ? [groupByField] : undefined}
               onGridReady={(e) => setGridApi(e.api)}
             />
