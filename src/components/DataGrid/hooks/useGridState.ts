@@ -405,6 +405,14 @@ export function useGridState<T>(props: DataGridProps<T>, containerWidth: number)
     getRowId,
   ]);
 
+  // Column pin handler
+  const setColumnPinned = useCallback((field: string, pinned: 'left' | 'right' | null) => {
+    setPinnedColumns((prev) => ({
+      ...prev,
+      [field]: pinned,
+    }));
+  }, []);
+
   return {
     rows,
     displayedRows,
@@ -424,5 +432,6 @@ export function useGridState<T>(props: DataGridProps<T>, containerWidth: number)
     api,
     setColumnOrder,
     setColumnWidths,
+    setColumnPinned,
   };
 }
