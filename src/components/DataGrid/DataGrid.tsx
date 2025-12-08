@@ -203,18 +203,30 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
     }
   );
 
-  // Measure column content width
+  // Measure column content width more accurately
   const measureColumnContent = useCallback((field: string): number => {
     const columnCells = cellContentRefs.current.get(field);
-    if (!columnCells) return 100;
+    if (!columnCells || columnCells.size === 0) return 100;
     
     let maxWidth = 0;
     columnCells.forEach((cell) => {
-      const width = cell.scrollWidth + 24; // padding
+      // Create a temporary span to measure the full text width
+      const span = document.createElement('span');
+      span.style.visibility = 'hidden';
+      span.style.position = 'absolute';
+      span.style.whiteSpace = 'nowrap';
+      span.style.fontSize = getComputedStyle(cell).fontSize;
+      span.style.fontFamily = getComputedStyle(cell).fontFamily;
+      span.textContent = cell.textContent || '';
+      document.body.appendChild(span);
+      
+      const width = span.offsetWidth;
+      document.body.removeChild(span);
+      
       if (width > maxWidth) maxWidth = width;
     });
     
-    return Math.max(50, maxWidth);
+    return Math.max(80, maxWidth);
   }, []);
 
   // Register cell refs for measuring
@@ -310,19 +322,31 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
 
   // Sort handler
   const handleSort = useCallback(
-    (field: string) => {
+    (field: string, direction?: 'asc' | 'desc') => {
       setSortModel((prev) => {
         const existing = prev.find((s) => s.field === field);
         let newModel: SortModel[];
 
-        if (!existing) {
-          newModel = [...prev, { field, direction: 'asc' }];
-        } else if (existing.direction === 'asc') {
-          newModel = prev.map((s) =>
-            s.field === field ? { ...s, direction: 'desc' as const } : s
-          );
+        if (direction) {
+          // Explicit direction provided - set it directly
+          if (existing) {
+            newModel = prev.map((s) =>
+              s.field === field ? { ...s, direction } : s
+            );
+          } else {
+            newModel = [...prev, { field, direction }];
+          }
         } else {
-          newModel = prev.filter((s) => s.field !== field);
+          // Toggle behavior
+          if (!existing) {
+            newModel = [...prev, { field, direction: 'asc' }];
+          } else if (existing.direction === 'asc') {
+            newModel = prev.map((s) =>
+              s.field === field ? { ...s, direction: 'desc' as const } : s
+            );
+          } else {
+            newModel = prev.filter((s) => s.field !== field);
+          }
         }
 
         onSortChanged?.({ sortModel: newModel });
@@ -371,6 +395,55 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
   const handlePinColumn = useCallback((field: string, pinned: 'left' | 'right' | null) => {
     setColumnPinned(field, pinned);
   }, [setColumnPinned]);
+
+  // Column hide handler
+  const handleHideColumn = useCallback((field: string) => {
+    api.setColumnVisible(field, false);
+  }, [api]);
+
+  // Auto-size single column handler
+  const handleAutoSize = useCallback((field: string) => {
+    const contentWidth = measureColumnContent(field);
+    const column = columns.find(c => c.field === field);
+    if (column) {
+      const headerText = column.headerName || '';
+      const headerWidth = headerText.length * 8 + 80;
+      const newWidth = Math.max(contentWidth + 40, headerWidth, column.minWidth || 50);
+      setColumnWidths(prev => ({ ...prev, [field]: Math.min(newWidth, column.maxWidth || 800) }));
+    }
+  }, [columns, measureColumnContent, setColumnWidths]);
+
+  // Auto-size all columns handler
+  const handleAutoSizeAll = useCallback(() => {
+    columns.forEach(column => {
+      if (!column.hide) {
+        handleAutoSize(column.field);
+      }
+    });
+  }, [columns, handleAutoSize]);
+
+  // Quick column filter handler
+  const handleQuickColumnFilter = useCallback((field: string, value: string) => {
+    if (!value.trim()) {
+      setFilterModel(prev => prev.filter(f => f.field !== field));
+    } else {
+      setFilterModel(prev => {
+        const existing = prev.findIndex(f => f.field === field);
+        const newFilter: FilterModel = {
+          field,
+          filterType: 'text',
+          value: value.trim(),
+          operator: 'contains',
+        };
+        if (existing >= 0) {
+          const newModel = [...prev];
+          newModel[existing] = newFilter;
+          return newModel;
+        }
+        return [...prev, newFilter];
+      });
+    }
+  }, [setFilterModel]);
 
   // Selection handlers
   const handleRowClick = useCallback(
@@ -499,6 +572,7 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
               <GridHeader
                 columns={columns}
                 sortModel={sortModel}
+                filterModel={filterModel}
                 onSort={handleSort}
                 onResizeStart={handleResizeStart}
                 onResizeDoubleClick={handleResizeDoubleClick}
@@ -514,10 +588,15 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
                 someSelected={someSelected}
                 onSelectAll={() => (allSelected ? deselectAll() : selectAll())}
                 onFilterClick={handleFilterClick}
+                onQuickColumnFilter={handleQuickColumnFilter}
                 headerHeight={headerHeight}
                 measureColumnContent={measureColumnContent}
                 showRowNumbers={showRowNumbers}
                 onPinColumn={handlePinColumn}
+                onHideColumn={handleHideColumn}
+                onAutoSize={handleAutoSize}
+                onAutoSizeAll={handleAutoSizeAll}
+                showFilterRow={true}
               />
             </div>
 
