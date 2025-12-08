@@ -95,8 +95,8 @@ export function GridHeader<T>({
     const center = visibleColumns.filter(c => !c.pinned);
     const right = visibleColumns.filter(c => c.pinned === 'right');
     
-    // Calculate cumulative left positions
-    let leftOffset = (showRowNumbers ? 50 : 0) + (showCheckboxColumn ? 48 : 0);
+    // Calculate cumulative left positions - start from 0 since other columns are not sticky
+    let leftOffset = 0;
     const leftWithPositions = left.map((col, idx) => {
       const pos = leftOffset;
       leftOffset += col.computedWidth;
@@ -116,7 +116,7 @@ export function GridHeader<T>({
       centerColumns: center,
       rightPinnedColumns: rightWithPositions,
     };
-  }, [visibleColumns, showRowNumbers, showCheckboxColumn]);
+  }, [visibleColumns]);
 
   const handleFilterClick = useCallback((e: React.MouseEvent, column: ProcessedColumn<T>) => {
     e.stopPropagation();
@@ -290,6 +290,9 @@ export function GridHeader<T>({
         className="flex"
         style={{ height: headerHeight }}
       >
+        {/* Left Pinned Column Headers - FIRST so they are sticky at left:0 */}
+        {leftPinnedColumns.map((column) => renderColumnHeader(column, true))}
+
         {/* Row Numbers Header */}
         {showRowNumbers && (
           <div
@@ -326,9 +329,6 @@ export function GridHeader<T>({
           </div>
         )}
         
-        {/* Left Pinned Column Headers */}
-        {leftPinnedColumns.map((column) => renderColumnHeader(column, true))}
-        
         {/* Center Column Headers */}
         {centerColumns.map((column) => renderColumnHeader(column, false))}
         
@@ -342,6 +342,9 @@ export function GridHeader<T>({
           className="flex border-t border-border bg-background"
           style={{ height: filterRowHeight }}
         >
+          {/* Left Pinned Filter Cells - FIRST */}
+          {leftPinnedColumns.map((column) => renderFilterCell(column, true))}
+
           {/* Row Numbers placeholder */}
           {showRowNumbers && (
             <div
@@ -365,9 +368,6 @@ export function GridHeader<T>({
               }}
             />
           )}
-          
-          {/* Left Pinned Filter Cells */}
-          {leftPinnedColumns.map((column) => renderFilterCell(column, true))}
           
           {/* Center Filter Cells */}
           {centerColumns.map((column) => renderFilterCell(column, false))}

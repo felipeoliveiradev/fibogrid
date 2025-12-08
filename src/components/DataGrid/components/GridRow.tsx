@@ -102,8 +102,8 @@ function GridRowInner<T>({
     const center = visibleColumns.filter(c => !c.pinned);
     const right = visibleColumns.filter(c => c.pinned === 'right');
     
-    // Calculate cumulative left positions (start after row numbers and checkbox columns)
-    let leftOffset = (showRowNumbers ? 50 : 0) + (showCheckboxColumn ? 48 : 0);
+    // Calculate cumulative left positions - start from 0 since other columns are not sticky
+    let leftOffset = 0;
     const leftWithPositions = left.map((col, idx) => {
       const pos = leftOffset;
       leftOffset += col.computedWidth;
@@ -123,7 +123,7 @@ function GridRowInner<T>({
       centerColumns: center,
       rightPinnedColumns: rightWithPositions,
     };
-  }, [visibleColumns, showRowNumbers, showCheckboxColumn]);
+  }, [visibleColumns]);
 
   const renderCell = (
     column: ProcessedColumn<T> & { stickyLeft?: number; stickyRight?: number; isLastPinned?: boolean; isFirstPinned?: boolean }, 
@@ -213,6 +213,9 @@ function GridRowInner<T>({
       onDragEnd={onRowDragEnd}
       onDrop={onRowDrop}
     >
+      {/* Left Pinned Columns - FIRST so they are sticky at left:0 */}
+      {leftPinnedColumns.map((column) => renderCell(column, true, column.stickyLeft, undefined))}
+
       {/* Row Number Column */}
       {showRowNumbers && (
         <div
@@ -249,9 +252,6 @@ function GridRowInner<T>({
           />
         </div>
       )}
-
-      {/* Left Pinned Columns */}
-      {leftPinnedColumns.map((column) => renderCell(column, true, column.stickyLeft, undefined))}
 
       {/* Center (non-pinned) Columns */}
       {centerColumns.map((column) => renderCell(column, false, undefined, undefined))}
