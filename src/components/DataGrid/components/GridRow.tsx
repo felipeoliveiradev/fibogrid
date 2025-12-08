@@ -14,15 +14,12 @@ interface GridRowProps<T> {
   onRowDoubleClick: (e: React.MouseEvent) => void;
   onCellClick: (column: ProcessedColumn<T>, e: React.MouseEvent) => void;
   onCellDoubleClick: (column: ProcessedColumn<T>, e: React.MouseEvent) => void;
-  // Selection
   showCheckboxColumn?: boolean;
   onCheckboxChange?: (checked: boolean) => void;
-  // Editing
   editingCell: EditingCell | null;
   onStartEdit: (field: string) => void;
   onEditChange: (value: any) => void;
   onStopEdit: (cancel?: boolean) => void;
-  // Row drag
   rowDragEnabled?: boolean;
   onRowDragStart?: (e: React.DragEvent) => void;
   onRowDragOver?: (e: React.DragEvent) => void;
@@ -31,26 +28,19 @@ interface GridRowProps<T> {
   isDragging?: boolean;
   isDropTarget?: boolean;
   dropPosition?: 'before' | 'after' | null;
-  // Range selection
   isCellSelected?: (rowIndex: number, colIndex: number) => boolean;
   isCellFocused?: (rowId: string, field: string) => boolean;
   onCellMouseDown?: (rowIndex: number, colIndex: number, e: React.MouseEvent) => void;
   onCellMouseEnter?: (rowIndex: number, colIndex: number) => void;
-  // API
   api: GridApi<T>;
-  // Striping
   isEven: boolean;
-  // Tree/hierarchy
   level?: number;
   hasChildren?: boolean;
   isExpanded?: boolean;
   onToggleExpand?: () => void;
-  // Cell ref registration for auto-size
   registerCellRef?: (field: string, rowId: string, element: HTMLElement | null) => void;
-  // Row numbers
   showRowNumbers?: boolean;
   rowNumber?: number;
-  // Add child row
   onAddChildRow?: (parentId: string) => void;
 }
 
@@ -92,17 +82,16 @@ function GridRowInner<T>({
   rowNumber,
   onAddChildRow,
 }: GridRowProps<T>) {
-  const visibleColumns = columns.filter((col) => !col.hide);
+  const visibleColumns = useMemo(() => columns.filter((col) => !col.hide), [columns]);
   const indentWidth = level * 20;
   const isChildRow = (row as any).isChildRow;
 
-  // Calculate sticky positions for pinned columns
+  // Memoize pinned columns calculation
   const { leftPinnedColumns, centerColumns, rightPinnedColumns } = useMemo(() => {
     const left = visibleColumns.filter(c => c.pinned === 'left');
     const center = visibleColumns.filter(c => !c.pinned);
     const right = visibleColumns.filter(c => c.pinned === 'right');
     
-    // Calculate cumulative left positions - start from 0 since other columns are not sticky
     let leftOffset = 0;
     const leftWithPositions = left.map((col, idx) => {
       const pos = leftOffset;
@@ -110,7 +99,6 @@ function GridRowInner<T>({
       return { ...col, stickyLeft: pos, isLastPinned: idx === left.length - 1 };
     });
     
-    // Calculate cumulative right positions
     let rightOffset = 0;
     const rightWithPositions = [...right].reverse().map((col, idx) => {
       const pos = rightOffset;
@@ -125,6 +113,13 @@ function GridRowInner<T>({
     };
   }, [visibleColumns]);
 
+  // Memoize background style calculation
+  const getPinnedBgStyle = useMemo((): React.CSSProperties => {
+    if (isSelected) return { backgroundColor: 'hsl(var(--primary) / 0.15)' };
+    if (isEven) return { backgroundColor: 'hsl(var(--muted))' };
+    return { backgroundColor: 'hsl(var(--background))' };
+  }, [isSelected, isEven]);
+
   const renderCell = (
     column: ProcessedColumn<T> & { stickyLeft?: number; stickyRight?: number; isLastPinned?: boolean; isFirstPinned?: boolean }, 
     isPinned: boolean, 
@@ -138,28 +133,19 @@ function GridRowInner<T>({
     const colIndex = visibleColumns.findIndex(c => c.field === column.field);
     const isFirstColumn = colIndex === 0;
     
-    // Determine the background style for pinned columns - must be SOLID colors, not transparent
-    const getPinnedBgStyle = (): React.CSSProperties => {
-      if (isSelected) return { backgroundColor: 'hsl(var(--primary) / 0.15)' };
-      if (isEven) return { backgroundColor: 'hsl(var(--muted))' };
-      return { backgroundColor: 'hsl(var(--background))' };
-    };
-
     return (
       <div
         key={column.field}
         className={cn(
           'h-full',
           isPinned && 'sticky z-[2]',
-          // Add shadow to last left-pinned column
           column.isLastPinned && column.pinned === 'left' && 'shadow-[2px_0_5px_-2px_rgba(0,0,0,0.3)]',
-          // Add shadow to first right-pinned column  
           column.isFirstPinned && column.pinned === 'right' && 'shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.3)]'
         )}
         style={{
-          left: stickyLeft !== undefined ? stickyLeft : undefined,
-          right: stickyRight !== undefined ? stickyRight : undefined,
-          ...(isPinned ? getPinnedBgStyle() : {}),
+          left: stickyLeft,
+          right: stickyRight,
+          ...(isPinned ? getPinnedBgStyle : {}),
         }}
       >
         <GridCell
@@ -191,12 +177,10 @@ function GridRowInner<T>({
   return (
     <div
       className={cn(
-        'flex border-b border-border transition-colors group/row',
-        // Hover effect
+        'flex border-b border-border group/row',
+        'transition-[background-color] duration-150',
         'hover:bg-accent/50',
-        // Selection takes priority
         isSelected && 'bg-primary/10 hover:bg-primary/15',
-        // Zebra striping when not selected
         !isSelected && isEven && 'bg-muted/30',
         !isSelected && !isEven && 'bg-background',
         isDragging && 'opacity-50',
@@ -213,7 +197,7 @@ function GridRowInner<T>({
       onDragEnd={onRowDragEnd}
       onDrop={onRowDrop}
     >
-      {/* Left Pinned Columns - FIRST so they are sticky at left:0 */}
+      {/* Left Pinned Columns */}
       {leftPinnedColumns.map((column) => renderCell(column, true, column.stickyLeft, undefined))}
 
       {/* Row Number Column */}
@@ -253,13 +237,13 @@ function GridRowInner<T>({
         </div>
       )}
 
-      {/* Center (non-pinned) Columns */}
+      {/* Center Columns */}
       {centerColumns.map((column) => renderCell(column, false, undefined, undefined))}
 
       {/* Right Pinned Columns */}
       {rightPinnedColumns.map((column) => renderCell(column, true, undefined, column.stickyRight))}
 
-      {/* Add Child Row Button */}
+      {/* Add Child Button */}
       {onAddChildRow && !isChildRow && (
         <Button
           variant="ghost"
@@ -278,4 +262,26 @@ function GridRowInner<T>({
   );
 }
 
-export const GridRow = memo(GridRowInner) as typeof GridRowInner;
+// Optimized memo with custom comparison
+export const GridRow = memo(GridRowInner, (prevProps, nextProps) => {
+  // Quick checks for most common changes
+  if (prevProps.isSelected !== nextProps.isSelected) return false;
+  if (prevProps.isEven !== nextProps.isEven) return false;
+  if (prevProps.row.id !== nextProps.row.id) return false;
+  if (prevProps.editingCell?.rowId !== nextProps.editingCell?.rowId) return false;
+  if (prevProps.editingCell?.field !== nextProps.editingCell?.field) return false;
+  if (prevProps.isDragging !== nextProps.isDragging) return false;
+  if (prevProps.isDropTarget !== nextProps.isDropTarget) return false;
+  if (prevProps.isExpanded !== nextProps.isExpanded) return false;
+  
+  // Check if row data changed (for real-time updates)
+  const prevData = prevProps.row.data as any;
+  const nextData = nextProps.row.data as any;
+  
+  // Compare relevant fields
+  for (const col of prevProps.columns) {
+    if (prevData[col.field] !== nextData[col.field]) return false;
+  }
+  
+  return true;
+}) as typeof GridRowInner;
