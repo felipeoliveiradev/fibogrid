@@ -117,27 +117,17 @@ export function useGridState<T>(props: DataGridProps<T>, containerWidth: number)
   // Update refs synchronously
   rowsRef.current = rows;
 
-  // Filter rows - optimized
+  // Filter rows - ultra-optimized
   const filteredRows = useMemo(() => {
-    let result = rows;
-
-    if (filterModel.length > 0) {
-      result = filterRows(result, filterModel, columns);
-    }
-
     const quickFilter = quickFilterText || internalQuickFilter;
-    if (quickFilter) {
-      const searchLower = quickFilter.toLowerCase();
-      result = result.filter((row) => {
-        return columns.some((col) => {
-          const value = (row.data as any)[col.field];
-          if (value == null) return false;
-          return String(value).toLowerCase().includes(searchLower);
-        });
-      });
+    
+    // Fast path - no filters
+    if (filterModel.length === 0 && !quickFilter) {
+      return rows;
     }
 
-    return result;
+    // Use optimized filter function
+    return filterRows(rows, filterModel, columns, quickFilter);
   }, [rows, filterModel, columns, quickFilterText, internalQuickFilter]);
 
   // Sort rows and update rowIndex - optimized
