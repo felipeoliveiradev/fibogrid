@@ -324,6 +324,7 @@ export interface DataGridProps<T = any> extends GridEvents<T> {
   // Toolbar & Status bar
   showToolbar?: boolean;
   showStatusBar?: boolean;
+  showRowNumbers?: boolean;
   
   // Context menu
   contextMenu?: boolean;
