@@ -24,7 +24,7 @@ export function createRowNode<T>(
   };
 }
 
-// Process columns with computed widths
+// Process columns with computed widths - Fixed widths, no flex redistribution
 export function processColumns<T>(
   columns: ColumnDef<T>[],
   containerWidth: number,
@@ -35,34 +35,10 @@ export function processColumns<T>(
     ...col,
   }));
 
-  // Calculate flex columns
-  const fixedWidth = mergedColumns
-    .filter((col) => !col.flex && col.width)
-    .reduce((sum, col) => sum + (col.width || 150), 0);
-
-  const flexTotal = mergedColumns
-    .filter((col) => col.flex)
-    .reduce((sum, col) => sum + (col.flex || 1), 0);
-
-  const availableFlexWidth = Math.max(0, containerWidth - fixedWidth);
-
   let currentLeft = 0;
   return mergedColumns.map((col, index) => {
-    let computedWidth: number;
-
-    if (col.flex && flexTotal > 0) {
-      computedWidth = (col.flex / flexTotal) * availableFlexWidth;
-    } else {
-      computedWidth = col.width || 150;
-    }
-
-    // Apply min/max constraints
-    if (col.minWidth) {
-      computedWidth = Math.max(computedWidth, col.minWidth);
-    }
-    if (col.maxWidth) {
-      computedWidth = Math.min(computedWidth, col.maxWidth);
-    }
+    // Use fixed width - no flex redistribution
+    const computedWidth = col.width || 150;
 
     const processed: ProcessedColumn<T> = {
       ...col,
@@ -160,15 +136,31 @@ export function filterRows<T>(
   return filtered;
 }
 
-// Default filter comparator
+// Default filter comparator - Fixed for select filter type
 export function defaultFilterComparator(filter: FilterModel, value: any): boolean {
   const filterValue = filter.value;
+  
+  // Handle select filter type (array of values)
+  if (filter.filterType === 'select' && Array.isArray(filterValue)) {
+    console.log('Select filter - filterValue:', filterValue, 'cellValue:', value);
+    
+    // Empty array means filter everything out
+    if (filterValue.length === 0) {
+      return false;
+    }
+    
+    // Check if value is in the selected values
+    const stringValue = String(value);
+    const isIncluded = filterValue.some(fv => String(fv) === stringValue);
+    console.log('Value included:', isIncluded);
+    return isIncluded;
+  }
   
   if (filterValue == null || filterValue === '') return true;
 
   switch (filter.operator || 'contains') {
     case 'equals':
-      return value === filterValue;
+      return String(value) === String(filterValue);
     case 'contains':
       return String(value).toLowerCase().includes(String(filterValue).toLowerCase());
     case 'startsWith':

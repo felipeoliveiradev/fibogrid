@@ -7,7 +7,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Filter, X, Search, SortAsc, SortDesc } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 interface FilterPopoverProps<T> {
   column: ProcessedColumn<T>;
@@ -17,6 +16,7 @@ interface FilterPopoverProps<T> {
   allValues?: any[];
   onSort?: (direction: 'asc' | 'desc') => void;
   anchorRect?: DOMRect | null;
+  containerRef?: React.RefObject<HTMLDivElement>;
 }
 
 export function FilterPopover<T>({
@@ -27,6 +27,7 @@ export function FilterPopover<T>({
   allValues = [],
   onSort,
   anchorRect,
+  containerRef,
 }: FilterPopoverProps<T>) {
   const popoverRef = useRef<HTMLDivElement>(null);
   const [value, setValue] = useState(currentFilter?.value ?? '');
@@ -58,18 +59,20 @@ export function FilterPopover<T>({
     );
   }, [uniqueValues, searchTerm]);
 
-  // Initialize selected values once
+  // Initialize selected values once when uniqueValues changes
   useEffect(() => {
-    if (isInitialized || uniqueValues.length === 0) return;
+    if (uniqueValues.length === 0) return;
     
-    if (currentFilter?.value && Array.isArray(currentFilter.value)) {
-      setSelectedValues(new Set(currentFilter.value.map(String)));
-      setSelectAll(false);
-    } else {
-      setSelectedValues(new Set(uniqueValues));
-      setSelectAll(true);
+    if (!isInitialized) {
+      if (currentFilter?.value && Array.isArray(currentFilter.value)) {
+        setSelectedValues(new Set(currentFilter.value.map(String)));
+        setSelectAll(currentFilter.value.length === uniqueValues.length);
+      } else {
+        setSelectedValues(new Set(uniqueValues));
+        setSelectAll(true);
+      }
+      setIsInitialized(true);
     }
-    setIsInitialized(true);
   }, [uniqueValues, currentFilter, isInitialized]);
 
   // Handle click outside
@@ -80,7 +83,6 @@ export function FilterPopover<T>({
       }
     };
     
-    // Delay to prevent immediate close
     const timer = setTimeout(() => {
       document.addEventListener('mousedown', handleClickOutside);
     }, 100);
@@ -106,9 +108,16 @@ export function FilterPopover<T>({
   };
 
   const handleApplyValues = () => {
-    if (selectAll || selectedValues.size === uniqueValues.length) {
+    console.log('Applying filter with selected values:', Array.from(selectedValues));
+    console.log('selectAll:', selectAll, 'uniqueValues.length:', uniqueValues.length, 'selectedValues.size:', selectedValues.size);
+    
+    if (selectAll) {
+      // All selected = no filter
+      console.log('All selected, clearing filter');
       onFilterChange(null);
     } else if (selectedValues.size === 0) {
+      // None selected = filter everything out
+      console.log('None selected, filtering all out');
       onFilterChange({
         field: column.field,
         filterType: 'select',
@@ -116,6 +125,8 @@ export function FilterPopover<T>({
         operator: 'equals',
       });
     } else {
+      // Some selected = filter to selected values
+      console.log('Some selected, filtering to:', Array.from(selectedValues));
       onFilterChange({
         field: column.field,
         filterType: 'select',
@@ -134,7 +145,11 @@ export function FilterPopover<T>({
     onClose();
   };
 
-  const toggleValue = (val: string) => {
+  const toggleValue = (val: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+    }
+    console.log('Toggling value:', val);
     setSelectedValues(prev => {
       const newSelected = new Set(prev);
       if (newSelected.has(val)) {
@@ -142,12 +157,18 @@ export function FilterPopover<T>({
       } else {
         newSelected.add(val);
       }
-      setSelectAll(newSelected.size === uniqueValues.length);
+      const allSelected = newSelected.size === uniqueValues.length;
+      setSelectAll(allSelected);
+      console.log('New selected values:', Array.from(newSelected), 'allSelected:', allSelected);
       return newSelected;
     });
   };
 
-  const toggleAll = () => {
+  const toggleAll = (e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+    }
+    console.log('Toggle all, current selectAll:', selectAll);
     if (selectAll) {
       setSelectedValues(new Set());
       setSelectAll(false);
@@ -157,21 +178,35 @@ export function FilterPopover<T>({
     }
   };
 
-  // Calculate position
+  // Calculate position relative to container
   const style = useMemo(() => {
     if (!anchorRect) return { top: 0, left: 0 };
     
+    const containerRect = containerRef?.current?.getBoundingClientRect();
+    
+    if (containerRect) {
+      // Position relative to container for proper scrolling
+      return {
+        position: 'absolute' as const,
+        top: anchorRect.bottom - containerRect.top + 4,
+        left: Math.max(0, anchorRect.left - containerRect.left),
+      };
+    }
+    
+    // Fallback to viewport positioning
     return {
+      position: 'fixed' as const,
       top: anchorRect.bottom + 4,
       left: Math.max(8, anchorRect.left),
     };
-  }, [anchorRect]);
+  }, [anchorRect, containerRef]);
 
   return (
     <div
       ref={popoverRef}
-      className="fixed w-80 bg-popover border border-border rounded-lg shadow-xl z-[100]"
+      className="w-80 bg-popover border border-border rounded-lg shadow-xl z-[100]"
       style={style}
+      onClick={(e) => e.stopPropagation()}
     >
       <div className="flex flex-col">
         {/* Header */}
@@ -240,32 +275,30 @@ export function FilterPopover<T>({
               </div>
 
               {/* Select All */}
-              <div 
+              <label 
                 className="flex items-center gap-2 py-1.5 px-2 hover:bg-muted rounded cursor-pointer"
-                onClick={toggleAll}
               >
                 <Checkbox 
                   checked={selectAll} 
                   onCheckedChange={() => toggleAll()}
                 />
                 <span className="text-sm font-medium">(Select All)</span>
-              </div>
+              </label>
 
               {/* Value List */}
               <ScrollArea className="h-48 border border-border rounded bg-background">
                 <div className="p-1">
                   {filteredValues.map((val) => (
-                    <div
+                    <label
                       key={val}
                       className="flex items-center gap-2 py-1.5 px-2 hover:bg-muted rounded cursor-pointer"
-                      onClick={() => toggleValue(val)}
                     >
                       <Checkbox 
                         checked={selectedValues.has(val)}
                         onCheckedChange={() => toggleValue(val)}
                       />
                       <span className="text-sm truncate">{val || '(Blank)'}</span>
-                    </div>
+                    </label>
                   ))}
                   {filteredValues.length === 0 && (
                     <div className="text-sm text-muted-foreground text-center py-4">
