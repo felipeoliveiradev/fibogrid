@@ -165,11 +165,12 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
     onGridReady?.({ api });
   }, [api, onGridReady]);
 
-  // Calculate heights
+  // Calculate heights - use prop height or container height
+  const effectiveContainerHeight = typeof height === 'number' ? height : (containerHeight || 600);
   const toolbarHeight = showToolbar ? 48 : 0;
   const statusBarHeight = showStatusBar ? 36 : 0;
   const paginationHeight = pagination ? 52 : 0;
-  const bodyHeight = containerHeight - headerHeight - toolbarHeight - statusBarHeight - paginationHeight;
+  const bodyHeight = effectiveContainerHeight - headerHeight - toolbarHeight - statusBarHeight - paginationHeight;
 
   // Calculate total content width for horizontal scroll
   const totalContentWidth = useMemo(() => {
@@ -179,7 +180,8 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
     return checkboxWidth + rowNumberWidth + columnsWidth;
   }, [columns, rowSelection, showRowNumbers]);
 
-  // Virtualization
+  // Virtualization - ensure minimum height for proper row calculation
+  const virtualizationHeight = Math.max(bodyHeight, 400);
   const {
     virtualRows,
     totalHeight,
@@ -189,7 +191,7 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
   } = useVirtualization(finalDisplayedRows as RowNode<T>[], {
     rowHeight,
     overscan: rowBuffer,
-    containerHeight: Math.max(bodyHeight, 100),
+    containerHeight: virtualizationHeight,
   });
 
   // Column resize with double-click support
