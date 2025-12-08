@@ -140,16 +140,24 @@ function GridRowInner<T>({
     const colIndex = visibleColumns.findIndex(c => c.field === column.field);
     const isFirstColumn = colIndex === 0;
     
+    // Determine the background class for pinned columns based on row state
+    const getPinnedBgClass = () => {
+      if (isSelected) return 'bg-primary/10';
+      if (isEven) return 'bg-muted/30';
+      return 'bg-background';
+    };
+
     return (
       <div
         key={column.field}
         className={cn(
+          'h-full',
           isPinned && 'sticky z-[1]',
-          isPinned && (isSelected ? 'bg-primary/10' : isEven ? 'bg-muted/40' : 'bg-background'),
+          isPinned && getPinnedBgClass(),
           // Add shadow to last left-pinned column
-          column.isLastPinned && column.pinned === 'left' && 'shadow-[2px_0_5px_-2px_rgba(0,0,0,0.15)]',
+          column.isLastPinned && column.pinned === 'left' && 'shadow-[2px_0_5px_-2px_rgba(0,0,0,0.2)]',
           // Add shadow to first right-pinned column  
-          column.isFirstPinned && column.pinned === 'right' && 'shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.15)]'
+          column.isFirstPinned && column.pinned === 'right' && 'shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.2)]'
         )}
         style={{
           left: stickyLeft !== undefined ? stickyLeft : undefined,
@@ -176,6 +184,7 @@ function GridRowInner<T>({
           isExpanded={isExpanded}
           onToggleExpand={onToggleExpand}
           registerCellRef={registerCellRef}
+          rowHeight={rowHeight}
         />
       </div>
     );
@@ -185,13 +194,17 @@ function GridRowInner<T>({
     <div
       className={cn(
         'flex border-b border-border transition-colors group/row',
-        isSelected && 'bg-primary/10',
-        !isSelected && isEven && 'bg-muted/20',
+        // Hover effect
+        'hover:bg-accent/50',
+        // Selection takes priority
+        isSelected && 'bg-primary/10 hover:bg-primary/15',
+        // Zebra striping when not selected
+        !isSelected && isEven && 'bg-muted/30',
         !isSelected && !isEven && 'bg-background',
         isDragging && 'opacity-50',
         isDropTarget && dropPosition === 'before' && 'border-t-2 border-t-primary',
         isDropTarget && dropPosition === 'after' && 'border-b-2 border-b-primary',
-        isChildRow && 'bg-muted/30'
+        isChildRow && 'bg-muted/40'
       )}
       style={{ height: rowHeight }}
       onClick={onRowClick}

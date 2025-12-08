@@ -26,6 +26,8 @@ interface GridCellProps<T> {
   onToggleExpand?: () => void;
   // Cell ref for auto-size
   registerCellRef?: (field: string, rowId: string, element: HTMLElement | null) => void;
+  // Row height for 100% height
+  rowHeight?: number;
 }
 
 export function GridCell<T>({
@@ -48,6 +50,7 @@ export function GridCell<T>({
   isExpanded,
   onToggleExpand,
   registerCellRef,
+  rowHeight,
 }: GridCellProps<T>) {
   const inputRef = useRef<HTMLInputElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -222,6 +225,7 @@ export function GridCell<T>({
       style={{ 
         width: column.computedWidth, 
         minWidth: column.minWidth || 50,
+        height: rowHeight ? `${rowHeight}px` : '100%',
         paddingLeft: indent > 0 ? `${indent + 12}px` : undefined,
       }}
       onClick={handleCellClick}
@@ -244,7 +248,7 @@ export function GridCell<T>({
           )}
         </button>
       )}
-      <div ref={contentRef} className="flex-1 overflow-hidden">
+      <div ref={contentRef} className="flex-1 overflow-hidden h-full flex items-center">
         {renderContent()}
       </div>
     </div>
