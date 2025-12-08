@@ -147,9 +147,9 @@ export function GridHeader<T>({
         key={column.field}
         className={cn(
           'relative flex items-center border-r border-border px-3 select-none group flex-shrink-0',
-          column.sortable !== false && 'cursor-pointer hover:bg-muted',
+          column.sortable !== false && 'cursor-pointer',
           isDragging && 'opacity-50',
-          isDragOver && 'bg-primary/10',
+          isDragOver && 'bg-primary/20',
           isPinned && 'sticky z-[2]',
           // Add shadow to last left-pinned column
           column.isLastPinned && column.pinned === 'left' && 'shadow-[2px_0_5px_-2px_rgba(0,0,0,0.3)]',
@@ -161,7 +161,7 @@ export function GridHeader<T>({
           minWidth: column.minWidth || 50,
           left: column.stickyLeft !== undefined ? column.stickyLeft : undefined,
           right: column.stickyRight !== undefined ? column.stickyRight : undefined,
-          backgroundColor: isPinned ? 'hsl(var(--muted))' : undefined,
+          backgroundColor: 'hsl(var(--muted))',
         }}
         onClick={() => column.sortable !== false && onSort(column.field)}
         draggable={column.draggable !== false && !isPinned}
@@ -251,7 +251,7 @@ export function GridHeader<T>({
           minWidth: column.minWidth || 50,
           left: column.stickyLeft !== undefined ? column.stickyLeft : undefined,
           right: column.stickyRight !== undefined ? column.stickyRight : undefined,
-          backgroundColor: isPinned ? 'hsl(var(--background))' : undefined,
+          backgroundColor: 'hsl(var(--background))',
         }}
       >
         {column.filterable !== false ? (
@@ -284,7 +284,7 @@ export function GridHeader<T>({
   };
 
   return (
-    <div className="flex flex-col border-b border-border bg-muted/50">
+    <div className="flex flex-col border-b border-border" style={{ backgroundColor: 'hsl(var(--muted))' }}>
       {/* Main Header Row */}
       <div
         className="flex"
@@ -339,8 +339,8 @@ export function GridHeader<T>({
       {/* Filter Row - Like AG Grid */}
       {showFilterRow && (
         <div
-          className="flex border-t border-border bg-background"
-          style={{ height: filterRowHeight }}
+          className="flex border-t border-border"
+          style={{ height: filterRowHeight, backgroundColor: 'hsl(var(--background))' }}
         >
           {/* Left Pinned Filter Cells - FIRST */}
           {leftPinnedColumns.map((column) => renderFilterCell(column, true))}
