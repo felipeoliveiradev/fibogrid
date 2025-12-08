@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import React, { memo, useMemo } from 'react';
 import { ProcessedColumn, RowNode, EditingCell, GridApi } from '../types';
 import { GridCell } from './GridCell';
 import { cn } from '@/lib/utils';
@@ -96,6 +96,73 @@ function GridRowInner<T>({
   const indentWidth = level * 20;
   const isChildRow = (row as any).isChildRow;
 
+  // Calculate sticky positions for pinned columns
+  const { leftPinnedColumns, centerColumns, rightPinnedColumns, leftPinnedWidth } = useMemo(() => {
+    const left = visibleColumns.filter(c => c.pinned === 'left');
+    const center = visibleColumns.filter(c => !c.pinned);
+    const right = visibleColumns.filter(c => c.pinned === 'right');
+    
+    // Calculate cumulative left positions
+    let leftOffset = (showRowNumbers ? 50 : 0) + (showCheckboxColumn ? 48 : 0);
+    const leftWithPositions = left.map(col => {
+      const pos = leftOffset;
+      leftOffset += col.computedWidth;
+      return { ...col, stickyLeft: pos };
+    });
+    
+    return {
+      leftPinnedColumns: leftWithPositions,
+      centerColumns: center,
+      rightPinnedColumns: right,
+      leftPinnedWidth: leftOffset,
+    };
+  }, [visibleColumns, showRowNumbers, showCheckboxColumn]);
+
+  const renderCell = (column: ProcessedColumn<T> & { stickyLeft?: number }, isPinned: boolean, stickyLeft?: number) => {
+    const isEditing = editingCell?.rowId === row.id && editingCell?.field === column.field;
+    const globalColIndex = columns.findIndex(c => c.field === column.field);
+    const cellSelected = isCellSelected?.(row.rowIndex, globalColIndex);
+    const cellFocused = isCellFocused?.(row.id, column.field);
+    const colIndex = visibleColumns.findIndex(c => c.field === column.field);
+    const isFirstColumn = colIndex === 0;
+    
+    return (
+      <div
+        key={column.field}
+        className={cn(
+          isPinned && 'sticky z-[1]',
+          isPinned && (isSelected ? 'bg-primary/10' : isEven ? 'bg-muted/40' : 'bg-background')
+        )}
+        style={{
+          left: stickyLeft !== undefined ? stickyLeft : undefined,
+          right: column.pinned === 'right' ? 0 : undefined,
+        }}
+      >
+        <GridCell
+          column={column}
+          row={row}
+          api={api}
+          isEditing={isEditing}
+          editValue={isEditing ? editingCell?.value : undefined}
+          onStartEdit={() => onStartEdit(column.field)}
+          onEditChange={onEditChange}
+          onStopEdit={onStopEdit}
+          onClick={(e) => onCellClick(column, e)}
+          onDoubleClick={(e) => onCellDoubleClick(column, e)}
+          isSelected={cellSelected}
+          isFocused={cellFocused}
+          onMouseDown={(e) => onCellMouseDown?.(row.rowIndex, globalColIndex, e)}
+          onMouseEnter={() => onCellMouseEnter?.(row.rowIndex, globalColIndex)}
+          indent={isFirstColumn ? indentWidth : 0}
+          showExpandIcon={isFirstColumn && hasChildren}
+          isExpanded={isExpanded}
+          onToggleExpand={onToggleExpand}
+          registerCellRef={registerCellRef}
+        />
+      </div>
+    );
+  };
+
   return (
     <div
       className={cn(
@@ -117,21 +184,25 @@ function GridRowInner<T>({
       onDragEnd={onRowDragEnd}
       onDrop={onRowDrop}
     >
-      {/* Row Number Column */}
+      {/* Row Number Column - Sticky */}
       {showRowNumbers && (
         <div
-          className="flex items-center justify-center border-r border-border px-2 text-xs text-muted-foreground bg-muted/30 flex-shrink-0"
+          className="flex items-center justify-center border-r border-border px-2 text-xs text-muted-foreground bg-muted/30 flex-shrink-0 sticky left-0 z-[2]"
           style={{ width: 50, minWidth: 50 }}
         >
           {rowNumber}
         </div>
       )}
       
-      {/* Checkbox Column */}
+      {/* Checkbox Column - Sticky */}
       {showCheckboxColumn && (
         <div
-          className="flex items-center justify-center border-r border-border px-2 bg-muted/30 flex-shrink-0"
-          style={{ width: 48, minWidth: 48 }}
+          className="flex items-center justify-center border-r border-border px-2 bg-muted/30 flex-shrink-0 sticky z-[2]"
+          style={{ 
+            width: 48, 
+            minWidth: 48,
+            left: showRowNumbers ? 50 : 0,
+          }}
         >
           {rowDragEnabled && (
             <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab mr-1" />
@@ -146,39 +217,14 @@ function GridRowInner<T>({
         </div>
       )}
 
-      {/* Data Columns */}
-      {visibleColumns.map((column, colIndex) => {
-        const isEditing = editingCell?.rowId === row.id && editingCell?.field === column.field;
-        const globalColIndex = columns.findIndex(c => c.field === column.field);
-        const cellSelected = isCellSelected?.(row.rowIndex, globalColIndex);
-        const cellFocused = isCellFocused?.(row.id, column.field);
-        const isFirstColumn = colIndex === 0;
-        
-        return (
-          <GridCell
-            key={column.field}
-            column={column}
-            row={row}
-            api={api}
-            isEditing={isEditing}
-            editValue={isEditing ? editingCell?.value : undefined}
-            onStartEdit={() => onStartEdit(column.field)}
-            onEditChange={onEditChange}
-            onStopEdit={onStopEdit}
-            onClick={(e) => onCellClick(column, e)}
-            onDoubleClick={(e) => onCellDoubleClick(column, e)}
-            isSelected={cellSelected}
-            isFocused={cellFocused}
-            onMouseDown={(e) => onCellMouseDown?.(row.rowIndex, globalColIndex, e)}
-            onMouseEnter={() => onCellMouseEnter?.(row.rowIndex, globalColIndex)}
-            indent={isFirstColumn ? indentWidth : 0}
-            showExpandIcon={isFirstColumn && hasChildren}
-            isExpanded={isExpanded}
-            onToggleExpand={onToggleExpand}
-            registerCellRef={registerCellRef}
-          />
-        );
-      })}
+      {/* Left Pinned Columns */}
+      {leftPinnedColumns.map((column) => renderCell(column, true, column.stickyLeft))}
+
+      {/* Center (non-pinned) Columns */}
+      {centerColumns.map((column) => renderCell(column, false))}
+
+      {/* Right Pinned Columns */}
+      {rightPinnedColumns.map((column) => renderCell(column, true))}
 
       {/* Add Child Row Button */}
       {onAddChildRow && !isChildRow && (
