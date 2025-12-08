@@ -97,16 +97,24 @@ export function GridHeader<T>({
     
     // Calculate cumulative left positions
     let leftOffset = (showRowNumbers ? 50 : 0) + (showCheckboxColumn ? 48 : 0);
-    const leftWithPositions = left.map(col => {
+    const leftWithPositions = left.map((col, idx) => {
       const pos = leftOffset;
       leftOffset += col.computedWidth;
-      return { ...col, stickyLeft: pos };
+      return { ...col, stickyLeft: pos, isLastPinned: idx === left.length - 1 };
     });
+    
+    // Calculate cumulative right positions
+    let rightOffset = 0;
+    const rightWithPositions = [...right].reverse().map((col, idx) => {
+      const pos = rightOffset;
+      rightOffset += col.computedWidth;
+      return { ...col, stickyRight: pos, isFirstPinned: idx === right.length - 1 };
+    }).reverse();
     
     return {
       leftPinnedColumns: leftWithPositions,
       centerColumns: center,
-      rightPinnedColumns: right,
+      rightPinnedColumns: rightWithPositions,
     };
   }, [visibleColumns, showRowNumbers, showCheckboxColumn]);
 
@@ -127,7 +135,7 @@ export function GridHeader<T>({
 
   const filterRowHeight = showFilterRow ? 36 : 0;
 
-  const renderColumnHeader = (column: ProcessedColumn<T> & { stickyLeft?: number }, isPinned: boolean) => {
+  const renderColumnHeader = (column: ProcessedColumn<T> & { stickyLeft?: number; stickyRight?: number; isLastPinned?: boolean; isFirstPinned?: boolean }, isPinned: boolean) => {
     const sortDirection = getSortDirection(column.field);
     const sortIndex = getSortIndex(column.field);
     const hasFilter = !!getActiveFilter(column.field);
@@ -142,13 +150,17 @@ export function GridHeader<T>({
           column.sortable !== false && 'cursor-pointer hover:bg-muted',
           isDragging && 'opacity-50',
           isDragOver && 'bg-primary/10',
-          isPinned && 'sticky z-[2] bg-muted/70'
+          isPinned && 'sticky z-[2] bg-muted/70',
+          // Add shadow to last left-pinned column
+          column.isLastPinned && column.pinned === 'left' && 'shadow-[2px_0_5px_-2px_rgba(0,0,0,0.15)]',
+          // Add shadow to first right-pinned column  
+          column.isFirstPinned && column.pinned === 'right' && 'shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.15)]'
         )}
         style={{ 
           width: column.computedWidth, 
           minWidth: column.minWidth || 50,
           left: column.stickyLeft !== undefined ? column.stickyLeft : undefined,
-          right: column.pinned === 'right' ? 0 : undefined,
+          right: column.stickyRight !== undefined ? column.stickyRight : undefined,
         }}
         onClick={() => column.sortable !== false && onSort(column.field)}
         draggable={column.draggable !== false && !isPinned}
@@ -218,7 +230,7 @@ export function GridHeader<T>({
     );
   };
 
-  const renderFilterCell = (column: ProcessedColumn<T> & { stickyLeft?: number }, isPinned: boolean) => {
+  const renderFilterCell = (column: ProcessedColumn<T> & { stickyLeft?: number; stickyRight?: number; isLastPinned?: boolean; isFirstPinned?: boolean }, isPinned: boolean) => {
     const activeFilter = getActiveFilter(column.field);
     const hasActiveFilter = !!activeFilter;
     
@@ -227,13 +239,17 @@ export function GridHeader<T>({
         key={`filter-${column.field}`}
         className={cn(
           'flex items-center border-r border-border px-1 flex-shrink-0',
-          isPinned && 'sticky z-[2] bg-background'
+          isPinned && 'sticky z-[2] bg-background',
+          // Add shadow to last left-pinned column
+          column.isLastPinned && column.pinned === 'left' && 'shadow-[2px_0_5px_-2px_rgba(0,0,0,0.15)]',
+          // Add shadow to first right-pinned column  
+          column.isFirstPinned && column.pinned === 'right' && 'shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.15)]'
         )}
         style={{ 
           width: column.computedWidth, 
           minWidth: column.minWidth || 50,
           left: column.stickyLeft !== undefined ? column.stickyLeft : undefined,
-          right: column.pinned === 'right' ? 0 : undefined,
+          right: column.stickyRight !== undefined ? column.stickyRight : undefined,
         }}
       >
         {column.filterable !== false ? (

@@ -211,7 +211,7 @@ export function useGridState<T>(props: DataGridProps<T>, containerWidth: number)
         } else {
           // Multiple selection
           if (shift && prev.anchorIndex !== null) {
-            // Range selection
+            // Range selection - add all rows in range
             const start = Math.min(prev.anchorIndex, rowIndex);
             const end = Math.max(prev.anchorIndex, rowIndex);
             for (let i = start; i <= end; i++) {
@@ -219,17 +219,11 @@ export function useGridState<T>(props: DataGridProps<T>, containerWidth: number)
                 newSelected.add(displayedRows[i].id);
               }
             }
-          } else if (ctrl) {
-            // Toggle single
+          } else {
+            // Toggle the clicked row (like checkboxes)
             if (newSelected.has(rowId)) {
               newSelected.delete(rowId);
             } else {
-              newSelected.add(rowId);
-            }
-          } else {
-            // Replace selection
-            newSelected.clear();
-            if (selected) {
               newSelected.add(rowId);
             }
           }
