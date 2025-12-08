@@ -290,24 +290,28 @@ export function GridHeader<T>({
         className="flex"
         style={{ height: headerHeight }}
       >
-        {/* Row Numbers Header - Sticky */}
+        {/* Row Numbers Header */}
         {showRowNumbers && (
           <div
-            className="flex items-center justify-center border-r border-border px-2 bg-muted/70 flex-shrink-0 sticky left-0 z-[3]"
-            style={{ width: 50, minWidth: 50 }}
+            className="flex items-center justify-center border-r border-border px-2 flex-shrink-0"
+            style={{ 
+              width: 50, 
+              minWidth: 50,
+              backgroundColor: 'hsl(var(--muted))',
+            }}
           >
             <span className="text-xs text-muted-foreground font-medium">#</span>
           </div>
         )}
         
-        {/* Checkbox Header - Sticky */}
+        {/* Checkbox Header */}
         {showCheckboxColumn && (
           <div
-            className="flex items-center justify-center border-r border-border px-2 bg-muted/70 flex-shrink-0 sticky z-[3]"
+            className="flex items-center justify-center border-r border-border px-2 flex-shrink-0"
             style={{ 
               width: 48, 
               minWidth: 48,
-              left: showRowNumbers ? 50 : 0,
+              backgroundColor: 'hsl(var(--muted))',
             }}
           >
             <input
@@ -338,22 +342,26 @@ export function GridHeader<T>({
           className="flex border-t border-border bg-background"
           style={{ height: filterRowHeight }}
         >
-          {/* Row Numbers placeholder - Sticky */}
+          {/* Row Numbers placeholder */}
           {showRowNumbers && (
             <div
-              className="border-r border-border flex-shrink-0 sticky left-0 z-[3] bg-background"
-              style={{ width: 50, minWidth: 50 }}
+              className="border-r border-border flex-shrink-0"
+              style={{ 
+                width: 50, 
+                minWidth: 50,
+                backgroundColor: 'hsl(var(--background))',
+              }}
             />
           )}
           
-          {/* Checkbox placeholder - Sticky */}
+          {/* Checkbox placeholder */}
           {showCheckboxColumn && (
             <div
-              className="border-r border-border flex-shrink-0 sticky z-[3] bg-background"
+              className="border-r border-border flex-shrink-0"
               style={{ 
                 width: 48, 
                 minWidth: 48,
-                left: showRowNumbers ? 50 : 0,
+                backgroundColor: 'hsl(var(--background))',
               }}
             />
           )}
