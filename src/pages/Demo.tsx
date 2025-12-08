@@ -24,11 +24,7 @@ import {
   Split,
   ChevronRight,
   ChevronDown,
-  Building2,
-  Calendar,
-  Users,
-  Globe,
-  User
+  Users
 } from 'lucide-react';
 
 import { toast } from '@/hooks/use-toast';
@@ -156,21 +152,6 @@ export default function Demo() {
     });
   }, []);
 
-  // State for detail row expansion (separate from child rows)
-  const [detailExpandedRows, setDetailExpandedRows] = useState<Set<string>>(new Set());
-
-  const toggleDetailExpand = useCallback((rowId: string) => {
-    setDetailExpandedRows(prev => {
-      const next = new Set(prev);
-      if (next.has(rowId)) {
-        next.delete(rowId);
-      } else {
-        next.add(rowId);
-      }
-      return next;
-    });
-  }, []);
-
   // Get visible rows (respecting expand/collapse state)
   const visibleRowData = useMemo(() => {
     const result: StockRow[] = [];
@@ -178,7 +159,7 @@ export default function Demo() {
     
     // Group children by parent
     rowData.forEach(row => {
-      if (row.parentId) {
+      if (row.parentId && row.isChild) {
         const children = childrenByParent.get(row.parentId) || [];
         children.push(row);
         childrenByParent.set(row.parentId, children);
@@ -190,26 +171,27 @@ export default function Demo() {
       if (!row.parentId && !row.isDetailRow) {
         result.push(row);
         
-        // Add detail row if expanded
-        if (detailExpandedRows.has(row.id)) {
+        // Add detail header + child rows if expanded
+        if (expandedRows.has(row.id)) {
+          // First add detail header row
           result.push({
             ...row,
             id: `${row.id}-detail`,
             isDetailRow: true,
             parentId: row.id,
           });
-        }
-        
-        // Add child rows if expanded
-        const children = childrenByParent.get(row.id);
-        if (children && expandedRows.has(row.id)) {
-          children.forEach(child => result.push(child));
+          
+          // Then add any child rows (splits)
+          const children = childrenByParent.get(row.id);
+          if (children) {
+            children.forEach(child => result.push(child));
+          }
         }
       }
     });
     
     return result;
-  }, [rowData, expandedRows, detailExpandedRows]);
+  }, [rowData, expandedRows]);
 
   // Check if row has children
   const hasChildren = useCallback((rowId: string) => {
@@ -231,53 +213,44 @@ export default function Demo() {
       cellRenderer: (params) => {
         const row = params.data as StockRow;
         
-        // Detail row - render full company info
+        // Detail row - render the master-detail header
         if (row.isDetailRow) {
-          return null; // Will be handled by a special full-width renderer
+          return (
+            <div className="flex items-center gap-3 pl-6">
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground font-bold text-sm">
+                {row.ticker?.slice(0, 2) || '??'}
+              </div>
+              <div>
+                <div className="font-semibold">{row.name}</div>
+                <Badge variant="secondary" className="text-xs">{row.sector}</Badge>
+              </div>
+            </div>
+          );
         }
         
-        const isParent = hasChildren(row.id);
-        const isChildExpanded = expandedRows.has(row.id);
-        const isDetailExpanded = detailExpandedRows.has(row.id);
+        const isExpanded = expandedRows.has(row.id);
         const isChild = row.isChild;
         
         return (
           <div className="flex items-center gap-1">
-            {/* Detail expand button (info) */}
+            {/* Expand button */}
             {!isChild && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleDetailExpand(row.id);
-                }}
-                className={`p-0.5 hover:bg-accent rounded transition-colors ${isDetailExpanded ? 'bg-primary/20' : ''}`}
-                title="Show company details"
-              >
-                {isDetailExpanded ? (
-                  <ChevronDown className="h-3 w-3 text-primary" />
-                ) : (
-                  <ChevronRight className="h-3 w-3 text-muted-foreground" />
-                )}
-              </button>
-            )}
-            {/* Child rows expand button */}
-            {isParent && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   toggleRowExpand(row.id);
                 }}
-                className="p-0.5 hover:bg-accent rounded"
-                title="Show child rows"
+                className={`p-0.5 hover:bg-accent rounded transition-colors ${isExpanded ? 'bg-primary/20' : ''}`}
+                title="Show details"
               >
-                {isChildExpanded ? (
-                  <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                {isExpanded ? (
+                  <ChevronDown className="h-4 w-4 text-primary" />
                 ) : (
-                  <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
                 )}
               </button>
             )}
-            {isChild && <span className="w-4 ml-4" />}
+            {isChild && <span className="w-5 ml-5" />}
             <span className={`font-bold ${isChild ? 'text-muted-foreground' : 'text-primary'}`}>
               {params.value || (isChild ? '—' : '')}
             </span>
@@ -288,80 +261,28 @@ export default function Demo() {
     {
       field: 'name',
       headerName: 'Company',
-      width: 220,
+      width: 200,
       sortable: true,
       filterable: true,
       editable: true,
       cellRenderer: (params) => {
         const row = params.data as StockRow;
         
-        // Detail row - show indicator
+        // Detail row - year info
         if (row.isDetailRow) {
           return (
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <div className="flex items-center gap-1">
-                <Calendar className="h-3 w-3" />
-                <span>{row.founded}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Users className="h-3 w-3" />
-                <span>{row.employees?.toLocaleString()}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Building2 className="h-3 w-3" />
-                <span>{row.headquarters}</span>
-              </div>
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-muted-foreground">Founded</span>
+              <span className="font-medium">{row.founded}</span>
             </div>
           );
         }
         
         return (
-          <span className={row.isChild ? 'text-muted-foreground italic' : ''}>
+          <span className={row.isChild ? 'text-muted-foreground italic pl-4' : ''}>
             {params.value || (row.isChild ? '—' : '')}
           </span>
         );
-      },
-    },
-    {
-      field: 'ceo',
-      headerName: 'CEO',
-      width: 140,
-      sortable: true,
-      cellRenderer: (params) => {
-        const row = params.data as StockRow;
-        if (row.isDetailRow) {
-          return (
-            <div className="flex items-center gap-1 text-sm text-muted-foreground">
-              <User className="h-3 w-3" />
-              <span>{row.ceo}</span>
-            </div>
-          );
-        }
-        return <span className="text-muted-foreground">{params.value}</span>;
-      },
-    },
-    {
-      field: 'website',
-      headerName: 'Website',
-      width: 180,
-      sortable: false,
-      cellRenderer: (params) => {
-        const row = params.data as StockRow;
-        if (row.isDetailRow || params.value) {
-          return (
-            <a 
-              href={row.website} 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="flex items-center gap-1 text-sm text-primary hover:underline"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <Globe className="h-3 w-3" />
-              <span className="truncate">{row.website?.replace('https://', '')}</span>
-            </a>
-          );
-        }
-        return null;
       },
     },
     {
@@ -371,9 +292,60 @@ export default function Demo() {
       sortable: true,
       filterable: true,
       filterType: 'number',
-      cellRenderer: (params) => (
-        <span className="font-mono font-semibold">${(params.value as number).toFixed(2)}</span>
-      ),
+      cellRenderer: (params) => {
+        const row = params.data as StockRow;
+        if (row.isDetailRow) {
+          return (
+            <Badge variant="outline" className="text-green-500 border-green-500/30">
+              Active
+            </Badge>
+          );
+        }
+        return <span className="font-mono font-semibold">${(params.value as number).toFixed(2)}</span>;
+      },
+    },
+    {
+      field: 'volume',
+      headerName: 'Volume',
+      width: 130,
+      sortable: true,
+      filterType: 'number',
+      aggFunc: 'sum',
+      cellRenderer: (params) => {
+        const row = params.data as StockRow;
+        if (row.isDetailRow) {
+          return (
+            <div className="flex items-center gap-1 text-sm">
+              <Users className="h-3 w-3 text-muted-foreground" />
+              <span>{row.employees?.toLocaleString()}</span>
+            </div>
+          );
+        }
+        const num = params.value as number;
+        if (num >= 1000000) return <span>{(num / 1000000).toFixed(1)}M</span>;
+        if (num >= 1000) return <span>{(num / 1000).toFixed(1)}K</span>;
+        return <span>{num}</span>;
+      },
+    },
+    {
+      field: 'marketCap',
+      headerName: 'Market Cap',
+      width: 120,
+      sortable: true,
+      filterType: 'number',
+      aggFunc: 'sum',
+      cellRenderer: (params) => {
+        const row = params.data as StockRow;
+        if (row.isDetailRow) {
+          return (
+            <div className="flex flex-col text-xs">
+              <span className="font-semibold">${row.marketCap}B</span>
+              <span className="text-green-500">5% increase</span>
+            </div>
+          );
+        }
+        return <span>${params.value}B</span>;
+      },
     },
     {
       field: 'change',
@@ -382,6 +354,12 @@ export default function Demo() {
       sortable: true,
       filterType: 'number',
       cellRenderer: (params) => {
+        const row = params.data as StockRow;
+        if (row.isDetailRow) {
+          return (
+            <span className="font-mono font-semibold">${row.price.toFixed(2)}</span>
+          );
+        }
         const value = params.value as number;
         const isPositive = value >= 0;
         return (
@@ -398,6 +376,8 @@ export default function Demo() {
       width: 80,
       sortable: true,
       cellRenderer: (params) => {
+        const row = params.data as StockRow;
+        if (row.isDetailRow) return null;
         const value = params.value as number;
         const isPositive = value >= 0;
         return (
@@ -406,29 +386,6 @@ export default function Demo() {
           </span>
         );
       },
-    },
-    {
-      field: 'volume',
-      headerName: 'Volume',
-      width: 120,
-      sortable: true,
-      filterType: 'number',
-      aggFunc: 'sum',
-      valueFormatter: (value) => {
-        const num = value as number;
-        if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
-        if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
-        return num.toString();
-      },
-    },
-    {
-      field: 'marketCap',
-      headerName: 'Market Cap',
-      width: 120,
-      sortable: true,
-      filterType: 'number',
-      aggFunc: 'sum',
-      valueFormatter: (value) => `$${value}B`,
     },
     {
       field: 'sector',
@@ -441,6 +398,17 @@ export default function Demo() {
       cellEditorParams: {
         values: ['Technology', 'Healthcare', 'Financial', 'Consumer', 'Industrial', 'Energy'],
       },
+      cellRenderer: (params) => {
+        const row = params.data as StockRow;
+        if (row.isDetailRow) {
+          return (
+            <Button variant="outline" size="sm" className="h-7 text-xs">
+              Hold Trading
+            </Button>
+          );
+        }
+        return <span>{params.value}</span>;
+      },
     },
     {
       field: 'pe',
@@ -449,7 +417,17 @@ export default function Demo() {
       sortable: true,
       filterType: 'number',
       aggFunc: 'avg',
-      valueFormatter: (value) => (value as number).toFixed(2),
+      cellRenderer: (params) => {
+        const row = params.data as StockRow;
+        if (row.isDetailRow) {
+          return (
+            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive hover:text-destructive">
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          );
+        }
+        return <span>{(params.value as number).toFixed(2)}</span>;
+      },
     },
     {
       field: 'actions',
@@ -460,7 +438,7 @@ export default function Demo() {
       pinned: 'right',
       cellRenderer: (params) => {
         const row = params.data as StockRow;
-        if (row.isChild) return null;
+        if (row.isChild || row.isDetailRow) return null;
         
         return (
           <Button
@@ -478,7 +456,7 @@ export default function Demo() {
         );
       },
     },
-  ], [hasChildren, expandedRows, detailExpandedRows, toggleRowExpand, toggleDetailExpand, handleSplitRow]);
+  ], [hasChildren, expandedRows, toggleRowExpand, handleSplitRow]);
 
   // Ultra-optimized real-time updates - target <16ms for 60fps
   useEffect(() => {
