@@ -96,9 +96,22 @@ export function useGridState<T>(props: DataGridProps<T>, containerWidth: number)
     return [...leftPinned, ...center, ...rightPinned];
   }, [columnDefs, columnOrder, columnWidths, hiddenColumns, pinnedColumns, containerWidth, defaultColDef]);
 
-  // Create row nodes - optimized with stable IDs
+  // Create row nodes - ultra-optimized with pre-allocation
   const rows = useMemo(() => {
-    return rowData.map((data, index) => createRowNode(data, index, getRowId));
+    const len = rowData.length;
+    const result: RowNode<T>[] = new Array(len);
+    for (let i = 0; i < len; i++) {
+      const data = rowData[i];
+      result[i] = {
+        id: getRowId ? getRowId(data) : `row-${i}`,
+        data,
+        rowIndex: i,
+        selected: false,
+        expanded: false,
+        level: 0,
+      };
+    }
+    return result;
   }, [rowData, getRowId]);
 
   // Update refs synchronously
@@ -127,19 +140,16 @@ export function useGridState<T>(props: DataGridProps<T>, containerWidth: number)
     return result;
   }, [rows, filterModel, columns, quickFilterText, internalQuickFilter]);
 
-  // Sort rows and update rowIndex
+  // Sort rows and update rowIndex - optimized
   const sortedRows = useMemo(() => {
-    if (sortModel.length === 0) {
-      return filteredRows.map((row, index) => ({
-        ...row,
-        rowIndex: index,
-      }));
+    const source = sortModel.length === 0 ? filteredRows : sortRows(filteredRows, sortModel, columns);
+    const len = source.length;
+    const result: RowNode<T>[] = new Array(len);
+    for (let i = 0; i < len; i++) {
+      const row = source[i];
+      result[i] = row.rowIndex === i ? row : { ...row, rowIndex: i };
     }
-    const sorted = sortRows(filteredRows, sortModel, columns);
-    return sorted.map((row, index) => ({
-      ...row,
-      rowIndex: index,
-    }));
+    return result;
   }, [filteredRows, sortModel, columns]);
 
   // Paginate rows - optimized

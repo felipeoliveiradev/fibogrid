@@ -196,53 +196,52 @@ export default function Demo() {
     },
   ], []);
 
-  // Optimized real-time updates - updates ALL rows efficiently for 100k
+  // Ultra-optimized real-time updates - target <16ms for 60fps
   useEffect(() => {
     if (isRealTimeEnabled) {
       intervalRef.current = setInterval(() => {
         const start = performance.now();
         
         setRowData(prev => {
-          // Pre-allocate array for maximum performance
           const len = prev.length;
           const updated: StockRow[] = new Array(len);
           
-          // Update all rows with optimized loop
+          // Batch random generation for better performance
           for (let i = 0; i < len; i++) {
             const stock = prev[i];
-            const priceChange = (Math.random() - 0.5) * 2;
-            const newPrice = Math.max(1, stock.price + priceChange);
+            const rand = Math.random();
+            const priceChange = (rand - 0.5) * 2;
+            const newPrice = stock.price + priceChange;
             const newChange = stock.change + priceChange;
             
+            // Direct property assignment - faster than spread
             updated[i] = {
               id: stock.id,
               ticker: stock.ticker,
               name: stock.name,
-              price: Math.round(newPrice * 100) / 100,
-              change: Math.round(newChange * 100) / 100,
-              changePercent: Math.round((newChange / (newPrice - newChange)) * 10000) / 100,
-              volume: stock.volume + Math.floor(Math.random() * 10000),
+              price: (newPrice * 100 + 0.5) | 0 / 100, // Faster rounding
+              change: (newChange * 100 + 0.5) | 0 / 100,
+              changePercent: ((newChange / newPrice) * 10000 + 0.5) | 0 / 100,
+              volume: stock.volume + ((rand * 10000) | 0),
               marketCap: stock.marketCap,
               sector: stock.sector,
               pe: stock.pe,
             };
           }
           
-          setRenderTime(Math.round(performance.now() - start));
+          setRenderTime(performance.now() - start | 0);
           return updated;
         });
       }, updateInterval);
-    } else {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
+    } else if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
     }
 
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [isRealTimeEnabled, updateInterval, rowCount]);
+  }, [isRealTimeEnabled, updateInterval]);
 
   const handleRowCountChange = useCallback((count: number) => {
     setRowCount(count);
