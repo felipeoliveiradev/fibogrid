@@ -278,10 +278,10 @@ export const GridRow = memo(GridRowInner, (prevProps, nextProps) => {
   if (prevProps.isDropTarget !== nextProps.isDropTarget) return false;
   if (prevProps.isExpanded !== nextProps.isExpanded) return false;
   
-  // Check editing state
+  // Check editing state - include value for input updates
   const prevEdit = prevProps.editingCell;
   const nextEdit = nextProps.editingCell;
-  if (prevEdit?.rowId !== nextEdit?.rowId || prevEdit?.field !== nextEdit?.field) return false;
+  if (prevEdit?.rowId !== nextEdit?.rowId || prevEdit?.field !== nextEdit?.field || prevEdit?.value !== nextEdit?.value) return false;
   
   // Check row data reference - if same reference, skip field comparison
   if (prevProps.row.data === nextProps.row.data) return true;
