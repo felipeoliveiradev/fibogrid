@@ -75,11 +75,20 @@ export function useColumnResize(
   const handleResizeDoubleClick = useCallback(
     (column: ProcessedColumn, measureContent: () => number) => {
       const contentWidth = measureContent();
-      const headerWidth = column.headerName.length * 10 + 60; // Approximate header width
+      // Add padding for header text + sort icon + menu button
+      const headerText = column.headerName || '';
+      const charWidth = 8; // approximate width per character
+      const headerPadding = 80; // space for icons and padding
+      const headerWidth = headerText.length * charWidth + headerPadding;
+      
+      // Use the larger of content width or header width
+      const targetWidth = Math.max(contentWidth + 40, headerWidth);
+      
       const newWidth = Math.max(
         column.minWidth || 50,
-        Math.min(column.maxWidth || Infinity, Math.max(contentWidth, headerWidth))
+        Math.min(column.maxWidth || 800, targetWidth)
       );
+      
       onResizeRef.current(column.field, newWidth);
     },
     []
