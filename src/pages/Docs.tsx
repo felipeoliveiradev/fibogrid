@@ -3,8 +3,8 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { ArrowLeft, Copy, Check, BookOpen, Code, Zap, Settings, Layers, Filter, ArrowUpDown, Pin, Edit3, Download, Move, Hexagon } from 'lucide-react';
 
 // FiboGrid Logo Component
@@ -95,13 +95,14 @@ export default function Docs() {
               Documentation
             </Badge>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <Button variant="ghost" size="sm" className="font-body hover:bg-primary/5" asChild>
               <Link to="/">
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Home
+                Home
               </Link>
             </Button>
+            <ThemeToggle />
             <Button size="sm" className="bg-gradient-gold text-primary-foreground shadow-gold font-body" asChild>
               <Link to="/demo">Live Demo</Link>
             </Button>

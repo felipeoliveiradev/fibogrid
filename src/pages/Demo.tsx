@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { 
   Plus, 
   Trash2, 
@@ -15,7 +15,6 @@ import {
   FileSpreadsheet, 
   Play, 
   Pause,
-  Table2,
   ArrowLeft,
   TrendingUp,
   TrendingDown,
@@ -629,6 +628,7 @@ export default function Demo() {
                 </Badge>
               )}
               
+              <ThemeToggle />
               <div className="flex items-center gap-2">
                 <Button variant="outline" size="sm" className="border-primary/30 hover:border-primary hover:bg-primary/5 font-body" onClick={handleAddRow}>
                   <Plus className="h-4 w-4 mr-1" />
