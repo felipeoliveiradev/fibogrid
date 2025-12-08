@@ -150,17 +150,18 @@ export function GridHeader<T>({
           column.sortable !== false && 'cursor-pointer hover:bg-muted',
           isDragging && 'opacity-50',
           isDragOver && 'bg-primary/10',
-          isPinned && 'sticky z-[2] bg-muted/70',
+          isPinned && 'sticky z-[2]',
           // Add shadow to last left-pinned column
-          column.isLastPinned && column.pinned === 'left' && 'shadow-[2px_0_5px_-2px_rgba(0,0,0,0.15)]',
+          column.isLastPinned && column.pinned === 'left' && 'shadow-[2px_0_5px_-2px_rgba(0,0,0,0.3)]',
           // Add shadow to first right-pinned column  
-          column.isFirstPinned && column.pinned === 'right' && 'shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.15)]'
+          column.isFirstPinned && column.pinned === 'right' && 'shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.3)]'
         )}
         style={{ 
           width: column.computedWidth, 
           minWidth: column.minWidth || 50,
           left: column.stickyLeft !== undefined ? column.stickyLeft : undefined,
           right: column.stickyRight !== undefined ? column.stickyRight : undefined,
+          backgroundColor: isPinned ? 'hsl(var(--muted))' : undefined,
         }}
         onClick={() => column.sortable !== false && onSort(column.field)}
         draggable={column.draggable !== false && !isPinned}
@@ -239,17 +240,18 @@ export function GridHeader<T>({
         key={`filter-${column.field}`}
         className={cn(
           'flex items-center border-r border-border px-1 flex-shrink-0',
-          isPinned && 'sticky z-[2] bg-background',
+          isPinned && 'sticky z-[2]',
           // Add shadow to last left-pinned column
-          column.isLastPinned && column.pinned === 'left' && 'shadow-[2px_0_5px_-2px_rgba(0,0,0,0.15)]',
+          column.isLastPinned && column.pinned === 'left' && 'shadow-[2px_0_5px_-2px_rgba(0,0,0,0.3)]',
           // Add shadow to first right-pinned column  
-          column.isFirstPinned && column.pinned === 'right' && 'shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.15)]'
+          column.isFirstPinned && column.pinned === 'right' && 'shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.3)]'
         )}
         style={{ 
           width: column.computedWidth, 
           minWidth: column.minWidth || 50,
           left: column.stickyLeft !== undefined ? column.stickyLeft : undefined,
           right: column.stickyRight !== undefined ? column.stickyRight : undefined,
+          backgroundColor: isPinned ? 'hsl(var(--background))' : undefined,
         }}
       >
         {column.filterable !== false ? (

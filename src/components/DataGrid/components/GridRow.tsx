@@ -140,11 +140,11 @@ function GridRowInner<T>({
     const colIndex = visibleColumns.findIndex(c => c.field === column.field);
     const isFirstColumn = colIndex === 0;
     
-    // Determine the background class for pinned columns based on row state
-    const getPinnedBgClass = () => {
-      if (isSelected) return 'bg-primary/10';
-      if (isEven) return 'bg-muted/30';
-      return 'bg-background';
+    // Determine the background style for pinned columns - must be SOLID colors, not transparent
+    const getPinnedBgStyle = (): React.CSSProperties => {
+      if (isSelected) return { backgroundColor: 'hsl(var(--primary) / 0.15)' };
+      if (isEven) return { backgroundColor: 'hsl(var(--muted))' };
+      return { backgroundColor: 'hsl(var(--background))' };
     };
 
     return (
@@ -152,16 +152,16 @@ function GridRowInner<T>({
         key={column.field}
         className={cn(
           'h-full',
-          isPinned && 'sticky z-[1]',
-          isPinned && getPinnedBgClass(),
+          isPinned && 'sticky z-[2]',
           // Add shadow to last left-pinned column
-          column.isLastPinned && column.pinned === 'left' && 'shadow-[2px_0_5px_-2px_rgba(0,0,0,0.2)]',
+          column.isLastPinned && column.pinned === 'left' && 'shadow-[2px_0_5px_-2px_rgba(0,0,0,0.3)]',
           // Add shadow to first right-pinned column  
-          column.isFirstPinned && column.pinned === 'right' && 'shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.2)]'
+          column.isFirstPinned && column.pinned === 'right' && 'shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.3)]'
         )}
         style={{
           left: stickyLeft !== undefined ? stickyLeft : undefined,
           right: stickyRight !== undefined ? stickyRight : undefined,
+          ...(isPinned ? getPinnedBgStyle() : {}),
         }}
       >
         <GridCell
