@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback, useRef, useEffect, startTransition } from 'react';
 import { Link } from 'react-router-dom';
 import { DataGrid } from '@/components/DataGrid';
-import { ColumnDef, GridApi, RowNode } from '@/components/DataGrid/types';
+import { ColumnDef, GridApi, RowNode, ServerSideDataSource, ServerSideDataSourceRequest, ServerSideDataSourceResponse } from '@/components/DataGrid/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -108,6 +108,8 @@ export default function Demo() {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const [renderTime, setRenderTime] = useState(0);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const [useServerSide, setUseServerSide] = useState(false);
+  const [isLoadingServer, setIsLoadingServer] = useState(false);
 
   // Split row handler - clones row as child with empty ticker/name
   const handleSplitRow = useCallback((rowId: string) => {
@@ -196,6 +198,31 @@ export default function Demo() {
   const hasChildren = useCallback((rowId: string) => {
     return rowData.some(r => r.parentId === rowId);
   }, [rowData]);
+
+  // Server-side data source (mock implementation)
+  const serverSideDataSource: ServerSideDataSource<StockRow> = useMemo(() => ({
+    async getRows(request: ServerSideDataSourceRequest): Promise<ServerSideDataSourceResponse<StockRow>> {
+      setIsLoadingServer(true);
+      
+      // Simula delay de rede
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Simula backend retornando dados paginados baseado no rowCount
+      const allData = generateStockData(rowCount); // Backend usa rowCount configurado
+      const startIndex = request.page * request.pageSize;
+      const endIndex = startIndex + request.pageSize;
+      const pageData = allData.slice(startIndex, endIndex);
+      
+      setIsLoadingServer(false);
+      
+      return {
+        data: pageData,
+        totalRows: allData.length,
+        page: request.page,
+        pageSize: request.pageSize,
+      };
+    },
+  }), [rowCount]);
 
   // Stable getRowId
   const getRowId = useCallback((row: StockRow) => row.id, []);
@@ -669,7 +696,7 @@ export default function Demo() {
                 {/* Row Count */}
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm font-body">
-                    <span>Row Count</span>
+                    <span>Row Count {useServerSide && <span className="text-xs text-muted-foreground">(Server)</span>}</span>
                     <Badge variant="outline" className="border-primary/30 font-mono">{rowCount.toLocaleString()}</Badge>
                   </div>
                   <div className="flex gap-2 flex-wrap">
@@ -732,6 +759,12 @@ export default function Demo() {
                   <span className="text-sm font-body">Row Numbers</span>
                   <Switch checked={showRowNumbers} onCheckedChange={setShowRowNumbers} />
                 </div>
+
+                {/* Server-side Pagination */}
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-body">Server-side Pagination</span>
+                  <Switch checked={useServerSide} onCheckedChange={setUseServerSide} />
+                </div>
               </CardContent>
             </Card>
 
@@ -765,8 +798,17 @@ export default function Demo() {
 
           {/* Data Grid */}
           <Card className="overflow-hidden border-primary/20 shadow-parchment glow-gold">
+            {useServerSide && (
+              <div className="bg-muted/30 border-b border-primary/10 px-4 py-2">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground font-body">
+                  <Badge variant="outline" className="border-primary/30">Server-side Mode</Badge>
+                  <span>Dados vêm do backend com paginação assíncrona</span>
+                  {isLoadingServer && <span className="text-primary">Loading...</span>}
+                </div>
+              </div>
+            )}
             <DataGrid
-              rowData={visibleRowData}
+              rowData={useServerSide ? [] : visibleRowData}
               columnDefs={columns}
               getRowId={getRowId}
               rowSelection="multiple"
@@ -775,8 +817,12 @@ export default function Demo() {
               showStatusBar={true}
               showRowNumbers={showRowNumbers}
               pagination={true}
-              paginationPageSize={1000}
+              paginationMode={useServerSide ? 'server' : 'client'}
+              serverSideDataSource={useServerSide ? serverSideDataSource : undefined}
+              paginationPageSize={25}
+              paginationPageSizeOptions={[25, 50, 100, 250, 500]}
               groupByFields={groupByField ? [groupByField] : undefined}
+              loading={isLoadingServer}
               onGridReady={(e) => setGridApi(e.api)}
               onCellValueChanged={(e) => {
                 console.log('[Demo] onCellValueChanged received:', e.newValue, 'for field:', e.column.field);
@@ -793,8 +839,29 @@ export default function Demo() {
                   row.id === targetId ? { ...row, [field]: newValue } : row
                 ));
               }}
-              rangeCellSelection={false}
+              rangeCellSelection={true}
               rowDragEnabled={false}
+              onRowClickFallback={(event) => {
+                console.log('[Demo] Row Click Fallback:', {
+                  clickType: event.clickType,
+                  rowData: event.rowData,
+                  totalRows: event.allRowsData.length,
+                  cell: event.cell,
+                });
+                
+                // Se clicou em uma célula editável, mostre no console
+                if (event.cell?.isEditable) {
+                  console.log('[Demo] Clicked on editable cell:', event.cell.column.field, 'value:', event.cell.value);
+                }
+                
+                // Exemplo: triple click para fazer algo especial
+                if (event.clickType === 'triple') {
+                  toast({ 
+                    title: 'Triple Click!', 
+                    description: `You triple-clicked on ${event.rowData.ticker}` 
+                  });
+                }
+              }}
             />
           </Card>
         </div>
