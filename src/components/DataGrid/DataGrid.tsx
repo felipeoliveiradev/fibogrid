@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
-import { DataGridProps, ProcessedColumn, SortModel, FilterModel, ContextMenuItem, RowNode } from './types';
+import { DataGridProps, ProcessedColumn, SortModel, FilterModel, ContextMenuItem, RowNode, EditingCell } from './types';
 import { useGridState } from './hooks/useGridState';
 import { useVirtualization } from './hooks/useVirtualization';
 import { useColumnResize } from './hooks/useColumnResize';
@@ -126,8 +126,12 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
     setColumnPinned,
   } = useGridState({ ...props, quickFilterText: quickFilterValue }, containerWidth);
 
-  // Keep ref in sync with editingCell state
-  editingCellRef.current = editingCell;
+  // keep latest editing cell in a ref to avoid stale closures when committing
+  useEffect(() => {
+    editingCellRef.current = editingCell;
+  }, [editingCell]);
+
+  // Grouping
   const {
     displayRows: groupedDisplayRows,
     groupedRows,
@@ -367,7 +371,6 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
   // Filter handler
   const handleFilterChange = useCallback(
     (filter: FilterModel | null) => {
-      console.log('handleFilterChange called with:', filter);
       setFilterModel((prev) => {
         let newModel: FilterModel[];
         if (filter === null) {
@@ -381,7 +384,6 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
             newModel = [...prev, filter];
           }
         }
-        console.log('New filter model:', newModel);
         onFilterChanged?.({ filterModel: newModel });
         return newModel;
       });
@@ -456,10 +458,10 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
   // Selection handlers
   const handleRowClick = useCallback(
     (rowId: string, e: React.MouseEvent) => {
-      if (!rowSelection) return;
+      if (!rowSelection || isRowDragging) return;
       selectRow(rowId, true, e.shiftKey, e.ctrlKey || e.metaKey);
     },
-    [rowSelection, selectRow]
+    [rowSelection, selectRow, isRowDragging]
   );
 
   // Fire selection changed event
@@ -640,6 +642,7 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
                           onRowSelected?.({ rowNode: row, selected: checked, api });
                         }}
                         editingCell={editingCell}
+<<<<<<< HEAD
                         onStartEdit={(field) => api.startEditingCell(row.id, field)}
                         onEditChange={(value) => setEditingCell((prev) => (prev ? { ...prev, value } : null))}
                         onStopEdit={(cancel, currentValue) => {
@@ -654,9 +657,38 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
                               column: columns.find((c) => c.field === currentEditingCell.field)!,
                               oldValue: currentEditingCell.originalValue,
                               newValue,
+=======
+                        onStartEdit={(field) => {
+                          const value = (row.data as any)[field];
+                          const edit: EditingCell = {
+                            rowId: row.id,
+                            field,
+                            value,
+                            originalValue: value,
+                          };
+                          editingCellRef.current = edit;
+                          api.startEditingCell(row.id, field);
+                        }}
+                        onEditChange={(value) => {
+                          setEditingCell((prev) => {
+                            const next = prev ? { ...prev, value } : null;
+                            editingCellRef.current = next;
+                            return next;
+                          });
+                        }}
+                        onStopEdit={(cancel) => {
+                          const currentEditing = editingCellRef.current;
+                          if (currentEditing && !cancel) {
+                            onCellValueChanged?.({
+                              rowNode: { ...row, data: { ...row.data, [currentEditing.field]: currentEditing.value } },
+                              column: columns.find((c) => c.field === currentEditing.field)!,
+                              oldValue: currentEditing.originalValue,
+                              newValue: currentEditing.value,
+>>>>>>> 41914fb (♻️ refactor: optimize DataGrid component state management)
                               api,
                             });
                           }
+                          editingCellRef.current = null;
                           api.stopEditing(cancel);
                         }}
                         rowDragEnabled={rowDragEnabled}

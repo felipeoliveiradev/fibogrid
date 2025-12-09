@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useRef } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import {
   RowNode,
   ColumnDef,
@@ -49,6 +49,7 @@ export function useGridState<T>(props: DataGridProps<T>, containerWidth: number)
     totalPages: 0,
   });
   const [editingCell, setEditingCell] = useState<EditingCell | null>(null);
+  const [overrides, setOverrides] = useState<Record<string, Record<string, any>>>({});
   const [columnOrder, setColumnOrder] = useState<string[]>(() =>
     columnDefs.map((c) => c.field)
   );
@@ -96,14 +97,21 @@ export function useGridState<T>(props: DataGridProps<T>, containerWidth: number)
     return [...leftPinned, ...center, ...rightPinned];
   }, [columnDefs, columnOrder, columnWidths, hiddenColumns, pinnedColumns, containerWidth, defaultColDef]);
 
-  // Create row nodes - ultra-optimized with pre-allocation
+  // Reset overrides when external data changes (by reference)
+  useEffect(() => {
+    setOverrides({});
+  }, [rowData]);
+
+  // Create row nodes - ultra-optimized with pre-allocation and local overrides
   const rows = useMemo(() => {
     const len = rowData.length;
     const result: RowNode<T>[] = new Array(len);
     for (let i = 0; i < len; i++) {
-      const data = rowData[i];
+      const raw = rowData[i];
+      const rowId = getRowId ? getRowId(raw) : `row-${i}`;
+      const data = overrides[rowId] ? ({ ...raw, ...overrides[rowId] } as T) : raw;
       result[i] = {
-        id: getRowId ? getRowId(data) : `row-${i}`,
+        id: rowId,
         data,
         rowIndex: i,
         selected: false,
@@ -112,7 +120,7 @@ export function useGridState<T>(props: DataGridProps<T>, containerWidth: number)
       };
     }
     return result;
-  }, [rowData, getRowId]);
+  }, [rowData, getRowId, overrides]);
 
   // Update refs synchronously
   rowsRef.current = rows;
@@ -346,7 +354,16 @@ export function useGridState<T>(props: DataGridProps<T>, containerWidth: number)
       }
     },
     stopEditing: (cancel = false) => {
-      setEditingCell(null);
+      setEditingCell((current) => {
+        if (!cancel && current) {
+          setOverrides((prev) => {
+            const next = { ...prev };
+            next[current.rowId] = { ...(next[current.rowId] || {}), [current.field]: current.value };
+            return next;
+          });
+        }
+        return null;
+      });
     },
 
     ensureRowVisible: () => {},
