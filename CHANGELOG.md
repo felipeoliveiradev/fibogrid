@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.6] - 2025-12-10
+
+### Added
+- **Favicon Support** - Added favicon support with both SVG and ICO formats for better branding
+- **Beta Badge** - Added Beta badge next to FiboGrid name in all page headers for brand consistency
+- **Column Layout Properties** - Added `isFirstPinnedRight` and `isLastCenterBeforeRight` properties to GridCell for improved layout handling
+
+### Changed
+- **Column Widths** - Adjusted column widths in Home component for better alignment and full-width utilization
+- **Grid Layout** - Enhanced GridHeader and GridRow to utilize new properties for better visual consistency in column rendering
+
+### Fixed
+- **Pinned Column Borders** - Fixed left border visibility on right-pinned columns
+- **Border Duplication** - Removed duplicate border between last center column and first right-pinned column for cleaner visual separation
+
 ## [1.0.5] - 2025-12-09
 
 ### Fixed
