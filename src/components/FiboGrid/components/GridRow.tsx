@@ -112,9 +112,15 @@ function GridRowInner<T>({
       return { ...col, stickyRight: pos, isFirstPinned: idx === right.length - 1 };
     }).reverse();
     
+    // Mark last center column if there are right pinned columns
+    const centerWithFlags = center.map((col, idx) => ({
+      ...col,
+      isLastCenterBeforeRight: right.length > 0 && idx === center.length - 1
+    }));
+    
     return {
       leftPinnedColumns: leftWithPositions,
-      centerColumns: center,
+      centerColumns: centerWithFlags,
       rightPinnedColumns: rightWithPositions,
     };
   }, [visibleColumns]);
@@ -126,7 +132,7 @@ function GridRowInner<T>({
   }, [isSelected, isEven]);
 
   const renderCell = (
-    column: ProcessedColumn<T> & { stickyLeft?: number; stickyRight?: number; isLastPinned?: boolean; isFirstPinned?: boolean }, 
+    column: ProcessedColumn<T> & { stickyLeft?: number; stickyRight?: number; isLastPinned?: boolean; isFirstPinned?: boolean; isLastCenterBeforeRight?: boolean }, 
     isPinned: boolean, 
     stickyLeft?: number,
     stickyRight?: number
@@ -180,6 +186,8 @@ function GridRowInner<T>({
           onToggleExpand={onToggleExpand}
           registerCellRef={registerCellRef}
           rowHeight={rowHeight}
+          isFirstPinnedRight={column.isFirstPinned && column.pinned === 'right'}
+          isLastCenterBeforeRight={column.isLastCenterBeforeRight}
         />
       </div>
     );

@@ -26,6 +26,8 @@ interface GridCellProps<T> {
   onToggleExpand?: () => void;
   registerCellRef?: (field: string, rowId: string, element: HTMLElement | null) => void;
   rowHeight?: number;
+  isFirstPinnedRight?: boolean;
+  isLastCenterBeforeRight?: boolean;
 }
 
 export function GridCell<T>({
@@ -50,6 +52,8 @@ export function GridCell<T>({
   onToggleExpand,
   registerCellRef,
   rowHeight,
+  isFirstPinnedRight = false,
+  isLastCenterBeforeRight = false,
 }: GridCellProps<T>) {
   const inputRef = useRef<HTMLInputElement>(null);
   const selectRef = useRef<HTMLSelectElement>(null);
@@ -246,8 +250,10 @@ export function GridCell<T>({
   return (
     <div
       className={cn(
-        'flex items-center border-r border-border px-3 overflow-hidden text-sm flex-shrink-0 whitespace-nowrap min-w-0',
+        'flex items-center px-3 overflow-hidden text-sm flex-shrink-0 whitespace-nowrap min-w-0',
+        !isLastCenterBeforeRight && 'border-r border-border',
         'fibogrid-cell-full-width',
+        isFirstPinnedRight && 'border-l border-border',
         column.editable && !isEditing && 'cursor-pointer hover:bg-muted/50',
         isEditing && 'fibogrid-cell-editing',
         isSelected && 'fibogrid-cell-selected',

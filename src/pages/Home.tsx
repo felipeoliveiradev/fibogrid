@@ -102,7 +102,7 @@ export default function Home() {
     { 
       field: 'name', 
       headerName: 'Product Name', 
-      width: 180, 
+      width: 200, 
       sortable: true, 
       filterable: true,
       pinned: 'left',
@@ -113,14 +113,14 @@ export default function Home() {
     { 
       field: 'category', 
       headerName: 'Category', 
-      width: 120, 
+      width: 250, 
       sortable: true, 
       filterable: true,
     },
     { 
       field: 'price', 
       headerName: 'Price', 
-      width: 100, 
+      width: 200, 
       sortable: true,
       valueFormatter: (v) => `$${v.toFixed(2)}`,
       cellRenderer: (params) => (
@@ -130,13 +130,13 @@ export default function Home() {
     { 
       field: 'stock', 
       headerName: 'Stock', 
-      width: 80, 
+      width: 180, 
       sortable: true,
     },
     { 
       field: 'status', 
       headerName: 'Status', 
-      width: 110,
+      width: 200,
       cellRenderer: (params) => {
         const colors: Record<string, string> = {
           'In Stock': 'bg-green-600/20 text-green-700 dark:text-green-400',
@@ -153,7 +153,7 @@ export default function Home() {
     { 
       field: 'rating', 
       headerName: 'Rating', 
-      width: 80,
+      width: 180,
       cellRenderer: (params) => (
         <span className="text-primary">★ {params.value}</span>
       ),
@@ -161,8 +161,9 @@ export default function Home() {
     { 
       field: 'sales', 
       headerName: 'Sales', 
-      width: 90,
+      width: 200,
       sortable: true,
+      pinned: 'right',
       valueFormatter: (v) => v.toLocaleString(),
     },
   ], []);

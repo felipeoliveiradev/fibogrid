@@ -101,9 +101,15 @@ export function GridHeader<T>({
       return { ...col, stickyRight: pos, isFirstPinned: idx === right.length - 1 };
     }).reverse();
     
+    // Mark last center column if there are right pinned columns
+    const centerWithFlags = center.map((col, idx) => ({
+      ...col,
+      isLastCenterBeforeRight: right.length > 0 && idx === center.length - 1
+    }));
+    
     return {
       leftPinnedColumns: leftWithPositions,
-      centerColumns: center,
+      centerColumns: centerWithFlags,
       rightPinnedColumns: rightWithPositions,
     };
   }, [visibleColumns]);
@@ -154,7 +160,7 @@ export function GridHeader<T>({
     document.addEventListener('mouseup', handleMouseUp);
   }, [onResizeStart]);
 
-  const renderColumnHeader = (column: ProcessedColumn<T> & { stickyLeft?: number; stickyRight?: number; isLastPinned?: boolean; isFirstPinned?: boolean }, isPinned: boolean) => {
+  const renderColumnHeader = (column: ProcessedColumn<T> & { stickyLeft?: number; stickyRight?: number; isLastPinned?: boolean; isFirstPinned?: boolean; isLastCenterBeforeRight?: boolean }, isPinned: boolean) => {
     const sortDirection = getSortDirection(column.field);
     const sortIndex = getSortIndex(column.field);
     const hasFilter = !!getActiveFilter(column.field);
@@ -165,13 +171,14 @@ export function GridHeader<T>({
       <div
         key={column.field}
         className={cn(
-          'relative flex items-center border-r border-border px-3 select-none group fibogrid-header-container',
+          'relative flex items-center px-3 select-none group fibogrid-header-container',
+          !column.isLastCenterBeforeRight && 'border-r border-border',
           column.sortable !== false && 'cursor-pointer',
           isDragging && 'opacity-50',
           isDragOver && 'fibogrid-header-drag-over',
           isPinned && 'sticky z-[2]',
           column.isLastPinned && column.pinned === 'left' && 'fibogrid-pinned-left-shadow',
-          column.isFirstPinned && column.pinned === 'right' && 'fibogrid-pinned-right-shadow'
+          column.isFirstPinned && column.pinned === 'right' && 'fibogrid-pinned-right-shadow border-l border-border'
         )}
         style={{ 
           width: column.computedWidth, 
@@ -248,7 +255,7 @@ export function GridHeader<T>({
     );
   };
 
-  const renderFilterCell = (column: ProcessedColumn<T> & { stickyLeft?: number; stickyRight?: number; isLastPinned?: boolean; isFirstPinned?: boolean }, isPinned: boolean) => {
+  const renderFilterCell = (column: ProcessedColumn<T> & { stickyLeft?: number; stickyRight?: number; isLastPinned?: boolean; isFirstPinned?: boolean; isLastCenterBeforeRight?: boolean }, isPinned: boolean) => {
     const activeFilter = getActiveFilter(column.field);
     const hasActiveFilter = !!activeFilter;
     const filterValue =
@@ -262,10 +269,11 @@ export function GridHeader<T>({
       <div
         key={`filter-${column.field}`}
         className={cn(
-          'flex items-center border-r border-border px-1 fibogrid-filter-row-container',
+          'flex items-center px-1 fibogrid-filter-row-container',
+          !column.isLastCenterBeforeRight && 'border-r border-border',
           isPinned && 'sticky z-[2]',
           column.isLastPinned && column.pinned === 'left' && 'fibogrid-pinned-left-shadow',
-          column.isFirstPinned && column.pinned === 'right' && 'fibogrid-pinned-right-shadow'
+          column.isFirstPinned && column.pinned === 'right' && 'fibogrid-pinned-right-shadow border-l border-border'
         )}
         style={{ 
           width: column.computedWidth, 
