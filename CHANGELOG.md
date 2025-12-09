@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.5] - 2025-12-09
+
+### Fixed
+- **Checkbox Checkmark** - Fixed missing checkmark content in checkbox checked state (added `content: '✓'`)
+- **Component Layout** - Adjusted styling in FiboGrid components for improved layout consistency
+- **Checkbox Indeterminate State** - Fixed indeterminate checkbox state rendering with proper visual indicator
+
+### Changed
+- **Component Styling** - Improved layout and spacing in various FiboGrid components for better visual consistency
+
 ## [1.0.4] - 2025-12-09
 
 ### Added
