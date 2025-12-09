@@ -264,24 +264,27 @@ function GridRowInner<T>({
 
 // Ultra-optimized memo - minimize comparison work
 export const GridRow = memo(GridRowInner, (prevProps, nextProps) => {
-  // Fast reference equality checks first
-  if (prevProps.row === nextProps.row && 
-      prevProps.isSelected === nextProps.isSelected &&
-      prevProps.editingCell === nextProps.editingCell) {
-    return true;
-  }
-  
-  // Quick checks for most common changes
+  // Quick checks for most common changes that require re-render
   if (prevProps.isSelected !== nextProps.isSelected) return false;
   if (prevProps.row.id !== nextProps.row.id) return false;
   if (prevProps.isDragging !== nextProps.isDragging) return false;
   if (prevProps.isDropTarget !== nextProps.isDropTarget) return false;
   if (prevProps.isExpanded !== nextProps.isExpanded) return false;
   
-  // Check editing state - include value for input updates
+  // Check editing state - must re-render when editing changes
   const prevEdit = prevProps.editingCell;
   const nextEdit = nextProps.editingCell;
-  if (prevEdit?.rowId !== nextEdit?.rowId || prevEdit?.field !== nextEdit?.field || prevEdit?.value !== nextEdit?.value) return false;
+  
+  // Check if this row is being edited (either before or after)
+  const prevIsEditing = prevEdit?.rowId === prevProps.row.id;
+  const nextIsEditing = nextEdit?.rowId === nextProps.row.id;
+  
+  if (prevIsEditing !== nextIsEditing) return false; // Editing state changed for this row
+  if (prevIsEditing && nextIsEditing) {
+    // Both editing same row - check if field or value changed
+    if (prevEdit?.field !== nextEdit?.field) return false;
+    if (prevEdit?.value !== nextEdit?.value) return false;
+  }
   
   // Check row data reference - if same reference, skip field comparison
   if (prevProps.row.data === nextProps.row.data) return true;
