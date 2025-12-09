@@ -639,8 +639,10 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
                         onStartEdit={(field) => api.startEditingCell(row.id, field)}
                         onEditChange={(value) => setEditingCell((prev) => (prev ? { ...prev, value } : null))}
                         onStopEdit={(cancel, currentValue) => {
+                          console.log('[DataGrid] onStopEdit called, cancel:', cancel, 'currentValue:', currentValue, 'editingCell:', editingCell);
                           if (editingCell && !cancel) {
                             const newValue = currentValue !== undefined ? currentValue : editingCell.value;
+                            console.log('[DataGrid] Calling onCellValueChanged with newValue:', newValue);
                             onCellValueChanged?.({
                               rowNode: row,
                               column: columns.find((c) => c.field === editingCell.field)!,

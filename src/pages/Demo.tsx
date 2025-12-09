@@ -779,6 +779,7 @@ export default function Demo() {
               groupByFields={groupByField ? [groupByField] : undefined}
               onGridReady={(e) => setGridApi(e.api)}
               onCellValueChanged={(e) => {
+                console.log('[Demo] onCellValueChanged received:', e.newValue, 'for field:', e.column.field);
                 const editedRowData = e.rowNode.data as StockRow;
                 const field = e.column.field as keyof StockRow;
                 const newValue = e.newValue;
@@ -787,12 +788,13 @@ export default function Demo() {
                   ? editedRowData.parentId
                   : editedRowData.id;
                 
+                console.log('[Demo] Updating row', targetId, 'field:', field, 'to:', newValue);
                 setRowData(prev => prev.map(row => 
                   row.id === targetId ? { ...row, [field]: newValue } : row
                 ));
               }}
-              rangeCellSelection={true}
-              rowDragEnabled={true}
+              rangeCellSelection={false}
+              rowDragEnabled={false}
             />
           </Card>
         </div>

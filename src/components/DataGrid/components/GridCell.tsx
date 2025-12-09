@@ -53,6 +53,7 @@ export function GridCell<T>({
   rowHeight,
 }: GridCellProps<T>) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const selectRef = useRef<HTMLSelectElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const value = getValueFromPath(row.data, column.field);
   
@@ -72,30 +73,51 @@ export function GridCell<T>({
     }
   }, [registerCellRef, column.field, row.id]);
 
+  // Track if we're currently stopping to prevent double-calls
   const isStoppingRef = useRef(false);
-  const currentValueRef = useRef(editValue);
-  
-  // Keep ref updated with latest value
-  currentValueRef.current = editValue;
+
+  // Get the current value from the input element directly to avoid stale closure
+  const getCurrentValue = () => {
+    if (inputRef.current) {
+      const inputType = inputRef.current.type;
+      if (inputType === 'checkbox') {
+        return inputRef.current.checked;
+      } else if (inputType === 'number') {
+        return parseFloat(inputRef.current.value) || 0;
+      }
+      return inputRef.current.value;
+    }
+    if (selectRef.current) {
+      return selectRef.current.value;
+    }
+    return editValue;
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
+      e.preventDefault();
       isStoppingRef.current = true;
-      onStopEdit(false, currentValueRef.current);
+      const currentValue = getCurrentValue();
+      console.log('[GridCell] Enter pressed, currentValue from input:', currentValue);
+      onStopEdit(false, currentValue);
     } else if (e.key === 'Escape') {
       isStoppingRef.current = true;
       onStopEdit(true);
     } else if (e.key === 'Tab') {
       e.preventDefault();
       isStoppingRef.current = true;
-      onStopEdit(false, currentValueRef.current);
+      const currentValue = getCurrentValue();
+      console.log('[GridCell] Tab pressed, currentValue from input:', currentValue);
+      onStopEdit(false, currentValue);
     }
   };
 
   const handleBlur = () => {
     // Prevent double-calling onStopEdit when Enter/Tab/Escape was pressed
     if (!isStoppingRef.current) {
-      onStopEdit(false, currentValueRef.current);
+      const currentValue = getCurrentValue();
+      console.log('[GridCell] Blur, currentValue from input:', currentValue);
+      onStopEdit(false, currentValue);
     }
     isStoppingRef.current = false;
   };
@@ -158,6 +180,7 @@ export function GridCell<T>({
       case 'select':
         return (
           <select
+            ref={selectRef}
             value={editValue ?? ''}
             onChange={(e) => onEditChange(e.target.value)}
             onBlur={handleBlur}
