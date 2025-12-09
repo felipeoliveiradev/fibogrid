@@ -90,7 +90,7 @@ const features = [
 const stats = [
   { value: '100k+', label: 'Rows Supported' },
   { value: '60fps', label: 'Scroll Performance' },
-  { value: '<16ms', label: 'Render Time' },
+  { value: '<29ms', label: 'Render Time' },
   { value: 'φ', label: 'Golden Ratio' },
 ];
 

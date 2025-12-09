@@ -560,9 +560,9 @@
 
 .fibogrid-filter-input {
   width: 100%;
-  height: 32px;
+  height: 30px;
   padding: 0 var(--fibogrid-cell-padding);
-  margin-bottom: 8px;
+  margin-bottom: 0px;
   font-size: var(--fibogrid-font-size);
   color: var(--fibogrid-input-text);
   background-color: var(--fibogrid-input-bg);

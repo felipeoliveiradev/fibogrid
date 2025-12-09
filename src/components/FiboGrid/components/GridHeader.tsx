@@ -278,7 +278,7 @@ export function GridHeader<T>({
         }}
       >
         {column.filterable !== false ? (
-          <div className="flex items-center w-full gap-1">
+          <div className="flex items-center py-2 w-full gap-1">
             <Input
               placeholder=""
               value={filterValue}
