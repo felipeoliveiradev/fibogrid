@@ -745,6 +745,27 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                           const column = columns[colIndex];
                           const value = (row.data as any)[column.field];
 
+                          // Selection Logic on Right Click
+                          
+                          // 1. Always focus the clicked cell
+                          focusCell(row.id, column.field);
+
+                          // 2. Handle Row Selection
+                          // 2. Handle Row Selection
+                          if (rowSelection) {
+                             if (rowSelection === 'multiple') {
+                               // User request: Right click acts as a toggle in multi-select mode (no modifiers needed)
+                               selectRow(row.id, true);
+                             } else {
+                               // Single selection behavior
+                               const isAlreadySelected = selection.selectedRows.has(row.id);
+                               if (!isAlreadySelected) {
+                                 deselectAll();
+                                 selectRow(row.id, true);
+                               }
+                             }
+                          }
+
                           setContextMenuTarget({
                             value,
                             data: row.data,
@@ -850,8 +871,16 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
   );
 
   if (contextMenu) {
-    const defaultParams = { api, column: null, node: null, value: null, data: null };
-    const params = contextMenuTarget ? { ...contextMenuTarget, api } : defaultParams;
+    const defaultParams = { api, column: null, node: null, value: null, data: null, selectedRows: [] };
+    
+    // Get currently selected rows data for the context menu
+    const selectedRowsData = displayedRows
+      .filter((r) => selection.selectedRows.has(r.id))
+      .map((r) => r.data);
+
+    const params = contextMenuTarget 
+      ? { ...contextMenuTarget, api, selectedRows: selectedRowsData } 
+      : { ...defaultParams, selectedRows: selectedRowsData };
 
     const items = getContextMenuItems
       ? getContextMenuItems(params)
