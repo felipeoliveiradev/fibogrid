@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useRef } from 'react';
 import { ProcessedColumn, SortModel, SortDirection, FilterModel } from '../types';
 import { cn } from '@/lib/utils';
 import { ArrowUp, ArrowDown, MoreVertical, Filter } from 'lucide-react';
@@ -134,6 +134,36 @@ export function GridHeader<T>({
   };
 
   const filterRowHeight = showFilterRow ? 36 : 0;
+  
+  // Track if we just finished resizing to prevent sort trigger
+  const wasResizingRef = useRef(false);
+
+  const handleHeaderClick = useCallback((column: ProcessedColumn<T>) => {
+    // Don't sort if we just finished resizing
+    if (wasResizingRef.current || resizingColumn) {
+      wasResizingRef.current = false;
+      return;
+    }
+    if (column.sortable !== false) {
+      onSort(column.field);
+    }
+  }, [resizingColumn, onSort]);
+
+  const handleResizeMouseDown = useCallback((e: React.MouseEvent, column: ProcessedColumn<T>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    wasResizingRef.current = true;
+    onResizeStart(e, column);
+    
+    // Reset the flag after a short delay (after mouseup)
+    const handleMouseUp = () => {
+      setTimeout(() => {
+        wasResizingRef.current = false;
+      }, 100);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+    document.addEventListener('mouseup', handleMouseUp);
+  }, [onResizeStart]);
 
   const renderColumnHeader = (column: ProcessedColumn<T> & { stickyLeft?: number; stickyRight?: number; isLastPinned?: boolean; isFirstPinned?: boolean }, isPinned: boolean) => {
     const sortDirection = getSortDirection(column.field);
@@ -166,7 +196,7 @@ export function GridHeader<T>({
           right: column.stickyRight !== undefined ? column.stickyRight : undefined,
           backgroundColor: 'hsl(var(--muted))',
         }}
-        onClick={() => column.sortable !== false && onSort(column.field)}
+        onClick={() => handleHeaderClick(column)}
         draggable={column.draggable !== false && !isPinned}
         onDragStart={(e) => !isPinned && onDragStart(e, column)}
         onDragOver={(e) => onDragOver(e, column)}
@@ -224,7 +254,7 @@ export function GridHeader<T>({
               'absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-primary group/resize',
               resizingColumn === column.field && 'bg-primary'
             )}
-            onMouseDown={(e) => onResizeStart(e, column)}
+            onMouseDown={(e) => handleResizeMouseDown(e, column)}
             onDoubleClick={(e) => handleResizeDoubleClick(e, column)}
           >
             <div className="absolute right-0 top-0 bottom-0 w-1 group-hover/resize:bg-primary transition-colors" />
