@@ -43,6 +43,7 @@ export interface CellRendererParams<T = any> {
   colDef: ColumnDef<T>;
   column: ProcessedColumn<T>;
   api: GridApi<T>;
+  selectedRows?: T[];
 }
 
 export interface HeaderRendererParams<T = any> {
@@ -55,6 +56,16 @@ export interface ProcessedColumn<T = any> extends ColumnDef<T> {
   computedWidth: number;
   left: number;
   index: number;
+}
+// ... skipped lines ...
+export interface ContextMenuItem {
+  name?: string;
+  action?: () => void;
+  icon?: React.ReactNode;
+  disabled?: boolean;
+  subMenu?: ContextMenuItem[];
+  separator?: boolean;
+  cssClasses?: string[];
 }
 
 export interface RowNode<T = any> {
@@ -383,11 +394,4 @@ export interface FiboGridProps<T = any> extends GridEvents<T> {
   childRowsField?: string;
 }
 
-export interface ContextMenuItem {
-  name: string;
-  action: () => void;
-  icon?: React.ReactNode;
-  disabled?: boolean;
-  subMenu?: ContextMenuItem[];
-  separator?: boolean;
-}
+

@@ -11,7 +11,7 @@ import { FiboGrid, ColumnDef } from 'fibogrid';
 import { 
   ArrowLeft, Copy, Check, BookOpen, Code, Zap, Settings, Layers, 
   Filter, ArrowUpDown, Pin, Edit3, Download, Move, Hexagon, 
-  Eye, Package, Palette, Bell, Link2, Terminal, Server
+  Eye, Package, Palette, Bell, Link2, Terminal, Server, List
 } from 'lucide-react';
 
 // FiboGrid Logo Component
@@ -142,6 +142,7 @@ const sections = [
   { id: 'export', title: 'Export', icon: Download },
   { id: 'server-side', title: 'Server-Side Integration', icon: Server },
   { id: 'events', title: 'Events', icon: Bell },
+  { id: 'context-menu', title: 'Context Menu', icon: List },
   { id: 'theming', title: 'Theming', icon: Palette },
   { id: 'linked-grids', title: 'Linked Grids', icon: Link2 },
   { id: 'performance', title: 'Performance', icon: Zap },
@@ -1756,6 +1757,102 @@ import './custom-grid-theme.css';
 />`} language="tsx" />
                       </CardContent>
                     </Card>
+                  </div>
+                )}
+
+                {activeSection === 'context-menu' && (
+                  <div className="space-y-8 animate-fade-in">
+                    <h1 className="text-4xl md:text-5xl font-display font-bold text-gradient-gold">Context Menu</h1>
+                    
+                    <p className="text-lg text-muted-foreground font-body">
+                      FiboGrid comes with a built-in context menu that can be fully customized. Right-click on any cell to open.
+                      It supports multi-level menus, icons, and dynamic actions based on the row context.
+                    </p>
+
+                    <Card className="paper-aged border-primary/10">
+                      <CardHeader>
+                        <CardTitle className="font-display text-xl">Selection Behavior</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <ul className="space-y-3 font-body">
+                          <li className="flex items-start gap-2">
+                            <Check className="h-4 w-4 text-green-500 mt-1 flex-shrink-0" />
+                            <span><strong>Standard Click:</strong> Selects the row and opens menu. If multiple rows were selected, keeps selection.</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <Check className="h-4 w-4 text-green-500 mt-1 flex-shrink-0" />
+                            <span><strong>Multi-Select Mode:</strong> Right-click acts as a toggle (adds/removes row) without clearing other selections. No modifier keys needed.</span>
+                          </li>
+                        </ul>
+                      </CardContent>
+                    </Card>
+
+                    <ExampleBlock
+                      title="Custom Context Menu"
+                      description="Use the getContextMenuItems prop to define your menu items. You receive data about the clicked cell/row and all selected rows."
+                      code={`<FiboGrid
+  rowData={data}
+  columnDefs={columns}
+  rowSelection="multiple"
+  getContextMenuItems={(params) => {
+    // params contains:
+    // - value: clicked cell value
+    // - data: clicked row data
+    // - column: clicked column def
+    // - selectedRows: array of all selected row data
+    // - api: grid API
+
+    return [
+      {
+        name: 'View Details',
+        action: () => console.log('View', params.data),
+        icon: <Eye className="h-4 w-4" />
+      },
+      { separator: true },
+      {
+        name: \`Export \${params.selectedRows.length} Items\`,
+        action: () => exportData(params.selectedRows),
+        disabled: params.selectedRows.length === 0,
+        icon: <Download className="h-4 w-4" />
+      },
+      {
+        name: 'Delete',
+        action: () => deleteRows(params.selectedRows),
+        icon: <Trash2 className="h-4 w-4" />,
+        cssClasses: ['text-red-500']
+      }
+    ];
+  }}
+/>`}
+                      preview={
+                        <FiboGrid
+                          rowData={sampleData}
+                          columnDefs={basicColumns}
+                          getRowId={(row) => row.id}
+                          rowSelection="multiple"
+                          getContextMenuItems={(params) => [
+                            {
+                              name: 'View Details',
+                              action: () => alert(`Viewing details for ${params.data.name}`),
+                              icon: <Eye className="h-4 w-4" />
+                            },
+                            {
+                              separator: true,
+                              name: '',
+                              action: function (): void {
+                                throw new Error('Function not implemented.');
+                              }
+                            },
+                            {
+                              name: `Export ${params.selectedRows?.length || 0} Items`,
+                              action: () => alert(`Exporting ${params.selectedRows?.length} items:\n${params.selectedRows?.map(r => r.name).join(', ')}`),
+                              disabled: !params.selectedRows || params.selectedRows.length === 0,
+                              icon: <Download className="h-4 w-4" />
+                            }
+                          ]}
+                        />
+                      }
+                    />
                   </div>
                 )}
 
