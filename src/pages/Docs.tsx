@@ -246,6 +246,11 @@ export default function Docs() {
                 Home
               </Link>
             </Button>
+            <Button variant="ghost" size="sm" className="font-body hover:bg-primary/5" asChild>
+              <Link to="/changelog">
+                Changelog
+              </Link>
+            </Button>
             <ThemeToggle />
             <Button size="sm" className="bg-gradient-gold text-primary-foreground shadow-gold font-body" asChild>
               <Link to="/demo">Live Demo</Link>
@@ -1844,7 +1849,7 @@ import './custom-grid-theme.css';
                               }
                             },
                             {
-                              name: `Export ${params.selectedRows?.length || 0} Items`,
+                              name: `Export ${params?.selectedRows?.length || 0} Items`,
                               action: () => alert(`Exporting ${params.selectedRows?.length} items:\n${params.selectedRows?.map(r => r.name).join(', ')}`),
                               disabled: !params.selectedRows || params.selectedRows.length === 0,
                               icon: <Download className="h-4 w-4" />

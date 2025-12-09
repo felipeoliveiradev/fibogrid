@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.4] - 2025-12-09
+
+### Added
+- **Complete Theme System Migration** - Migrated all inline styles to CSS variables system
+- **Theme Presets** - Added complete theme presets (Matrix, Uber, Material, Apple, Excel) with all CSS variables
+- **Semantic Component Classes** - Added utility classes for toolbar, statusbar, pagination, badges, and search inputs
+- **Right-click Selection** - Implemented right-click selection logic for better user interaction
+- **Context Menu Enhancements** - Enhanced context menu with new styling and features
+- **Interactive Theme Preview** - Added theme builder with live preview in documentation
+- **Controlled ThemeSelector** - Enhanced ThemeSelector component for controlled usage
+
+### Changed
+- **CSS Architecture** - Migrated all component inline styles to theme system using CSS variables
+- **Theme Management** - Streamlined theme management in ThemeSelector and documentation
+- **Checkbox Styling** - Complete redesign of checkbox styling with custom checkmark using CSS
+- **Column Panel Styling** - Migrated ColumnPanel to use theme variables instead of hardcoded Tailwind classes
+- **Popover Styling** - Migrated all popover components to use theme variables
+- **Build Process** - Updated build process to copy library to node_modules for GitHub Pages deployment
+
+### Fixed
+- **Checkbox Interaction** - Fixed checkbox column interaction by removing `pointer-events-none`
+- **Checkbox Visual State** - Fixed checkbox checked state rendering with proper CSS
+- **Theme Variable Coverage** - Ensured all theme presets have complete variable definitions matching Matrix theme pattern
+- **Row Selection Visual Feedback** - Fixed row selection background colors and checkbox states
+
+### Documentation
+- Enhanced documentation with context menu details and examples
+- Added comprehensive theming section with interactive examples
+- Updated theme builder documentation with preset examples
+
 ## [1.0.3] - 2025-12-09
 
 ### Fixed

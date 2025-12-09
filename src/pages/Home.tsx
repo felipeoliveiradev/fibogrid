@@ -185,6 +185,9 @@ export default function Home() {
             <Link to="/demo" className="text-muted-foreground hover:text-foreground transition-colors font-body">
               Demo
             </Link>
+            <Link to="/changelog" className="text-muted-foreground hover:text-foreground transition-colors font-body">
+              Changelog
+            </Link>
             <Link to="/theme-builder" className="text-muted-foreground hover:text-foreground transition-colors font-body">
               Theme Builder
             </Link>

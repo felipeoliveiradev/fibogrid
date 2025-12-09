@@ -128,7 +128,7 @@ Override variables directly:
 
 ```tsx
 <FiboGrid 
-  style={{
+  style={ {
     '--fibogrid-primary': '#8b5cf6',
     '--fibogrid-row-height': '32px',
   } as React.CSSProperties}
