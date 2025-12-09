@@ -638,13 +638,16 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
                         editingCell={editingCell}
                         onStartEdit={(field) => api.startEditingCell(row.id, field)}
                         onEditChange={(value) => setEditingCell((prev) => (prev ? { ...prev, value } : null))}
-                        onStopEdit={(cancel) => {
+                        onStopEdit={(cancel, currentValue) => {
                           if (editingCell && !cancel) {
+                            // Use currentValue passed from GridCell (latest value from ref)
+                            // This avoids stale closure issues
+                            const newValue = currentValue !== undefined ? currentValue : editingCell.value;
                             onCellValueChanged?.({
                               rowNode: row,
                               column: columns.find((c) => c.field === editingCell.field)!,
                               oldValue: editingCell.originalValue,
-                              newValue: editingCell.value,
+                              newValue,
                               api,
                             });
                           }
