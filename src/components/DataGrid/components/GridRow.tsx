@@ -42,6 +42,8 @@ interface GridRowProps<T> {
   showRowNumbers?: boolean;
   rowNumber?: number;
   onAddChildRow?: (parentId: string) => void;
+  onRowRangeMouseDown?: (rowId: string, isSelected: boolean, onToggle: () => void) => void;
+  onRowRangeMouseEnter?: (rowId: string, isSelected: boolean, onToggle: () => void) => void;
 }
 
 function GridRowInner<T>({
@@ -81,6 +83,8 @@ function GridRowInner<T>({
   showRowNumbers,
   rowNumber,
   onAddChildRow,
+  onRowRangeMouseDown,
+  onRowRangeMouseEnter,
 }: GridRowProps<T>) {
   const visibleColumns = useMemo(() => columns.filter((col) => !col.hide), [columns]);
   const indentWidth = level * 20;
@@ -201,6 +205,23 @@ function GridRowInner<T>({
       onDragOver={onRowDragOver}
       onDragEnd={onRowDragEnd}
       onDrop={onRowDrop}
+      onMouseDown={(e) => {
+        // Only trigger on left click and not on specific interactive elements
+        if (e.button === 0 && !(e.target as HTMLElement).closest('input, button')) {
+          // Don't prevent default - let click event fire normally
+          // Just track that mouse is down for potential drag
+          if (onRowRangeMouseDown && onCheckboxChange) {
+            // Pass the real toggle function - it will only be called if we start dragging
+            onRowRangeMouseDown(row.id, isSelected, () => onCheckboxChange(!isSelected));
+          }
+        }
+      }}
+      onMouseEnter={(e) => {
+        // Only process if mouse button is actually pressed
+        if (e.buttons === 1 && onRowRangeMouseEnter && onCheckboxChange) {
+          onRowRangeMouseEnter(row.id, isSelected, () => onCheckboxChange(!isSelected));
+        }
+      }}
     >
       {/* Left Pinned Columns */}
       {leftPinnedColumns.map((column) => renderCell(column, true, column.stickyLeft, undefined))}
@@ -237,7 +258,7 @@ function GridRowInner<T>({
             checked={isSelected}
             onChange={(e) => onCheckboxChange?.(e.target.checked)}
             onClick={(e) => e.stopPropagation()}
-            className="h-4 w-4 rounded border-border"
+            className="h-4 w-4 rounded border-border pointer-events-none"
           />
         </div>
       )}
@@ -273,7 +294,8 @@ export const GridRow = memo(GridRowInner, (prevProps, nextProps) => {
   if (prevProps.row === nextProps.row && 
       prevProps.isSelected === nextProps.isSelected &&
       prevProps.editingCell === nextProps.editingCell &&
-      prevProps.columns === nextProps.columns) {
+      prevProps.columns === nextProps.columns &&
+      prevProps.isCellSelected === nextProps.isCellSelected) {
     return true;
   }
   
@@ -283,6 +305,7 @@ export const GridRow = memo(GridRowInner, (prevProps, nextProps) => {
   if (prevProps.isDragging !== nextProps.isDragging) return false;
   if (prevProps.isDropTarget !== nextProps.isDropTarget) return false;
   if (prevProps.isExpanded !== nextProps.isExpanded) return false;
+  if (prevProps.isCellSelected !== nextProps.isCellSelected) return false;
   
   // Check editing state - include value for input updates
   const prevEdit = prevProps.editingCell;

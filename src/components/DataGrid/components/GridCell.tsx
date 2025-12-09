@@ -120,12 +120,12 @@ export function GridCell<T>({
   };
 
   const handleCellClick = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent row click
+    // Don't stop propagation - let it bubble for row selection
     onClick(e);
   };
 
   const handleCellDoubleClick = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent row double click
+    // Don't stop propagation - let it bubble
     onDoubleClick(e);
     if (column.editable) {
       onStartEdit();
@@ -133,8 +133,12 @@ export function GridCell<T>({
   };
 
   const handleMouseDownInternal = (e: React.MouseEvent) => {
-    // Don't trigger range selection on normal clicks
-    // Range selection requires Shift key
+    // Don't interfere with editing - allow input clicks to focus
+    if (isEditing) {
+      return;
+    }
+    
+    // Call range selection handler if provided
     if (onMouseDown) {
       onMouseDown(e);
     }
@@ -255,7 +259,7 @@ export function GridCell<T>({
         'flex items-center border-r border-border px-3 overflow-hidden text-sm flex-shrink-0 whitespace-nowrap min-w-0',
         column.editable && !isEditing && 'cursor-pointer hover:bg-muted/50',
         isEditing && 'ring-2 ring-primary ring-inset p-0',
-        isSelected && 'bg-primary/20',
+        isSelected && 'bg-primary/30 border-primary/50',
         isFocused && !isEditing && 'ring-2 ring-primary/50 ring-inset',
         cellClass
       )}
