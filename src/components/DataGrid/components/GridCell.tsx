@@ -59,7 +59,6 @@ export function GridCell<T>({
   
   // Focus input when editing starts
   useEffect(() => {
-    console.log('[GridCell] useEffect isEditing:', isEditing, 'inputRef:', inputRef.current);
     if (isEditing && inputRef.current) {
       inputRef.current.focus();
       inputRef.current.select();
@@ -99,7 +98,6 @@ export function GridCell<T>({
       e.preventDefault();
       isStoppingRef.current = true;
       const currentValue = getCurrentValue();
-      console.log('[GridCell] Enter pressed, currentValue from input:', currentValue);
       onStopEdit(false, currentValue);
     } else if (e.key === 'Escape') {
       isStoppingRef.current = true;
@@ -108,7 +106,6 @@ export function GridCell<T>({
       e.preventDefault();
       isStoppingRef.current = true;
       const currentValue = getCurrentValue();
-      console.log('[GridCell] Tab pressed, currentValue from input:', currentValue);
       onStopEdit(false, currentValue);
     }
   };
@@ -117,7 +114,6 @@ export function GridCell<T>({
     // Prevent double-calling onStopEdit when Enter/Tab/Escape was pressed
     if (!isStoppingRef.current) {
       const currentValue = getCurrentValue();
-      console.log('[GridCell] Blur, currentValue from input:', currentValue);
       onStopEdit(false, currentValue);
     }
     isStoppingRef.current = false;
@@ -130,10 +126,8 @@ export function GridCell<T>({
 
   const handleCellDoubleClick = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent row double click
-    console.log('[GridCell] Double click on cell, editable:', column.editable);
     onDoubleClick(e);
     if (column.editable) {
-      console.log('[GridCell] Calling onStartEdit');
       onStartEdit();
     }
   };
@@ -241,7 +235,6 @@ export function GridCell<T>({
         );
 
       default:
-        console.log('[GridCell] Rendering text editor with editValue:', editValue);
         return (
           <input
             ref={inputRef}
