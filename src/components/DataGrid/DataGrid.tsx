@@ -127,7 +127,11 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
     setColumnOrder,
     setColumnWidths,
     setColumnPinned,
+    serverSideLoading,
   } = useGridState({ ...props, quickFilterText: quickFilterValue }, containerWidth);
+
+  // Combine loading states
+  const isLoading = loading || serverSideLoading;
 
   // keep latest editing cell in a ref to avoid stale closures when committing
   useEffect(() => {
@@ -826,8 +830,8 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
       )}
 
       {/* Overlays */}
-      {loading && <GridOverlay type="loading" customComponent={loadingOverlayComponent} />}
-      {!loading && displayedRows.length === 0 && (
+      {isLoading && <GridOverlay type="loading" customComponent={loadingOverlayComponent} />}
+      {!isLoading && displayedRows.length === 0 && (
         <GridOverlay type="noRows" customComponent={noRowsOverlayComponent} />
       )}
 
