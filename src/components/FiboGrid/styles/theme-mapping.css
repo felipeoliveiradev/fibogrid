@@ -1,0 +1,63 @@
+/* 
+ * Theme Mapping
+ * Maps FiboGrid's isolated variables to standard Tailwind/Shadcn variables
+ * entirely within the .fibogrid scope.
+ * 
+ * IMPORTANT: Since Tailwind config uses hsl(var(...)), and FiboGrid variables 
+ * are full hex/hsl strings, we must OVERRIDE the utility classes directly 
+ * to bypass the hsl() wrapper.
+ */
+
+.fibogrid {
+  --radius: var(--fibogrid-radius-md);
+}
+
+/* Backgrounds */
+.fibogrid.bg-background, .fibogrid .bg-background { background-color: var(--fibogrid-bg); }
+.fibogrid.bg-card, .fibogrid .bg-card { background-color: var(--fibogrid-surface); }
+.fibogrid.bg-popover, .fibogrid .bg-popover { background-color: var(--fibogrid-dropdown-bg); }
+.fibogrid.bg-primary, .fibogrid .bg-primary { background-color: var(--fibogrid-primary); }
+.fibogrid.bg-secondary, .fibogrid .bg-secondary { background-color: var(--fibogrid-surface-selected); }
+.fibogrid.bg-muted, .fibogrid .bg-muted { background-color: var(--fibogrid-surface-hover); }
+.fibogrid.bg-accent, .fibogrid .bg-accent { background-color: var(--fibogrid-surface-selected); }
+.fibogrid.bg-destructive, .fibogrid .bg-destructive { background-color: var(--fibogrid-error); }
+
+/* Attribute-based overrides for robustness (avoids complex class escaping) */
+.fibogrid [role="checkbox"] {
+  border-radius: var(--fibogrid-radius-sm) !important;
+}
+
+.fibogrid [role="checkbox"][data-state="checked"] {
+  background-color: var(--fibogrid-checkbox-bg-checked) !important;
+  border-color: var(--fibogrid-checkbox-border-checked) !important;
+  color: var(--fibogrid-checkbox-checkmark) !important;
+}
+
+/* Fallback for other rounded utilities if needed */
+.fibogrid.rounded-sm:not([role="checkbox"]), .fibogrid .rounded-sm:not([role="checkbox"]) {
+  border-radius: var(--fibogrid-radius-sm) !important;
+}
+.fibogrid.rounded-md, .fibogrid .rounded-md {
+  border-radius: var(--fibogrid-radius-md) !important;
+}
+.fibogrid.rounded-lg, .fibogrid .rounded-lg {
+  border-radius: var(--fibogrid-radius-lg) !important;
+}
+
+/* Text Colors */
+.fibogrid.text-foreground, .fibogrid .text-foreground { color: var(--fibogrid-text); }
+.fibogrid.text-card-foreground, .fibogrid .text-card-foreground { color: var(--fibogrid-text); }
+.fibogrid.text-popover-foreground, .fibogrid .text-popover-foreground { color: var(--fibogrid-dropdown-item-text); }
+.fibogrid.text-primary-foreground, .fibogrid .text-primary-foreground { color: var(--fibogrid-primary-text); }
+.fibogrid.text-secondary-foreground, .fibogrid .text-secondary-foreground { color: var(--fibogrid-text); }
+.fibogrid.text-muted-foreground, .fibogrid .text-muted-foreground { color: var(--fibogrid-text-muted); }
+.fibogrid.text-accent-foreground, .fibogrid .text-accent-foreground { color: var(--fibogrid-text); }
+.fibogrid.text-destructive-foreground, .fibogrid .text-destructive-foreground { color: #ffffff; }
+
+/* Borders */
+.fibogrid.border-border, .fibogrid .border-border { border-color: var(--fibogrid-border); }
+.fibogrid.border-input, .fibogrid .border-input { border-color: var(--fibogrid-input-bg); }
+.fibogrid.border-primary, .fibogrid .border-primary { border-color: var(--fibogrid-primary); }
+
+/* Rings */
+.fibogrid .ring-ring { --tw-ring-color: var(--fibogrid-primary); }

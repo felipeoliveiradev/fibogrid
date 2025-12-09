@@ -2312,3 +2312,155 @@ Custom sizing example:
   --fibogrid-font-size: 13px;
 }
 */
+
+/* ================================
+   Semantic Component Classes
+   ================================ */
+
+/* Toolbar */
+.fibogrid-toolbar {
+  display: flex !important;
+  flex-direction: column !important;
+  background-color: var(--fibogrid-bg) !important;
+  border-bottom: 1px solid var(--fibogrid-toolbar-border-bottom) !important;
+  color: var(--fibogrid-text) !important;
+}
+
+.fibogrid-toolbar-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: var(--fibogrid-spacing-sm) !important;
+  padding: var(--fibogrid-toolbar-padding) !important;
+  border-bottom: 1px solid var(--fibogrid-border-light) !important;
+}
+
+.fibogrid-toolbar-row:last-child {
+  border-bottom: none !important;
+}
+
+/* Status Bar & Pagination Overrides */
+.fibogrid-statusbar {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: var(--fibogrid-spacing-xs) var(--fibogrid-spacing-md) !important;
+  background-color: var(--fibogrid-surface) !important;
+  border-top: 1px solid var(--fibogrid-statusbar-border-top) !important;
+  color: var(--fibogrid-text-secondary) !important;
+  font-size: var(--fibogrid-font-size-sm) !important;
+  min-height: var(--fibogrid-statusbar-height) !important;
+}
+
+.fibogrid-pagination {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: var(--fibogrid-spacing-sm) var(--fibogrid-spacing-lg) !important;
+  background-color: var(--fibogrid-pagination-bg) !important;
+  border-top: 1px solid var(--fibogrid-pagination-border) !important;
+  color: var(--fibogrid-pagination-text) !important;
+}
+
+/* Badges (Selected counts, active filters) */
+.fibogrid-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  padding: 2px 6px !important;
+  border-radius: var(--fibogrid-radius-sm) !important;
+  background-color: var(--fibogrid-active-filter-bg) !important;
+  color: var(--fibogrid-active-filter-text) !important;
+  border: 1px solid var(--fibogrid-active-filter-border) !important;
+  font-size: 12px !important;
+  line-height: 1 !important;
+}
+
+.fibogrid-badge button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  margin-left: 4px !important;
+  background: transparent !important;
+  border: none !important;
+  color: currentColor !important;
+  cursor: pointer !important;
+}
+
+.fibogrid-badge button:hover {
+  background-color: var(--fibogrid-active-filter-remove-bg-hover) !important;
+  border-radius: 2px !important;
+}
+
+/* Search/Inputs */
+.fibogrid-search-container {
+  position: relative !important;
+  flex: 1 !important;
+  max-width: 300px !important;
+}
+
+.fibogrid-search-input {
+  width: 100% !important;
+  height: 32px !important;
+  padding-left: 32px !important;
+  padding-right: 24px !important;
+  background-color: var(--fibogrid-input-bg) !important;
+  color: var(--fibogrid-input-text) !important;
+  border: 1px solid var(--fibogrid-input-border) !important;
+  border-radius: var(--fibogrid-radius-md) !important;
+  font-size: var(--fibogrid-font-size-sm) !important;
+}
+
+.fibogrid-search-input:focus {
+  outline: none !important;
+  border-color: var(--fibogrid-input-border-focus) !important;
+  background-color: var(--fibogrid-input-bg-focus) !important;
+  box-shadow: 0 0 0 1px var(--fibogrid-input-border-focus) !important;
+}
+
+.fibogrid-search-icon {
+  position: absolute !important;
+  left: 8px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  width: 16px !important;
+  height: 16px !important;
+  color: var(--fibogrid-search-icon-color) !important;
+  pointer-events: none !important;
+}
+
+/* Common Text Classes */
+.fibogrid-text-primary { color: var(--fibogrid-text) !important; }
+.fibogrid-text-secondary { color: var(--fibogrid-text-secondary) !important; }
+.fibogrid-text-muted { color: var(--fibogrid-text-muted) !important; }
+
+/* Popover Content Override */
+.fibogrid-popover-content {
+  background-color: var(--fibogrid-popover-bg) !important;
+  border-color: var(--fibogrid-popover-border) !important;
+  color: var(--fibogrid-popover-item-text) !important;
+  box-shadow: var(--fibogrid-popover-shadow) !important;
+}
+
+.fibogrid-popover-content-header {
+  border-bottom: 1px solid var(--fibogrid-popover-border) !important;
+  color: var(--fibogrid-popover-item-text) !important;
+}
+
+.fibogrid-popover-content-footer {
+  border-top: 1px solid var(--fibogrid-popover-border) !important;
+}
+
+.fibogrid-popover-content-item:hover,
+.fibogrid-popover-content-item:focus-within {
+  background-color: var(--fibogrid-popover-item-bg-hover) !important;
+  color: var(--fibogrid-popover-item-text-hover) !important;
+}
+
+.fibogrid-column-panel-icon {
+  color: var(--fibogrid-popover-icon-color) !important;
+}
+
+.fibogrid-popover-content-item:hover .fibogrid-column-panel-icon {
+  color: var(--fibogrid-popover-icon-color-hover) !important;
+}

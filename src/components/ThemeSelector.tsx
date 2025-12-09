@@ -10,9 +10,11 @@ import '../themes/minimal.css';
 import '../themes/dark-modern.css';
 import '../themes/light-airy.css';
 import '../themes/warm-sunset.css';
+import '../themes/apple.css';
 
 export const themes = [
   { value: 'theme-default', label: 'Default (Golden Ratio)' },
+  { value: 'theme-apple', label: 'Apple (iOS)' },
   { value: 'theme-compact', label: 'Compact' },
   { value: 'theme-comfortable', label: 'Comfortable' },
   { value: 'theme-material', label: 'Material Design' },

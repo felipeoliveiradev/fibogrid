@@ -19,6 +19,7 @@ interface GridCellProps<T> {
   isFocused?: boolean;
   onMouseDown?: (e: React.MouseEvent) => void;
   onMouseEnter?: () => void;
+  onContextMenu?: (e: React.MouseEvent) => void;
   indent?: number;
   showExpandIcon?: boolean;
   isExpanded?: boolean;
@@ -42,6 +43,7 @@ export function GridCell<T>({
   isFocused,
   onMouseDown,
   onMouseEnter,
+  onContextMenu,
   indent = 0,
   showExpandIcon,
   isExpanded,
@@ -247,9 +249,9 @@ export function GridCell<T>({
         'flex items-center border-r border-border px-3 overflow-hidden text-sm flex-shrink-0 whitespace-nowrap min-w-0',
         'fibogrid-cell-full-width',
         column.editable && !isEditing && 'cursor-pointer hover:bg-muted/50',
-        isEditing && 'ring-2 ring-primary ring-inset p-0',
-        isSelected && 'bg-primary/30 border-primary/50',
-        isFocused && !isEditing && 'ring-2 ring-primary/50 ring-inset',
+        isEditing && 'fibogrid-cell-editing',
+        isSelected && 'fibogrid-cell-selected',
+        isFocused && !isEditing && 'fibogrid-cell-focused',
         cellClass
       )}
       style={{ 
@@ -259,6 +261,7 @@ export function GridCell<T>({
       onClick={handleCellClick}
       onDoubleClick={handleCellDoubleClick}
       onMouseDown={handleMouseDownInternal}
+      onContextMenu={onContextMenu}
       onMouseEnter={onMouseEnter}
     >
       {showExpandIcon && (

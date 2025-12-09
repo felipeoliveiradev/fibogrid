@@ -23,7 +23,7 @@ export function GridOverlay({ type, customComponent, headerHeight = 44, toolbarH
   if (customComponent) {
     return (
       <div 
-        className="absolute flex items-center justify-center bg-background/80 z-10" 
+        className="absolute flex items-center justify-center z-10 fibogrid-overlay" 
         style={overlayStyle}
       >
         {customComponent}
@@ -34,12 +34,12 @@ export function GridOverlay({ type, customComponent, headerHeight = 44, toolbarH
   if (type === 'loading') {
     return (
       <div 
-        className="absolute flex items-center justify-center bg-background/80 z-10" 
+        className="absolute flex items-center justify-center z-10 fibogrid-overlay" 
         style={overlayStyle}
       >
         <div className="flex flex-col items-center gap-2">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <span className="text-sm text-muted-foreground">Loading...</span>
+          <Loader2 className="h-8 w-8 animate-spin text-[hsl(var(--fibogrid-primary))]" />
+          <span className="text-sm text-[color:var(--fibogrid-text-muted)]">Loading...</span>
         </div>
       </div>
     );
@@ -47,11 +47,11 @@ export function GridOverlay({ type, customComponent, headerHeight = 44, toolbarH
 
   return (
     <div 
-      className="absolute flex items-center justify-center bg-background/50 z-10" 
+      className="absolute flex items-center justify-center z-10 fibogrid-overlay" 
       style={overlayStyle}
     >
       <div className="flex flex-col items-center gap-2">
-        <span className="text-sm text-muted-foreground">No rows to display</span>
+        <span className="text-sm text-[color:var(--fibogrid-text-muted)]">No rows to display</span>
       </div>
     </div>
   );

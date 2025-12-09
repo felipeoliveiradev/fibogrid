@@ -9,14 +9,16 @@ import {
   ContextMenuSubTrigger,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
+import { cn } from '@/lib/utils';
 import { ContextMenuItem as ContextMenuItemType } from '../types';
 
 interface GridContextMenuProps {
   items: ContextMenuItemType[];
   children: React.ReactNode;
+  className?: string;
 }
 
-export function GridContextMenu({ items, children }: GridContextMenuProps) {
+export function GridContextMenu({ items, children, className }: GridContextMenuProps) {
   const renderMenuItem = (item: ContextMenuItemType, index: number) => {
     if (item.separator) {
       return <ContextMenuSeparator key={index} />;
@@ -51,7 +53,7 @@ export function GridContextMenu({ items, children }: GridContextMenuProps) {
   return (
     <RadixContextMenu>
       <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
-      <ContextMenuContent className="w-48">
+      <ContextMenuContent className={cn("fibogrid w-48", className)}>
         {items.map((item, index) => renderMenuItem(item, index))}
       </ContextMenuContent>
     </RadixContextMenu>

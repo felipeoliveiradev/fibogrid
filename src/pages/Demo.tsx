@@ -788,7 +788,11 @@ export default function Demo() {
               pagination={true}
               paginationMode={useServerSide ? 'server' : 'client'}
               serverSideDataSource={useServerSide ? serverSideDataSource : undefined}
-              paginationPageSize={25}
+              paginationPageSize={25}   
+              getContextMenuItems={(info) => [
+                { name: "Copiar valor", action: () => console.log(123, info) },
+                { name: "Editar", action: () => console.log("editar", info) },
+              ]}
               paginationPageSizeOptions={[25, 50, 100, 250, 500]}
               groupByFields={groupByField ? [groupByField] : undefined}
               loading={isLoadingServer}

@@ -318,6 +318,18 @@
   border-bottom-color: var(--fibogrid-row-border-bottom-group);
 }
 
+.fibogrid-row-even {
+  background-color: var(--fibogrid-row-bg-even);
+}
+
+.fibogrid-row-odd {
+  background-color: var(--fibogrid-row-bg-odd);
+}
+
+.fibogrid-row-selected {
+  background-color: var(--fibogrid-row-bg-selected);
+}
+
 /* Cell */
 .fibogrid-cell {
   position: relative;

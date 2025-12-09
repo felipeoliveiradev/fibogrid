@@ -33,6 +33,7 @@ interface GridHeaderProps<T> {
   onAutoSize?: (field: string) => void;
   onAutoSizeAll?: () => void;
   showFilterRow?: boolean;
+  className?: string;
 }
 
 export function GridHeader<T>({
@@ -63,6 +64,7 @@ export function GridHeader<T>({
   onAutoSize,
   onAutoSizeAll,
   showFilterRow = true,
+  className,
 }: GridHeaderProps<T>) {
   const getSortDirection = (field: string): SortDirection => {
     const sort = sortModel.find((s) => s.field === field);
@@ -144,6 +146,8 @@ export function GridHeader<T>({
     const handleMouseUp = () => {
       setTimeout(() => {
         wasResizingRef.current = false;
+        // Clean up the style that might have been applied to body during resize
+        document.body.style.cursor = '';
       }, 100);
       document.removeEventListener('mouseup', handleMouseUp);
     };
@@ -164,10 +168,10 @@ export function GridHeader<T>({
           'relative flex items-center border-r border-border px-3 select-none group fibogrid-header-container',
           column.sortable !== false && 'cursor-pointer',
           isDragging && 'opacity-50',
-          isDragOver && 'bg-primary/20',
+          isDragOver && 'fibogrid-header-drag-over',
           isPinned && 'sticky z-[2]',
-          column.isLastPinned && column.pinned === 'left' && 'shadow-[2px_0_5px_-2px_rgba(0,0,0,0.3)]',
-          column.isFirstPinned && column.pinned === 'right' && 'shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.3)]'
+          column.isLastPinned && column.pinned === 'left' && 'fibogrid-pinned-left-shadow',
+          column.isFirstPinned && column.pinned === 'right' && 'fibogrid-pinned-right-shadow'
         )}
         style={{ 
           width: column.computedWidth, 
@@ -218,10 +222,11 @@ export function GridHeader<T>({
           onAutoSize={onAutoSize}
           onAutoSizeAll={onAutoSizeAll}
           onFilterClick={(col, rect) => onFilterClick?.(col, rect)}
+          className={className}
         >
           <button
             onClick={(e) => e.stopPropagation()}
-            className="ml-1 p-0.5 opacity-0 group-hover:opacity-100 hover:bg-muted-foreground/20 rounded flex-shrink-0"
+            className="ml-1 p-0.5 opacity-0 group-hover:opacity-100 hover:bg-[color:var(--fibogrid-surface-hover)] rounded flex-shrink-0"
           >
             <MoreVertical className="h-4 w-4" />
           </button>
@@ -230,13 +235,13 @@ export function GridHeader<T>({
         {column.resizable !== false && (
           <div
             className={cn(
-              'absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-primary group/resize',
-              resizingColumn === column.field && 'bg-primary'
+              'absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-[color:var(--fibogrid-primary)] group/resize fibogrid-resize-handle',
+              resizingColumn === column.field && 'bg-[color:var(--fibogrid-primary)]'
             )}
             onMouseDown={(e) => handleResizeMouseDown(e, column)}
             onDoubleClick={(e) => handleResizeDoubleClick(e, column)}
           >
-            <div className="absolute right-0 top-0 bottom-0 w-1 group-hover/resize:bg-primary transition-colors" />
+            <div className="absolute right-0 top-0 bottom-0 w-1 group-hover/resize:bg-[color:var(--fibogrid-primary)] transition-colors" />
           </div>
         )}
       </div>
@@ -259,8 +264,8 @@ export function GridHeader<T>({
         className={cn(
           'flex items-center border-r border-border px-1 fibogrid-filter-row-container',
           isPinned && 'sticky z-[2]',
-          column.isLastPinned && column.pinned === 'left' && 'shadow-[2px_0_5px_-2px_rgba(0,0,0,0.3)]',
-          column.isFirstPinned && column.pinned === 'right' && 'shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.3)]'
+          column.isLastPinned && column.pinned === 'left' && 'fibogrid-pinned-left-shadow',
+          column.isFirstPinned && column.pinned === 'right' && 'fibogrid-pinned-right-shadow'
         )}
         style={{ 
           width: column.computedWidth, 
@@ -276,10 +281,10 @@ export function GridHeader<T>({
           <div className="flex items-center w-full gap-1">
             <Input
               placeholder=""
-                  value={filterValue}
+              value={filterValue}
               className={cn(
-                "h-7 text-xs border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-primary",
-                hasActiveFilter && "bg-primary/10"
+                "h-7 text-xs border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-[color:var(--fibogrid-primary)] fibogrid-filter-input",
+                hasActiveFilter && "fibogrid-filter-input-active"
               )}
               onClick={(e) => e.stopPropagation()}
               onChange={(e) => onQuickColumnFilter?.(column.field, e.target.value)}
@@ -287,8 +292,8 @@ export function GridHeader<T>({
             <button
               onClick={(e) => handleFilterClick(e, column)}
               className={cn(
-                "p-1 rounded hover:bg-muted flex-shrink-0",
-                hasActiveFilter && "text-primary"
+                "p-1 rounded hover:bg-[color:var(--fibogrid-surface-hover)] flex-shrink-0",
+                hasActiveFilter && "text-[color:var(--fibogrid-primary)]"
               )}
               title="Advanced filter"
             >

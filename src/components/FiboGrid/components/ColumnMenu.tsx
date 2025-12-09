@@ -10,6 +10,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { cn } from '@/lib/utils';
 import {
   ArrowUp,
   ArrowDown,
@@ -32,6 +33,7 @@ interface ColumnMenuProps<T> {
   onAutoSizeAll?: () => void;
   onFilterClick?: (column: ProcessedColumn<T>, rect: DOMRect) => void;
   children: React.ReactNode;
+  className?: string;
 }
 
 export function ColumnMenu<T>({
@@ -43,6 +45,7 @@ export function ColumnMenu<T>({
   onAutoSizeAll,
   onFilterClick,
   children,
+  className,
 }: ColumnMenuProps<T>) {
   const triggerRef = useRef<HTMLButtonElement>(null);
 
@@ -56,7 +59,7 @@ export function ColumnMenu<T>({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild ref={triggerRef}>{children}</DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-52 bg-popover border border-border z-[100]">
+      <DropdownMenuContent align="start" className={cn("fibogrid w-52 bg-popover border border-border z-[100]", className)}>
         {}
         {column.sortable !== false && onSort && (
           <>

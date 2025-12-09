@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import { FiboGridProps, ProcessedColumn, SortModel, FilterModel, ContextMenuItem, RowNode, EditingCell } from './types';
+import './styles/theme-mapping.css';
 import { useGridState } from './hooks/useGridState';
 import { useVirtualization } from './hooks/useVirtualization';
 import { useColumnResize } from './hooks/useColumnResize';
@@ -84,7 +85,9 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
   const [containerWidth, setContainerWidth] = useState(0);
   const [containerHeight, setContainerHeight] = useState(0);
   const [filterState, setFilterState] = useState<FilterState<T> | null>(null);
+
   const [quickFilterValue, setQuickFilterValue] = useState('');
+  const [contextMenuTarget, setContextMenuTarget] = useState<any>(null); // State to hold inner clicked cell data
   
   const editingCellRef = useRef<{ rowId: string; field: string; value: any; originalValue: any } | null>(null);
   useEffect(() => {
@@ -572,11 +575,12 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
           selectedCount={selection.selectedRows.size}
           totalCount={displayedRows.length}
           filterModel={filterModel}
-          onResetFilters={() => {
-            setFilterModel([]);
-            setQuickFilterValue('');
-          }}
-        />
+            onResetFilters={filterModel.length > 0 ? () => {
+              api.setFilterModel([]);
+              setQuickFilterValue('');
+            } : undefined}
+            className={className}
+          />
       )}
 
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -615,6 +619,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                 onAutoSize={handleAutoSize}
                 onAutoSizeAll={handleAutoSizeAll}
                 showFilterRow={true}
+                className={className}
               />
             </div>
 
@@ -731,7 +736,24 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                         rowNumber={row.rowIndex + 1}
                         onAddChildRow={handleAddChildRow}
                         onRowRangeMouseDown={handleRowRangeMouseDown}
+
                         onRowRangeMouseEnter={handleRowRangeMouseEnter}
+                        onCellContextMenu={(rowIndex, colIndex, e) => {
+                          // Do NOT prevent default here, as it blocks Radix UI ContextMenuTrigger from seeing the event
+                          // e.preventDefault(); 
+                          
+                          const column = columns[colIndex];
+                          const value = (row.data as any)[column.field];
+
+                          setContextMenuTarget({
+                            value,
+                            data: row.data,
+                            rowIndex: row.rowIndex,
+                            colDef: column,
+                            column,
+                            api,
+                          });
+                        }}
                       />
                   );
                 }
@@ -768,6 +790,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
           pageSizeOptions={paginationPageSizeOptions}
           onPageChange={handlePageChange}
           onPageSizeChange={handlePageSizeChange}
+          className={className}
         />
       )}
 
@@ -819,6 +842,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
             anchorRect={filterState.anchorRect}
             containerRef={containerRef}
             enableVirtualization={enableFilterValueVirtualization}
+            className={className}
           />
         );
       })()}
@@ -826,10 +850,13 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
   );
 
   if (contextMenu) {
+    const defaultParams = { api, column: null, node: null, value: null, data: null };
+    const params = contextMenuTarget ? { ...contextMenuTarget, api } : defaultParams;
+
     const items = getContextMenuItems
-      ? getContextMenuItems({} as any)
+      ? getContextMenuItems(params)
       : getDefaultContextMenuItems();
-    return <GridContextMenu items={items}>{gridContent}</GridContextMenu>;
+    return <GridContextMenu items={items} className={className}>{gridContent}</GridContextMenu>;
   }
 
   return gridContent;

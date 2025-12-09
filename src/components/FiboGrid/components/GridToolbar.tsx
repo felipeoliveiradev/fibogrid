@@ -33,6 +33,7 @@ interface GridToolbarProps<T> {
   totalCount: number;
   filterModel?: FilterModel[];
   onResetFilters?: () => void;
+  className?: string;
 }
 
 export function GridToolbar<T>({
@@ -45,6 +46,7 @@ export function GridToolbar<T>({
   totalCount,
   filterModel = [],
   onResetFilters,
+  className,
 }: GridToolbarProps<T>) {
   const [copied, setCopied] = useState(false);
 
@@ -78,12 +80,12 @@ export function GridToolbar<T>({
 
   return (
     <div className="flex flex-col">
-      {}
+      {/* Active Filters Row */}
       {hasActiveFilters && (
         <div className="flex items-center gap-2 px-3 py-2 border-b border-border bg-muted/20">
           <span className="text-xs text-muted-foreground font-medium">Active Filters:</span>
           
-          {}
+          {/* Quick Filter Tag */}
           {quickFilterValue && (
             <div className="flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded-md text-xs">
               <Search className="h-3 w-3" />
@@ -97,7 +99,7 @@ export function GridToolbar<T>({
             </div>
           )}
           
-          {}
+          {/* Column Filters Tags */}
           {filterModel.map((filter, idx) => (
             <div
               key={`${filter.field}-${idx}`}
@@ -116,7 +118,7 @@ export function GridToolbar<T>({
             </div>
           ))}
           
-          {}
+          {/* Reset All Button */}
           {onResetFilters && (
             <Button
               variant="ghost"
@@ -131,9 +133,9 @@ export function GridToolbar<T>({
         </div>
       )}
       
-      {}
+      {/* Search and Tools Row */}
       <div className="flex items-center gap-2 p-2 border-b border-border bg-muted/30">
-      {}
+      {/* Search Input */}
       <div className="relative flex-1 max-w-sm">
         <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
@@ -152,15 +154,16 @@ export function GridToolbar<T>({
         )}
       </div>
 
-      {}
+      {/* Selection Count */}
       {selectedCount > 0 && (
         <div className="text-sm text-muted-foreground px-2 py-1 bg-primary/10 rounded">
           {selectedCount} of {totalCount} selected
         </div>
       )}
 
+      {/* Toolbar Buttons */}
       <div className="flex items-center gap-1 ml-auto">
-        {}
+        {/* Columns Toggle */}
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="ghost" size="sm" className="h-8 px-2">
@@ -168,7 +171,7 @@ export function GridToolbar<T>({
               <span className="ml-1.5 hidden sm:inline">Columns</span>
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-56 p-0 fibogrid-popover-content" align="end">
+          <PopoverContent className={cn("fibogrid w-56 p-0 fibogrid-popover-content bg-popover border-border", className)} align="end">
             <div className="p-2 fibogrid-popover-content-header">
               <span className="text-sm font-medium">Toggle Columns</span>
             </div>
@@ -218,7 +221,7 @@ export function GridToolbar<T>({
           </PopoverContent>
         </Popover>
 
-        {}
+        {/* Copy Button */}
         <Button
           variant="ghost"
           size="sm"
@@ -233,7 +236,7 @@ export function GridToolbar<T>({
           <span className="ml-1.5 hidden sm:inline">{copied ? 'Copied!' : 'Copy'}</span>
         </Button>
 
-        {}
+        {/* Export Button */}
         <Button
           variant="ghost"
           size="sm"
@@ -244,7 +247,7 @@ export function GridToolbar<T>({
           <span className="ml-1.5 hidden sm:inline">Export</span>
         </Button>
 
-        {}
+        {/* Refresh Button */}
         <Button
           variant="ghost"
           size="sm"

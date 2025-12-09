@@ -3,6 +3,7 @@ import { ProcessedColumn, RowNode, EditingCell, GridApi } from '../types';
 import { GridCell } from './GridCell';
 import { cn } from '@/lib/utils';
 import { GripVertical, Plus } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 
 interface GridRowProps<T> {
@@ -32,6 +33,7 @@ interface GridRowProps<T> {
   isCellFocused?: (rowId: string, field: string) => boolean;
   onCellMouseDown?: (rowIndex: number, colIndex: number, e: React.MouseEvent) => void;
   onCellMouseEnter?: (rowIndex: number, colIndex: number) => void;
+  onCellContextMenu?: (rowIndex: number, colIndex: number, e: React.MouseEvent) => void;
   api: GridApi<T>;
   isEven: boolean;
   level?: number;
@@ -73,6 +75,7 @@ function GridRowInner<T>({
   isCellFocused,
   onCellMouseDown,
   onCellMouseEnter,
+  onCellContextMenu,
   api,
   isEven,
   level = 0,
@@ -117,9 +120,9 @@ function GridRowInner<T>({
   }, [visibleColumns]);
 
   const getPinnedBgClass = useMemo(() => {
-    if (isSelected) return 'bg-primary/15';
-    if (isEven) return 'bg-muted';
-    return 'bg-background';
+    if (isSelected) return 'fibogrid-row-selected';
+    if (isEven) return 'fibogrid-row-even';
+    return 'fibogrid-row-odd';
   }, [isSelected, isEven]);
 
   const renderCell = (
@@ -141,8 +144,8 @@ function GridRowInner<T>({
         className={cn(
           'h-full',
           isPinned && 'sticky z-[2]',
-          column.isLastPinned && column.pinned === 'left' && 'shadow-[2px_0_5px_-2px_rgba(0,0,0,0.3)]',
-          column.isFirstPinned && column.pinned === 'right' && 'shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.3)]',
+          column.isLastPinned && column.pinned === 'left' && 'fibogrid-pinned-left-shadow',
+          column.isFirstPinned && column.pinned === 'right' && 'fibogrid-pinned-right-shadow',
           isPinned && getPinnedBgClass
         )}
         style={{
@@ -170,6 +173,7 @@ function GridRowInner<T>({
           isFocused={cellFocused}
           onMouseDown={(e) => onCellMouseDown?.(row.rowIndex, globalColIndex, e)}
           onMouseEnter={() => onCellMouseEnter?.(row.rowIndex, globalColIndex)}
+          onContextMenu={(e) => onCellContextMenu?.(row.rowIndex, globalColIndex, e)}
           indent={isFirstColumn ? indentWidth : 0}
           showExpandIcon={isFirstColumn && hasChildren}
           isExpanded={isExpanded}
@@ -184,16 +188,16 @@ function GridRowInner<T>({
   return (
     <div
       className={cn(
-        'flex border-b border-border group/row',
+        'flex border-b border-border group/row text-sm',
         'transition-[background-color] duration-150',
-        'hover:bg-accent/50',
-        isSelected && 'bg-primary/10 hover:bg-primary/15',
-        !isSelected && isEven && 'bg-muted/30',
-        !isSelected && !isEven && 'bg-background',
-        isDragging && 'opacity-50',
-        isDropTarget && dropPosition === 'before' && 'border-t-2 border-t-primary',
-        isDropTarget && dropPosition === 'after' && 'border-b-2 border-b-primary',
-        isChildRow && 'bg-muted/40'
+        'fibogrid-row-hover',
+        isSelected && 'fibogrid-row-selected',
+        !isSelected && isEven && 'fibogrid-row-even',
+        !isSelected && !isEven && 'fibogrid-row-odd',
+        isDragging && 'fibogrid-row-dragging',
+        isDropTarget && dropPosition === 'before' && 'fibogrid-drop-target-top',
+        isDropTarget && dropPosition === 'after' && 'fibogrid-drop-target-bottom',
+        isChildRow && 'fibogrid-row-child'
       )}
       style={{ height: `${rowHeight}px` }}
       onClick={onRowClick}
@@ -222,7 +226,7 @@ function GridRowInner<T>({
         <div
           className={cn(
             "flex items-center justify-center border-r border-border px-2 text-xs text-muted-foreground flex-shrink-0 fibogrid-row-number-column",
-            isSelected ? 'fibogrid-row-number-bg-selected' : isEven ? 'fibogrid-row-number-bg-even' : 'bg-background'
+            isSelected ? 'fibogrid-row-number-bg-selected' : isEven ? 'fibogrid-row-number-bg-even' : ''
           )}
         >
           {rowNumber}
@@ -240,13 +244,13 @@ function GridRowInner<T>({
           {rowDragEnabled && (
             <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab mr-1" />
           )}
-          <input
-            type="checkbox"
+          <Checkbox
             checked={isSelected}
-            onChange={(e) => {
-              e.stopPropagation();
-              onCheckboxChange?.(e.target.checked);
+            onCheckedChange={(checked) => {
+              onCheckboxChange?.(!!checked);
             }}
+            className="translate-y-[1px]" 
+            aria-label="Select row"
             onClick={(e) => e.stopPropagation()}
           />
         </div>
@@ -255,7 +259,6 @@ function GridRowInner<T>({
       {centerColumns.map((column) => renderCell(column, false, undefined, undefined))}
 
       {rightPinnedColumns.map((column) => renderCell(column, true, undefined, column.stickyRight))}
-
       {onAddChildRow && !isChildRow && (
         <Button
           variant="ghost"

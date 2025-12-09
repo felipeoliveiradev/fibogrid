@@ -7,6 +7,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Filter, X, Search, SortAsc, SortDesc } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { VirtualFilterList } from './VirtualFilterList';
 
 interface FilterPopoverProps<T> {
@@ -19,6 +20,7 @@ interface FilterPopoverProps<T> {
   anchorRect?: DOMRect | null;
   containerRef?: React.RefObject<HTMLDivElement>;
   enableVirtualization?: boolean;
+  className?: string;
 }
 
 export function FilterPopover<T>({
@@ -31,6 +33,7 @@ export function FilterPopover<T>({
   anchorRect,
   containerRef,
   enableVirtualization = false,
+  className,
 }: FilterPopoverProps<T>) {
   const popoverRef = useRef<HTMLDivElement>(null);
   const [value, setValue] = useState(currentFilter?.value ?? '');
@@ -341,7 +344,7 @@ export function FilterPopover<T>({
                 <SelectTrigger className="h-8">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-popover border border-border z-[110]">
+                <SelectContent className={cn("fibogrid bg-popover border border-border z-[110]", className)}>
                   {operators.map((op) => (
                     <SelectItem key={op.value} value={op.value}>
                       {op.label}
@@ -350,7 +353,7 @@ export function FilterPopover<T>({
                 </SelectContent>
               </Select>
 
-              {renderInput(filterType, value, setValue)}
+              {renderInput(filterType, value, setValue, className)}
 
               <div className="flex gap-2 pt-2">
                 <Button variant="outline" className="flex-1" onClick={handleClear}>
@@ -397,7 +400,8 @@ function getOperatorsForType(type: string) {
 function renderInput(
   type: string,
   value: any,
-  onChange: (value: any) => void
+  onChange: (value: any) => void,
+  className?: string
 ) {
   switch (type) {
     case 'number':
@@ -425,7 +429,7 @@ function renderInput(
           <SelectTrigger className="h-8">
             <SelectValue placeholder="Select..." />
           </SelectTrigger>
-          <SelectContent className="bg-popover border border-border z-[110]">
+          <SelectContent className={cn("fibogrid bg-popover border border-border z-[110]", className)}>
             <SelectItem value="true">Yes</SelectItem>
             <SelectItem value="false">No</SelectItem>
           </SelectContent>

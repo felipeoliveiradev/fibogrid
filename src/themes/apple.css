@@ -1,0 +1,202 @@
+/* FiboGrid - Apple Theme
+ * Cupertino (iOS) inspired style
+ */
+
+.fibogrid.theme-apple {
+  /* Background & Surface */
+  --fibogrid-bg: #ffffff;
+  --fibogrid-surface: #f2f2f7;
+  --fibogrid-surface-hover: #e5e5ea;
+  --fibogrid-surface-selected: #d1d1d6;
+  --fibogrid-surface-active: #c7c7cc;
+  
+  /* Text */
+  --fibogrid-text: #000000;
+  --fibogrid-text-secondary: #3c3c43;
+  --fibogrid-text-muted: #8e8e93;
+  --fibogrid-text-inverse: #ffffff;
+  
+  /* Primary */
+  --fibogrid-primary: #007aff;
+  --fibogrid-primary-hover: #0051d5;
+  --fibogrid-primary-active: #0040aa;
+  --fibogrid-primary-text: #ffffff;
+  
+  /* Borders */
+  --fibogrid-border: #c6c6c8;
+  --fibogrid-border-strong: #a1a1a6;
+  --fibogrid-border-hover: #8e8e93;
+  --fibogrid-border-light: #e5e5ea;
+  
+  /* Cell Borders */
+  --fibogrid-cell-border-right: #e5e5ea;
+  --fibogrid-cell-border-bottom: #e5e5ea;
+  --fibogrid-cell-border-hover: #c6c6c8;
+  --fibogrid-cell-border-selected: #007aff;
+  --fibogrid-cell-border-editing: #007aff;
+  
+  /* Row Borders */
+  --fibogrid-row-border-bottom: #e5e5ea;
+  --fibogrid-row-border-bottom-hover: #c6c6c8;
+  --fibogrid-row-border-bottom-selected: #007aff;
+  --fibogrid-row-border-bottom-group: #a1a1a6;
+  
+  /* Header Borders */
+  --fibogrid-header-border-bottom: #a1a1a6;
+  --fibogrid-header-cell-border-right: #e5e5ea;
+  --fibogrid-header-cell-border-right-hover: #c6c6c8;
+  --fibogrid-header-cell-border-right-active: #007aff;
+  
+  /* Container */
+  --fibogrid-container-border: #c6c6c8;
+  --fibogrid-container-border-focus: #007aff;
+  
+  /* Typography */
+  --fibogrid-font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
+  --fibogrid-font-weight-medium: 500;
+  --fibogrid-font-weight-semibold: 600;
+  
+  /* Border Radius */
+  --fibogrid-radius-sm: 8px;
+  --fibogrid-radius-md: 10px;
+  --fibogrid-radius-lg: 12px;
+  
+  /* Selection */
+  --fibogrid-selection-bg: rgba(0, 122, 255, 0.1);
+  --fibogrid-selection-border: #007aff;
+  --fibogrid-selection-hover: rgba(0, 122, 255, 0.15);
+  
+  /* Header */
+  --fibogrid-header-bg: #f2f2f7;
+  --fibogrid-header-bg-hover: #e5e5ea;
+  --fibogrid-header-text: #000000;
+  --fibogrid-header-text-secondary: #3c3c43;
+  
+  /* Row States */
+  --fibogrid-row-bg-even: #ffffff;
+  --fibogrid-row-bg-odd: #f2f2f7;
+  --fibogrid-row-bg-hover: #e5e5ea;
+  --fibogrid-row-bg-selected: #d1d1d6;
+  --fibogrid-row-bg-selected-hover: #c7c7cc;
+  
+  /* Buttons */
+  --fibogrid-button-bg: transparent;
+  --fibogrid-button-bg-hover: #e5e5ea;
+  --fibogrid-button-bg-active: #c7c7cc;
+  --fibogrid-button-text: #007aff;
+  --fibogrid-button-text-hover: #0051d5;
+  --fibogrid-button-text-active: #0040aa;
+  --fibogrid-button-border: #c6c6c8;
+  --fibogrid-button-border-hover: #007aff;
+  --fibogrid-button-border-active: #0051d5;
+  
+  /* Icons */
+  --fibogrid-icon-color: #8e8e93;
+  --fibogrid-icon-color-hover: #007aff;
+  --fibogrid-icon-color-active: #0051d5;
+  
+  /* Checkbox */
+  --fibogrid-checkbox-bg: #ffffff;
+  --fibogrid-checkbox-bg-checked: #007aff;
+  --fibogrid-checkbox-border: #c6c6c8;
+  --fibogrid-checkbox-border-hover: #007aff;
+  --fibogrid-checkbox-border-checked: #007aff;
+  --fibogrid-checkbox-checkmark: #ffffff;
+  
+  /* Popover */
+  --fibogrid-popover-bg: #ffffff;
+  --fibogrid-popover-border: #c6c6c8;
+  --fibogrid-popover-item-bg-hover: #e5e5ea;
+  --fibogrid-popover-item-text: #000000;
+  
+  /* Shadows */
+  --fibogrid-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --fibogrid-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --fibogrid-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+}
+
+.dark .fibogrid.theme-apple {
+  /* Background & Surface */
+  --fibogrid-bg: #000000;
+  --fibogrid-surface: #1c1c1e;
+  --fibogrid-surface-hover: #2c2c2e;
+  --fibogrid-surface-selected: #3a3a3c;
+  --fibogrid-surface-active: #48484a;
+  
+  /* Text */
+  --fibogrid-text: #ffffff;
+  --fibogrid-text-secondary: #ebebf5;
+  --fibogrid-text-muted: #8e8e93;
+  --fibogrid-text-inverse: #000000;
+  
+  /* Primary */
+  --fibogrid-primary: #0a84ff;
+  --fibogrid-primary-hover: #409cff;
+  --fibogrid-primary-active: #007aff;
+  --fibogrid-primary-text: #ffffff;
+  
+  /* Borders */
+  --fibogrid-border: #38383a;
+  --fibogrid-border-strong: #48484a;
+  --fibogrid-border-hover: #636366;
+  --fibogrid-border-light: #2c2c2e;
+  
+  /* Cell Borders */
+  --fibogrid-cell-border-right: #1c1c1e;
+  --fibogrid-cell-border-bottom: #1c1c1e;
+  --fibogrid-cell-border-hover: #2c2c2e;
+  --fibogrid-cell-border-selected: #0a84ff;
+  --fibogrid-cell-border-editing: #0a84ff;
+  
+  /* Row Borders */
+  --fibogrid-row-border-bottom: #38383a;
+  --fibogrid-row-border-bottom-hover: #48484a;
+  --fibogrid-row-border-bottom-selected: #0a84ff;
+  --fibogrid-row-border-bottom-group: #1c1c1e;
+  
+  /* Header Borders */
+  --fibogrid-header-border-bottom: #38383a;
+  --fibogrid-header-cell-border-right: #1c1c1e;
+  --fibogrid-header-cell-border-right-hover: #2c2c2e;
+  --fibogrid-header-cell-border-right-active: #0a84ff;
+  
+  /* Container */
+  --fibogrid-container-border: #38383a;
+  --fibogrid-container-border-focus: #0a84ff;
+  
+  /* Header */
+  --fibogrid-header-bg: #1c1c1e;
+  --fibogrid-header-bg-hover: #2c2c2e;
+  --fibogrid-header-text: #ffffff;
+  --fibogrid-header-text-secondary: #ebebf5;
+  
+  /* Row States */
+  --fibogrid-row-bg-even: #000000;
+  --fibogrid-row-bg-odd: #1c1c1e;
+  --fibogrid-row-bg-hover: #2c2c2e;
+  --fibogrid-row-bg-selected: #3a3a3c;
+  --fibogrid-row-bg-selected-hover: #48484a;
+  
+  /* Checkbox */
+  --fibogrid-checkbox-bg: #000000;
+  --fibogrid-checkbox-bg-checked: #0a84ff;
+  --fibogrid-checkbox-border: #48484a;
+  --fibogrid-checkbox-border-hover: #0a84ff;
+  --fibogrid-checkbox-border-checked: #0a84ff;
+  
+  /* Selection */
+  --fibogrid-selection-bg: rgba(10, 132, 255, 0.15);
+  --fibogrid-selection-border: #0a84ff;
+  --fibogrid-selection-hover: rgba(10, 132, 255, 0.25);
+
+  /* Buttons */
+  --fibogrid-button-bg: transparent;
+  --fibogrid-button-bg-hover: #2c2c2e;
+  --fibogrid-button-bg-active: #3a3a3c;
+  --fibogrid-button-text: #0a84ff;
+  --fibogrid-button-text-hover: #409cff;
+  --fibogrid-button-text-active: #007aff;
+  --fibogrid-button-border: #38383a;
+  --fibogrid-button-border-hover: #0a84ff;
+  --fibogrid-button-border-active: #409cff;
+}

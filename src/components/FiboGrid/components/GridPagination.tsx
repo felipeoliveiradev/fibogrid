@@ -2,6 +2,7 @@ import React from 'react';
 import { PaginationState } from '../types';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 
 interface GridPaginationProps {
@@ -9,6 +10,7 @@ interface GridPaginationProps {
   pageSizeOptions: number[];
   onPageChange: (page: number) => void;
   onPageSizeChange: (size: number) => void;
+  className?: string;
 }
 
 export function GridPagination({
@@ -16,6 +18,7 @@ export function GridPagination({
   pageSizeOptions,
   onPageChange,
   onPageSizeChange,
+  className,
 }: GridPaginationProps) {
   const { currentPage, totalPages, totalRows, pageSize } = pagination;
   
@@ -33,7 +36,7 @@ export function GridPagination({
           <SelectTrigger className="w-20 h-8">
             <SelectValue />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className={cn("fibogrid", className)}>
             {pageSizeOptions.map((size) => (
               <SelectItem key={size} value={String(size)}>
                 {size}
