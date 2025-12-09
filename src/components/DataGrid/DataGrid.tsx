@@ -640,8 +640,6 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
                         onEditChange={(value) => setEditingCell((prev) => (prev ? { ...prev, value } : null))}
                         onStopEdit={(cancel, currentValue) => {
                           if (editingCell && !cancel) {
-                            // Use currentValue passed from GridCell (latest value from ref)
-                            // This avoids stale closure issues
                             const newValue = currentValue !== undefined ? currentValue : editingCell.value;
                             onCellValueChanged?.({
                               rowNode: row,

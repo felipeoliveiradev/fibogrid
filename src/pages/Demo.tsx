@@ -783,21 +783,13 @@ export default function Demo() {
                 const field = e.column.field as keyof StockRow;
                 const newValue = e.newValue;
                 
-                // Handle detail rows - they have parentId pointing to the original row
-                // Handle child rows - they exist in rowData
-                // Handle regular rows - they exist in rowData
                 const targetId = editedRowData.isDetailRow && editedRowData.parentId 
-                  ? editedRowData.parentId  // Detail rows update their parent
-                  : editedRowData.id;       // Regular/child rows update themselves
+                  ? editedRowData.parentId
+                  : editedRowData.id;
                 
-                setRowData(prev => {
-                  return prev.map(row => {
-                    if (row.id === targetId) {
-                      return { ...row, [field]: newValue };
-                    }
-                    return row;
-                  });
-                });
+                setRowData(prev => prev.map(row => 
+                  row.id === targetId ? { ...row, [field]: newValue } : row
+                ));
               }}
               rangeCellSelection={true}
               rowDragEnabled={true}
