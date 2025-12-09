@@ -605,6 +605,7 @@ export default function Demo() {
                 <ArrowLeft className="h-4 w-4" />
                 <FiboLogo className="h-8 w-8" />
                 <span className="font-display font-bold text-xl">FiboGrid</span>
+                <Badge className="bg-primary/10 text-primary border-primary/30 font-body text-xs px-2 py-0.5">Beta</Badge>
               </Link>
               <Badge className="bg-primary/10 text-primary border-primary/30 font-body">Interactive Demo</Badge>
             </div>

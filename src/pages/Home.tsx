@@ -177,6 +177,7 @@ export default function Home() {
           <div className="flex items-center gap-3">
             <FiboLogo className="h-10 w-10" />
             <span className="text-2xl font-display font-bold tracking-tight">FiboGrid</span>
+            <Badge className="bg-primary/10 text-primary border-primary/30 font-body text-xs px-2 py-0.5">Beta</Badge>
           </div>
           <div className="flex items-center gap-6">
             <Link to="/docs" className="text-muted-foreground hover:text-foreground transition-colors font-body">

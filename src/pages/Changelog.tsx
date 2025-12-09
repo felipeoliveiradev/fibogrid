@@ -169,13 +169,14 @@ export default function Changelog() {
       <div className="fixed inset-0 texture-overlay pointer-events-none" />
       
       {/* Header */}
-      <header className="relative overflow-hidden border-b border-primary/10 bg-background/80 backdrop-blur-sm sticky top-0 z-50">
+      <header className="sticky top-0 z-50 overflow-hidden border-b border-primary/10 bg-background/80 backdrop-blur-sm">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-background to-accent/5" />
         <nav className="relative z-10 max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
               <FiboLogo className="h-8 w-8" />
               <span className="text-xl font-display font-bold tracking-tight">FiboGrid</span>
+              <Badge className="bg-primary/10 text-primary border-primary/30 font-body text-xs px-2 py-0.5">Beta</Badge>
             </Link>
           </div>
           <div className="flex items-center gap-4">

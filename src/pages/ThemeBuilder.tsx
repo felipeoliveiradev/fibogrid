@@ -238,7 +238,9 @@ ${Object.entries(theme)
           <div className="flex items-center gap-4">
             <Link to="/" className="flex items-center gap-2">
               <Palette className="h-6 w-6 text-primary" />
-              <span className="font-semibold text-lg">FiboGrid Theme Builder</span>
+              <span className="font-semibold text-lg">FiboGrid</span>
+              <Badge className="bg-primary/10 text-primary border-primary/30 font-body text-xs px-2 py-0.5">Beta</Badge>
+              <span className="font-semibold text-lg">Theme Builder</span>
             </Link>
             <Badge variant="outline" className="text-xs">
               Beta
