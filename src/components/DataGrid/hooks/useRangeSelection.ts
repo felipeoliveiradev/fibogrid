@@ -53,8 +53,8 @@ export function useRangeSelection(): RangeSelectionResult {
       // Only handle left click
       if (e.button !== 0) return;
       
-      // Don't prevent default - it interferes with input focus
-      // e.preventDefault();
+      // Prevent default text selection during drag
+      e.preventDefault();
       
       const position = { rowIndex, colIndex };
       

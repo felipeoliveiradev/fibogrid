@@ -59,36 +59,9 @@ export function useKeyboardNavigation<T>({
 
       if (rowIndex === -1 || colIndex === -1) return;
 
-      // When editing, only handle escape and enter
+      // When editing, don't intercept keyboard events - let the input handle them
+      // The GridCell component will call onStopEdit with the correct value
       if (isEditing) {
-        if (e.key === 'Escape') {
-          e.preventDefault();
-          onStopEdit?.(true);
-        } else if (e.key === 'Enter') {
-          e.preventDefault();
-          onStopEdit?.(false);
-          // Move to next row
-          if (rowIndex < displayedRows.length - 1) {
-            navigateToCell(rowIndex + 1, colIndex);
-          }
-        } else if (e.key === 'Tab') {
-          e.preventDefault();
-          onStopEdit?.(false);
-          // Move to next/prev cell
-          if (e.shiftKey) {
-            if (colIndex > 0) {
-              navigateToCell(rowIndex, colIndex - 1);
-            } else if (rowIndex > 0) {
-              navigateToCell(rowIndex - 1, visibleColumns.length - 1);
-            }
-          } else {
-            if (colIndex < visibleColumns.length - 1) {
-              navigateToCell(rowIndex, colIndex + 1);
-            } else if (rowIndex < displayedRows.length - 1) {
-              navigateToCell(rowIndex + 1, 0);
-            }
-          }
-        }
         return;
       }
 
