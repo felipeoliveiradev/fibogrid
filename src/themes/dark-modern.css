@@ -19,6 +19,33 @@
   
   --fibogrid-border: #334155;
   
+  /* Cell Borders - Dark Modern with purple accents */
+  --fibogrid-cell-border-right: #334155;
+  --fibogrid-cell-border-bottom: #334155;
+  --fibogrid-cell-border-hover: #475569;
+  --fibogrid-cell-border-selected: #8b5cf6;
+  --fibogrid-cell-border-editing: #8b5cf6;
+  
+  /* Row Borders */
+  --fibogrid-row-border-bottom: #334155;
+  --fibogrid-row-border-bottom-hover: #475569;
+  --fibogrid-row-border-bottom-selected: #8b5cf6;
+  --fibogrid-row-border-bottom-group: #475569;
+  
+  /* Header Borders */
+  --fibogrid-header-border-bottom: #475569;
+  --fibogrid-header-cell-border-right: #334155;
+  --fibogrid-header-cell-border-right-hover: #475569;
+  --fibogrid-header-cell-border-right-active: #8b5cf6;
+  
+  /* Toolbar & Statusbar */
+  --fibogrid-toolbar-border-bottom: #334155;
+  --fibogrid-statusbar-border-top: #334155;
+  
+  /* Container */
+  --fibogrid-container-border: #334155;
+  --fibogrid-container-border-focus: #8b5cf6;
+  
   --fibogrid-selection-bg: #2d1b4e;
   --fibogrid-selection-hover: #3b2667;
   

@@ -19,6 +19,33 @@
   
   --fibogrid-border: #e0e0e0;
   
+  /* Cell Borders - Material Design subtle lines */
+  --fibogrid-cell-border-right: #e0e0e0;
+  --fibogrid-cell-border-bottom: #e0e0e0;
+  --fibogrid-cell-border-hover: #bdbdbd;
+  --fibogrid-cell-border-selected: #1976d2;
+  --fibogrid-cell-border-editing: #1976d2;
+  
+  /* Row Borders */
+  --fibogrid-row-border-bottom: #e0e0e0;
+  --fibogrid-row-border-bottom-hover: #bdbdbd;
+  --fibogrid-row-border-bottom-selected: #1976d2;
+  --fibogrid-row-border-bottom-group: #bdbdbd;
+  
+  /* Header Borders */
+  --fibogrid-header-border-bottom: #bdbdbd;
+  --fibogrid-header-cell-border-right: #e0e0e0;
+  --fibogrid-header-cell-border-right-hover: #bdbdbd;
+  --fibogrid-header-cell-border-right-active: #1976d2;
+  
+  /* Toolbar & Statusbar */
+  --fibogrid-toolbar-border-bottom: #e0e0e0;
+  --fibogrid-statusbar-border-top: #e0e0e0;
+  
+  /* Container */
+  --fibogrid-container-border: #e0e0e0;
+  --fibogrid-container-border-focus: #1976d2;
+  
   --fibogrid-radius-sm: 4px;
   --fibogrid-radius-md: 4px;
   --fibogrid-radius-lg: 4px;
@@ -42,4 +69,31 @@
   --fibogrid-text-secondary: #b0b0b0;
   
   --fibogrid-border: #2c2c2c;
+  
+  /* Cell Borders - Dark Material */
+  --fibogrid-cell-border-right: #2c2c2c;
+  --fibogrid-cell-border-bottom: #2c2c2c;
+  --fibogrid-cell-border-hover: #424242;
+  --fibogrid-cell-border-selected: #90caf9;
+  --fibogrid-cell-border-editing: #90caf9;
+  
+  /* Row Borders */
+  --fibogrid-row-border-bottom: #2c2c2c;
+  --fibogrid-row-border-bottom-hover: #424242;
+  --fibogrid-row-border-bottom-selected: #90caf9;
+  --fibogrid-row-border-bottom-group: #424242;
+  
+  /* Header Borders */
+  --fibogrid-header-border-bottom: #424242;
+  --fibogrid-header-cell-border-right: #2c2c2c;
+  --fibogrid-header-cell-border-right-hover: #424242;
+  --fibogrid-header-cell-border-right-active: #90caf9;
+  
+  /* Toolbar & Statusbar */
+  --fibogrid-toolbar-border-bottom: #2c2c2c;
+  --fibogrid-statusbar-border-top: #2c2c2c;
+  
+  /* Container */
+  --fibogrid-container-border: #2c2c2c;
+  --fibogrid-container-border-focus: #90caf9;
 }

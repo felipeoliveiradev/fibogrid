@@ -1,7 +1,6 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
-import "../node_modules/fibogrid/dist/style.css";
 import "./fibogrid.css"; // Use local CSS for documentation site
 
 // Initialize theme from localStorage or system preference

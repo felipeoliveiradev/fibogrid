@@ -30,8 +30,12 @@
   flex-direction: column;
   width: 100%;
   overflow: hidden;
-  border: 1px solid var(--fibogrid-border);
+  border: 1px solid var(--fibogrid-container-border);
   border-radius: var(--fibogrid-radius-md);
+}
+
+.fibogrid:focus-within {
+  border-color: var(--fibogrid-container-border-focus);
 }
 
 /* Toolbar */
@@ -43,7 +47,7 @@
   padding: var(--fibogrid-toolbar-padding);
   height: var(--fibogrid-toolbar-height);
   background-color: var(--fibogrid-surface);
-  border-bottom: 1px solid var(--fibogrid-border);
+  border-bottom: 1px solid var(--fibogrid-toolbar-border-bottom);
 }
 
 .fibogrid-toolbar-left,
@@ -66,16 +70,32 @@
   height: 32px;
   padding: 0 var(--fibogrid-cell-padding) 0 36px;
   font-size: var(--fibogrid-font-size);
-  color: var(--fibogrid-text);
-  background-color: var(--fibogrid-bg);
-  border: 1px solid var(--fibogrid-border);
+  color: var(--fibogrid-input-text);
+  background-color: var(--fibogrid-input-bg);
+  border: 1px solid var(--fibogrid-input-border);
   border-radius: var(--fibogrid-radius-sm);
   outline: none;
-  transition: border-color var(--fibogrid-transition);
+  transition: border-color var(--fibogrid-transition), background-color var(--fibogrid-transition);
+}
+
+.fibogrid-search input::placeholder {
+  color: var(--fibogrid-input-text-placeholder);
+}
+
+.fibogrid-search input:hover {
+  border-color: var(--fibogrid-input-border-hover);
 }
 
 .fibogrid-search input:focus {
-  border-color: var(--fibogrid-primary);
+  border-color: var(--fibogrid-input-border-focus);
+  background-color: var(--fibogrid-input-bg-focus);
+}
+
+.fibogrid-search input:disabled {
+  background-color: var(--fibogrid-input-bg-disabled);
+  color: var(--fibogrid-input-text-disabled);
+  border-color: var(--fibogrid-input-border-disabled);
+  cursor: not-allowed;
 }
 
 .fibogrid-search-icon {
@@ -83,7 +103,7 @@
   left: 10px;
   width: 16px;
   height: 16px;
-  color: var(--fibogrid-text-secondary);
+  color: var(--fibogrid-search-icon-color);
 }
 
 /* Buttons */
@@ -96,9 +116,9 @@
   padding: 0 12px;
   font-size: var(--fibogrid-font-size);
   font-weight: 500;
-  color: var(--fibogrid-text);
-  background-color: transparent;
-  border: 1px solid var(--fibogrid-border);
+  color: var(--fibogrid-button-text);
+  background-color: var(--fibogrid-button-bg);
+  border: 1px solid var(--fibogrid-button-border);
   border-radius: var(--fibogrid-radius-sm);
   cursor: pointer;
   transition: all var(--fibogrid-transition);
@@ -106,17 +126,22 @@
 }
 
 .fibogrid-button:hover {
-  background-color: var(--fibogrid-surface-hover);
-  border-color: var(--fibogrid-primary);
+  background-color: var(--fibogrid-button-bg-hover);
+  border-color: var(--fibogrid-button-border-hover);
+  color: var(--fibogrid-button-text-hover);
 }
 
 .fibogrid-button:active {
-  background-color: var(--fibogrid-surface-active);
+  background-color: var(--fibogrid-button-bg-active);
+  border-color: var(--fibogrid-button-border-active);
 }
 
 .fibogrid-button:disabled {
-  opacity: 0.5;
+  background-color: var(--fibogrid-button-bg-disabled);
+  color: var(--fibogrid-button-text-disabled);
+  border-color: var(--fibogrid-button-border-disabled);
   cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .fibogrid-button-primary {
@@ -142,7 +167,7 @@
   align-items: stretch;
   height: var(--fibogrid-header-height);
   background-color: var(--fibogrid-surface);
-  border-bottom: 1px solid var(--fibogrid-border);
+  border-bottom: 2px solid var(--fibogrid-header-border-bottom);
   overflow: hidden;
   user-select: none;
 }
@@ -157,13 +182,19 @@
   font-weight: var(--fibogrid-font-weight-medium);
   color: var(--fibogrid-text);
   background-color: var(--fibogrid-surface);
-  border-right: 1px solid var(--fibogrid-border);
+  border-right: 1px solid var(--fibogrid-header-cell-border-right);
   flex-shrink: 0;
-  transition: background-color var(--fibogrid-transition);
+  transition: background-color var(--fibogrid-transition), border-color var(--fibogrid-transition);
 }
 
 .fibogrid-header-cell:hover {
   background-color: var(--fibogrid-surface-hover);
+  border-right-color: var(--fibogrid-header-cell-border-right-hover);
+}
+
+.fibogrid-header-cell:active,
+.fibogrid-header-cell.fibogrid-header-cell-active {
+  border-right-color: var(--fibogrid-header-cell-border-right-active);
 }
 
 .fibogrid-header-cell-content {
@@ -181,28 +212,30 @@
 .fibogrid-sort-icon {
   width: 16px;
   height: 16px;
-  color: var(--fibogrid-text-secondary);
+  color: var(--fibogrid-sort-icon-color);
   flex-shrink: 0;
+  transition: color var(--fibogrid-transition-fast);
 }
 
 .fibogrid-sort-icon-active {
-  color: var(--fibogrid-primary);
+  color: var(--fibogrid-sort-icon-color-active);
 }
 
 .fibogrid-filter-icon {
   width: 16px;
   height: 16px;
-  color: var(--fibogrid-text-secondary);
+  color: var(--fibogrid-filter-icon-color);
   cursor: pointer;
   flex-shrink: 0;
+  transition: color var(--fibogrid-transition-fast);
 }
 
 .fibogrid-filter-icon:hover {
-  color: var(--fibogrid-primary);
+  color: var(--fibogrid-filter-icon-color-hover);
 }
 
 .fibogrid-filter-icon-active {
-  color: var(--fibogrid-primary);
+  color: var(--fibogrid-filter-icon-color-active);
 }
 
 /* Column resize handle */
@@ -259,26 +292,30 @@
   align-items: stretch;
   height: var(--fibogrid-row-height);
   background-color: var(--fibogrid-bg);
-  border-bottom: 1px solid var(--fibogrid-border);
-  transition: background-color var(--fibogrid-transition);
+  border-bottom: 1px solid var(--fibogrid-row-border-bottom);
+  transition: background-color var(--fibogrid-transition), border-color var(--fibogrid-transition);
 }
 
 .fibogrid-row:hover {
   background-color: var(--fibogrid-surface-hover);
+  border-bottom-color: var(--fibogrid-row-border-bottom-hover);
 }
 
 .fibogrid-row-selected {
   background-color: var(--fibogrid-surface-selected);
+  border-bottom-color: var(--fibogrid-row-border-bottom-selected);
 }
 
 .fibogrid-row-selected:hover {
   background-color: var(--fibogrid-selection-hover);
+  border-bottom-color: var(--fibogrid-row-border-bottom-selected);
 }
 
 .fibogrid-row-group {
   background-color: var(--fibogrid-surface);
   font-weight: var(--fibogrid-font-weight-medium);
   cursor: pointer;
+  border-bottom-color: var(--fibogrid-row-border-bottom-group);
 }
 
 /* Cell */
@@ -289,9 +326,23 @@
   padding: var(--fibogrid-cell-padding);
   font-size: var(--fibogrid-font-size);
   color: var(--fibogrid-text);
-  border-right: 1px solid var(--fibogrid-border);
+  border-right: 1px solid var(--fibogrid-cell-border-right);
   overflow: hidden;
   flex-shrink: 0;
+  transition: border-color var(--fibogrid-transition-fast);
+}
+
+.fibogrid-row:hover .fibogrid-cell {
+  border-right-color: var(--fibogrid-cell-border-hover);
+}
+
+.fibogrid-row-selected .fibogrid-cell {
+  border-right-color: var(--fibogrid-cell-border-selected);
+}
+
+.fibogrid-cell-editing {
+  border-right-color: var(--fibogrid-cell-border-editing) !important;
+  border: 2px solid var(--fibogrid-cell-border-editing);
 }
 
 .fibogrid-cell-content {
@@ -311,7 +362,7 @@
   font-size: var(--fibogrid-font-size);
   color: var(--fibogrid-text);
   background-color: var(--fibogrid-bg);
-  border: 2px solid var(--fibogrid-primary);
+  border: 2px solid var(--fibogrid-cell-border-editing);
   border-radius: var(--fibogrid-radius-sm);
   outline: none;
 }
@@ -326,10 +377,29 @@
 }
 
 .fibogrid-checkbox {
-  width: 16px;
-  height: 16px;
+  width: var(--fibogrid-checkbox-size);
+  height: var(--fibogrid-checkbox-size);
   cursor: pointer;
-  accent-color: var(--fibogrid-primary);
+  accent-color: var(--fibogrid-checkbox-bg-checked);
+  background-color: var(--fibogrid-checkbox-bg);
+  border: 1px solid var(--fibogrid-checkbox-border);
+  border-radius: var(--fibogrid-radius-sm);
+  transition: all var(--fibogrid-transition-fast);
+}
+
+.fibogrid-checkbox:hover {
+  border-color: var(--fibogrid-checkbox-border-hover);
+  background-color: var(--fibogrid-checkbox-bg-hover);
+}
+
+.fibogrid-checkbox:checked {
+  background-color: var(--fibogrid-checkbox-bg-checked);
+  border-color: var(--fibogrid-checkbox-border-checked);
+}
+
+.fibogrid-checkbox:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* Row numbers */
@@ -354,7 +424,7 @@
   padding: 0 var(--fibogrid-cell-padding);
   height: var(--fibogrid-statusbar-height);
   background-color: var(--fibogrid-surface);
-  border-top: 1px solid var(--fibogrid-border);
+  border-top: 1px solid var(--fibogrid-statusbar-border-top);
   font-size: var(--fibogrid-font-size-sm);
   color: var(--fibogrid-text-secondary);
 }
@@ -389,7 +459,7 @@
   padding: 0 var(--fibogrid-cell-padding);
   height: var(--fibogrid-statusbar-height);
   background-color: var(--fibogrid-surface);
-  border-top: 1px solid var(--fibogrid-border);
+  border-top: 1px solid var(--fibogrid-statusbar-border-top);
   font-size: var(--fibogrid-font-size-sm);
   color: var(--fibogrid-text-secondary);
 }
@@ -404,19 +474,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: rgba(255, 255, 255, 0.8);
+  background-color: var(--fibogrid-overlay);
   z-index: var(--fibogrid-z-overlay);
 }
 
-.dark .fibogrid-overlay {
-  background-color: rgba(0, 0, 0, 0.8);
-}
-
 .fibogrid-loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid var(--fibogrid-border);
-  border-top-color: var(--fibogrid-primary);
+  width: var(--fibogrid-spinner-size);
+  height: var(--fibogrid-spinner-size);
+  border: var(--fibogrid-spinner-width) solid var(--fibogrid-spinner-bg);
+  border-top-color: var(--fibogrid-spinner-color);
   border-radius: 50%;
   animation: fibogrid-spin 0.8s linear infinite;
 }
@@ -432,10 +498,10 @@
   position: fixed;
   min-width: 180px;
   padding: 4px 0;
-  background-color: var(--fibogrid-surface);
-  border: 1px solid var(--fibogrid-border);
+  background-color: var(--fibogrid-dropdown-bg);
+  border: 1px solid var(--fibogrid-dropdown-border);
   border-radius: var(--fibogrid-radius-md);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--fibogrid-dropdown-shadow);
   z-index: var(--fibogrid-z-context-menu);
 }
 
@@ -445,13 +511,15 @@
   gap: 8px;
   padding: 8px 12px;
   font-size: var(--fibogrid-font-size);
-  color: var(--fibogrid-text);
+  color: var(--fibogrid-dropdown-item-text);
+  background-color: var(--fibogrid-dropdown-item-bg);
   cursor: pointer;
-  transition: background-color var(--fibogrid-transition);
+  transition: background-color var(--fibogrid-transition), color var(--fibogrid-transition);
 }
 
 .fibogrid-context-menu-item:hover {
-  background-color: var(--fibogrid-surface-hover);
+  background-color: var(--fibogrid-dropdown-item-bg-hover);
+  color: var(--fibogrid-dropdown-item-text-hover);
 }
 
 .fibogrid-context-menu-item svg {
@@ -471,10 +539,10 @@
   position: fixed;
   min-width: 240px;
   padding: 12px;
-  background-color: var(--fibogrid-surface);
-  border: 1px solid var(--fibogrid-border);
+  background-color: var(--fibogrid-dropdown-bg);
+  border: 1px solid var(--fibogrid-dropdown-border);
   border-radius: var(--fibogrid-radius-md);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--fibogrid-dropdown-shadow);
   z-index: var(--fibogrid-z-overlay);
 }
 
@@ -484,35 +552,46 @@
   padding: 0 var(--fibogrid-cell-padding);
   margin-bottom: 8px;
   font-size: var(--fibogrid-font-size);
-  color: var(--fibogrid-text);
-  background-color: var(--fibogrid-bg);
-  border: 1px solid var(--fibogrid-border);
+  color: var(--fibogrid-input-text);
+  background-color: var(--fibogrid-input-bg);
+  border: 1px solid var(--fibogrid-input-border);
   border-radius: var(--fibogrid-radius-sm);
   outline: none;
+  transition: border-color var(--fibogrid-transition), background-color var(--fibogrid-transition);
+}
+
+.fibogrid-filter-input::placeholder {
+  color: var(--fibogrid-input-text-placeholder);
+}
+
+.fibogrid-filter-input:hover {
+  border-color: var(--fibogrid-input-border-hover);
 }
 
 .fibogrid-filter-input:focus {
-  border-color: var(--fibogrid-primary);
+  border-color: var(--fibogrid-input-border-focus);
+  background-color: var(--fibogrid-input-bg-focus);
 }
 
 /* Scrollbar styling */
 .fibogrid-body::-webkit-scrollbar {
-  width: 12px;
-  height: 12px;
+  width: var(--fibogrid-scrollbar-width);
+  height: var(--fibogrid-scrollbar-height);
 }
 
 .fibogrid-body::-webkit-scrollbar-track {
-  background-color: var(--fibogrid-bg);
+  background-color: var(--fibogrid-scrollbar-track-bg);
 }
 
 .fibogrid-body::-webkit-scrollbar-thumb {
-  background-color: var(--fibogrid-border);
-  border-radius: 6px;
-  border: 2px solid var(--fibogrid-bg);
+  background-color: var(--fibogrid-scrollbar-thumb-bg);
+  border-radius: var(--fibogrid-scrollbar-thumb-radius);
+  border: 2px solid var(--fibogrid-scrollbar-thumb-border);
+  transition: background-color var(--fibogrid-transition-fast);
 }
 
 .fibogrid-body::-webkit-scrollbar-thumb:hover {
-  background-color: var(--fibogrid-text-secondary);
+  background-color: var(--fibogrid-scrollbar-thumb-bg-hover);
 }
 
 /* Utility classes */

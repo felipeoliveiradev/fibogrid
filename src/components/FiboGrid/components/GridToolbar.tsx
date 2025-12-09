@@ -168,8 +168,8 @@ export function GridToolbar<T>({
               <span className="ml-1.5 hidden sm:inline">Columns</span>
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-56 p-0" align="end">
-            <div className="p-2 border-b border-border">
+          <PopoverContent className="w-56 p-0 fibogrid-popover-content" align="end">
+            <div className="p-2 fibogrid-popover-content-header">
               <span className="text-sm font-medium">Toggle Columns</span>
             </div>
             <ScrollArea className="h-64">
@@ -177,7 +177,7 @@ export function GridToolbar<T>({
                 {columns.map((col) => (
                   <label
                     key={col.field}
-                    className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted cursor-pointer"
+                    className="flex items-center gap-2 px-2 py-1.5 fibogrid-popover-content-item cursor-pointer"
                   >
                     <Checkbox
                       checked={!col.hide}
@@ -187,15 +187,15 @@ export function GridToolbar<T>({
                     />
                     <span className="text-sm flex-1 truncate">{col.headerName}</span>
                     {col.hide ? (
-                      <EyeOff className="h-3 w-3 text-muted-foreground" />
+                      <EyeOff className="h-3 w-3 fibogrid-column-panel-icon" />
                     ) : (
-                      <Eye className="h-3 w-3 text-muted-foreground" />
+                      <Eye className="h-3 w-3 fibogrid-column-panel-icon" />
                     )}
                   </label>
                 ))}
               </div>
             </ScrollArea>
-            <div className="p-2 border-t border-border flex gap-2">
+            <div className="p-2 fibogrid-popover-content-footer flex gap-2">
               <Button
                 variant="outline"
                 size="sm"

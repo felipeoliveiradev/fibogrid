@@ -1500,7 +1500,7 @@ import 'fibogrid/styles.css';
                       <CardHeader>
                         <CardTitle className="font-display text-xl flex items-center justify-between">
                           <span>Interactive Theme Preview</span>
-                          <ThemeSelector onThemeChange={setThemingGridTheme} />
+                          <ThemeSelector value={themingGridTheme} onThemeChange={setThemingGridTheme} />
                         </CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-4">

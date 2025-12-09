@@ -13,11 +13,11 @@ export function GridOverlay({ type, customComponent, headerHeight = 44, toolbarH
 
   const topOffset = toolbarHeight + headerHeight + filterRowHeight;
   
-  const overlayStyle = {
+  const overlayStyle: React.CSSProperties = {
     top: `${topOffset}px`,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    left: 'var(--fibogrid-overlay-left)',
+    right: 'var(--fibogrid-overlay-right)',
+    bottom: 'var(--fibogrid-overlay-bottom)',
   };
 
   if (customComponent) {

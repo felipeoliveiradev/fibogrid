@@ -245,6 +245,7 @@ export function GridCell<T>({
     <div
       className={cn(
         'flex items-center border-r border-border px-3 overflow-hidden text-sm flex-shrink-0 whitespace-nowrap min-w-0',
+        'fibogrid-cell-full-width',
         column.editable && !isEditing && 'cursor-pointer hover:bg-muted/50',
         isEditing && 'ring-2 ring-primary ring-inset p-0',
         isSelected && 'bg-primary/30 border-primary/50',
@@ -252,10 +253,8 @@ export function GridCell<T>({
         cellClass
       )}
       style={{ 
-        width: '100%',
-        minWidth: '100%',
         height: rowHeight ? `${rowHeight}px` : '100%',
-        paddingLeft: indent > 0 ? `${indent + 12}px` : undefined,
+        paddingLeft: indent > 0 ? `calc(var(--fibogrid-cell-indent-level) * ${indent} + var(--fibogrid-cell-indent-base))` : undefined,
       }}
       onClick={handleCellClick}
       onDoubleClick={handleCellDoubleClick}

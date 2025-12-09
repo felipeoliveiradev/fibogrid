@@ -19,6 +19,33 @@
   
   --fibogrid-border: #fde68a;
   
+  /* Cell Borders - Warm Sunset */
+  --fibogrid-cell-border-right: #fde68a;
+  --fibogrid-cell-border-bottom: #fde68a;
+  --fibogrid-cell-border-hover: #fcd34d;
+  --fibogrid-cell-border-selected: #f97316;
+  --fibogrid-cell-border-editing: #f97316;
+  
+  /* Row Borders */
+  --fibogrid-row-border-bottom: #fde68a;
+  --fibogrid-row-border-bottom-hover: #fcd34d;
+  --fibogrid-row-border-bottom-selected: #f97316;
+  --fibogrid-row-border-bottom-group: #fcd34d;
+  
+  /* Header Borders */
+  --fibogrid-header-border-bottom: #fcd34d;
+  --fibogrid-header-cell-border-right: #fde68a;
+  --fibogrid-header-cell-border-right-hover: #fcd34d;
+  --fibogrid-header-cell-border-right-active: #f97316;
+  
+  /* Toolbar & Statusbar */
+  --fibogrid-toolbar-border-bottom: #fde68a;
+  --fibogrid-statusbar-border-top: #fde68a;
+  
+  /* Container */
+  --fibogrid-container-border: #fde68a;
+  --fibogrid-container-border-focus: #f97316;
+  
   --fibogrid-selection-bg: #fed7aa;
   --fibogrid-selection-hover: #fdba74;
 }
@@ -34,4 +61,31 @@
   --fibogrid-text-secondary: #fde68a;
   
   --fibogrid-border: #57340a;
+  
+  /* Cell Borders - Warm Sunset Dark */
+  --fibogrid-cell-border-right: #57340a;
+  --fibogrid-cell-border-bottom: #57340a;
+  --fibogrid-cell-border-hover: #78350f;
+  --fibogrid-cell-border-selected: #f97316;
+  --fibogrid-cell-border-editing: #f97316;
+  
+  /* Row Borders */
+  --fibogrid-row-border-bottom: #57340a;
+  --fibogrid-row-border-bottom-hover: #78350f;
+  --fibogrid-row-border-bottom-selected: #f97316;
+  --fibogrid-row-border-bottom-group: #78350f;
+  
+  /* Header Borders */
+  --fibogrid-header-border-bottom: #78350f;
+  --fibogrid-header-cell-border-right: #57340a;
+  --fibogrid-header-cell-border-right-hover: #78350f;
+  --fibogrid-header-cell-border-right-active: #f97316;
+  
+  /* Toolbar & Statusbar */
+  --fibogrid-toolbar-border-bottom: #57340a;
+  --fibogrid-statusbar-border-top: #57340a;
+  
+  /* Container */
+  --fibogrid-container-border: #57340a;
+  --fibogrid-container-border-focus: #f97316;
 }

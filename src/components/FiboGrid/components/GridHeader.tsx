@@ -161,7 +161,7 @@ export function GridHeader<T>({
       <div
         key={column.field}
         className={cn(
-          'relative flex items-center border-r border-border px-3 select-none group',
+          'relative flex items-center border-r border-border px-3 select-none group fibogrid-header-container',
           column.sortable !== false && 'cursor-pointer',
           isDragging && 'opacity-50',
           isDragOver && 'bg-primary/20',
@@ -177,7 +177,6 @@ export function GridHeader<T>({
           flexGrow: 0,
           left: column.stickyLeft !== undefined ? column.stickyLeft : undefined,
           right: column.stickyRight !== undefined ? column.stickyRight : undefined,
-          backgroundColor: 'hsl(var(--muted))',
         }}
         onClick={() => handleHeaderClick(column)}
         draggable={column.draggable !== false && !isPinned}
@@ -258,7 +257,7 @@ export function GridHeader<T>({
       <div
         key={`filter-${column.field}`}
         className={cn(
-          'flex items-center border-r border-border px-1',
+          'flex items-center border-r border-border px-1 fibogrid-filter-row-container',
           isPinned && 'sticky z-[2]',
           column.isLastPinned && column.pinned === 'left' && 'shadow-[2px_0_5px_-2px_rgba(0,0,0,0.3)]',
           column.isFirstPinned && column.pinned === 'right' && 'shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.3)]'
@@ -271,7 +270,6 @@ export function GridHeader<T>({
           flexGrow: 0,
           left: column.stickyLeft !== undefined ? column.stickyLeft : undefined,
           right: column.stickyRight !== undefined ? column.stickyRight : undefined,
-          backgroundColor: 'hsl(var(--background))',
         }}
       >
         {column.filterable !== false ? (
@@ -305,21 +303,16 @@ export function GridHeader<T>({
   };
 
   return (
-    <div className="flex flex-col border-b border-border" style={{ backgroundColor: 'hsl(var(--muted))' }}>
+    <div className="flex flex-col border-b border-border fibogrid-header-container">
       <div
         className="flex"
-        style={{ height: headerHeight }}
+        style={{ height: `${headerHeight}px` }}
       >
         {leftPinnedColumns.map((column) => renderColumnHeader(column, true))}
 
         {showRowNumbers && (
           <div
-            className="flex items-center justify-center border-r border-border px-2 flex-shrink-0"
-            style={{ 
-              width: 50, 
-              minWidth: 50,
-              backgroundColor: 'hsl(var(--muted))',
-            }}
+            className="flex items-center justify-center border-r border-border px-2 flex-shrink-0 fibogrid-row-number-column fibogrid-header-container"
           >
             <span className="text-xs text-muted-foreground font-medium">#</span>
           </div>
@@ -327,12 +320,7 @@ export function GridHeader<T>({
         
         {showCheckboxColumn && (
           <div
-            className="flex items-center justify-center border-r border-border px-2 flex-shrink-0"
-            style={{ 
-              width: 48, 
-              minWidth: 48,
-              backgroundColor: 'hsl(var(--muted))',
-            }}
+            className="flex items-center justify-center px-2 flex-shrink-0 fibogrid-checkbox-column fibogrid-header-container"
           >
             <input
               type="checkbox"
@@ -341,7 +329,6 @@ export function GridHeader<T>({
                 if (el) el.indeterminate = someSelected && !allSelected;
               }}
               onChange={onSelectAll}
-              className="h-4 w-4 rounded border-border"
             />
           </div>
         )}
@@ -353,30 +340,20 @@ export function GridHeader<T>({
 
       {showFilterRow && (
         <div
-          className="flex border-t border-border"
-          style={{ height: filterRowHeight, backgroundColor: 'hsl(var(--background))' }}
+          className="flex border-t border-border fibogrid-filter-row-container"
+          style={{ height: `${filterRowHeight}px` }}
         >
           {leftPinnedColumns.map((column) => renderFilterCell(column, true))}
 
           {showRowNumbers && (
             <div
-              className="border-r border-border flex-shrink-0"
-              style={{ 
-                width: 50, 
-                minWidth: 50,
-                backgroundColor: 'hsl(var(--background))',
-              }}
+              className="border-r border-border flex-shrink-0 fibogrid-row-number-column fibogrid-filter-row-container"
             />
           )}
           
           {showCheckboxColumn && (
             <div
-              className="border-r border-border flex-shrink-0"
-              style={{ 
-                width: 48, 
-                minWidth: 48,
-                backgroundColor: 'hsl(var(--background))',
-              }}
+              className="border-r border-border flex-shrink-0 fibogrid-checkbox-column fibogrid-filter-row-container"
             />
           )}
           

@@ -55,9 +55,9 @@ export function ColumnPanel<T>({
   };
 
   return (
-    <div className="fixed right-0 top-0 bottom-0 w-72 bg-popover border-l border-border shadow-xl z-50 flex flex-col">
+    <div className="fixed right-0 top-0 bottom-0 w-72 fibogrid-column-panel z-50 flex flex-col">
       {}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+      <div className="flex items-center justify-between px-4 py-3 fibogrid-column-panel-header">
         <h3 className="font-semibold">Columns</h3>
         <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={onClose}>
           <X className="h-4 w-4" />
@@ -65,14 +65,14 @@ export function ColumnPanel<T>({
       </div>
 
       {}
-      <div className="p-3 border-b border-border">
+      <div className="p-3 fibogrid-column-panel-search">
         <div className="relative">
-          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 fibogrid-column-panel-icon" />
           <Input
             placeholder="Search columns..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-8 h-8"
+            className="pl-8 h-8 fibogrid-column-panel-search-input"
           />
         </div>
       </div>
@@ -84,9 +84,9 @@ export function ColumnPanel<T>({
             <div
               key={column.field}
               className={cn(
-                'flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted cursor-pointer group',
-                draggedIndex === index && 'opacity-50',
-                dragOverIndex === index && 'bg-primary/10'
+                'flex items-center gap-2 px-2 py-1.5 fibogrid-column-panel-item cursor-pointer group',
+                draggedIndex === index && 'fibogrid-column-panel-item-dragging',
+                dragOverIndex === index && 'fibogrid-column-panel-item-drag-over'
               )}
               draggable
               onDragStart={(e) => handleDragStart(e, index)}
@@ -94,7 +94,7 @@ export function ColumnPanel<T>({
               onDrop={(e) => handleDrop(e, index)}
               onDragEnd={handleDragEnd}
             >
-              <GripVertical className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 cursor-grab" />
+              <GripVertical className="h-4 w-4 fibogrid-column-panel-icon opacity-0 group-hover:opacity-100 cursor-grab" />
               
               <Checkbox
                 checked={!column.hide}
@@ -111,7 +111,7 @@ export function ColumnPanel<T>({
                 <button
                   onClick={() => onColumnPinChange(column.field, column.pinned === 'left' ? null : 'left')}
                   className={cn(
-                    'p-1 rounded hover:bg-muted-foreground/20',
+                    'p-1 rounded',
                     column.pinned === 'left' && 'text-primary'
                   )}
                   title={column.pinned === 'left' ? 'Unpin' : 'Pin Left'}
@@ -125,7 +125,7 @@ export function ColumnPanel<T>({
       </ScrollArea>
 
       {}
-      <div className="p-3 border-t border-border flex gap-2">
+      <div className="p-3 fibogrid-column-panel-footer flex gap-2">
         <Button
           variant="outline"
           size="sm"

@@ -12,6 +12,33 @@
   --fibogrid-text: #111827;
   --fibogrid-text-secondary: #6b7280;
   
+  /* Cell Borders - Minimal (transparent) */
+  --fibogrid-cell-border-right: transparent;
+  --fibogrid-cell-border-bottom: transparent;
+  --fibogrid-cell-border-hover: rgba(0, 0, 0, 0.05);
+  --fibogrid-cell-border-selected: rgba(59, 130, 246, 0.3);
+  --fibogrid-cell-border-editing: #3b82f6;
+  
+  /* Row Borders */
+  --fibogrid-row-border-bottom: transparent;
+  --fibogrid-row-border-bottom-hover: rgba(0, 0, 0, 0.05);
+  --fibogrid-row-border-bottom-selected: rgba(59, 130, 246, 0.3);
+  --fibogrid-row-border-bottom-group: transparent;
+  
+  /* Header Borders */
+  --fibogrid-header-border-bottom: transparent;
+  --fibogrid-header-cell-border-right: transparent;
+  --fibogrid-header-cell-border-right-hover: rgba(0, 0, 0, 0.05);
+  --fibogrid-header-cell-border-right-active: #3b82f6;
+  
+  /* Toolbar & Statusbar */
+  --fibogrid-toolbar-border-bottom: transparent;
+  --fibogrid-statusbar-border-top: transparent;
+  
+  /* Container */
+  --fibogrid-container-border: transparent;
+  --fibogrid-container-border-focus: rgba(59, 130, 246, 0.3);
+  
   --fibogrid-radius-sm: 0;
   --fibogrid-radius-md: 0;
   --fibogrid-radius-lg: 0;
@@ -26,4 +53,31 @@
   
   --fibogrid-text: #f9fafb;
   --fibogrid-text-secondary: #9ca3af;
+  
+  /* Cell Borders - Minimal Dark (transparent) */
+  --fibogrid-cell-border-right: transparent;
+  --fibogrid-cell-border-bottom: transparent;
+  --fibogrid-cell-border-hover: rgba(255, 255, 255, 0.05);
+  --fibogrid-cell-border-selected: rgba(96, 165, 250, 0.3);
+  --fibogrid-cell-border-editing: #60a5fa;
+  
+  /* Row Borders */
+  --fibogrid-row-border-bottom: transparent;
+  --fibogrid-row-border-bottom-hover: rgba(255, 255, 255, 0.05);
+  --fibogrid-row-border-bottom-selected: rgba(96, 165, 250, 0.3);
+  --fibogrid-row-border-bottom-group: transparent;
+  
+  /* Header Borders */
+  --fibogrid-header-border-bottom: transparent;
+  --fibogrid-header-cell-border-right: transparent;
+  --fibogrid-header-cell-border-right-hover: rgba(255, 255, 255, 0.05);
+  --fibogrid-header-cell-border-right-active: #60a5fa;
+  
+  /* Toolbar & Statusbar */
+  --fibogrid-toolbar-border-bottom: transparent;
+  --fibogrid-statusbar-border-top: transparent;
+  
+  /* Container */
+  --fibogrid-container-border: transparent;
+  --fibogrid-container-border-focus: rgba(96, 165, 250, 0.3);
 }

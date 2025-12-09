@@ -25,13 +25,17 @@ export const themes = [
 interface ThemeSelectorProps {
   onThemeChange?: (theme: string) => void;
   className?: string;
+  value?: string;
 }
 
-export function ThemeSelector({ onThemeChange, className = '' }: ThemeSelectorProps) {
-  const [selectedTheme, setSelectedTheme] = useState('theme-default');
+export function ThemeSelector({ onThemeChange, className = '', value: controlledValue }: ThemeSelectorProps) {
+  const [internalTheme, setInternalTheme] = useState('theme-default');
+  const selectedTheme = controlledValue !== undefined ? controlledValue : internalTheme;
 
   const handleThemeChange = (theme: string) => {
-    setSelectedTheme(theme);
+    if (controlledValue === undefined) {
+      setInternalTheme(theme);
+    }
     onThemeChange?.(theme);
   };
 

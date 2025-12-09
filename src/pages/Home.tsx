@@ -185,6 +185,9 @@ export default function Home() {
             <Link to="/demo" className="text-muted-foreground hover:text-foreground transition-colors font-body">
               Demo
             </Link>
+            <Link to="/theme-builder" className="text-muted-foreground hover:text-foreground transition-colors font-body">
+              Theme Builder
+            </Link>
             <ThemeToggle />
             <Button variant="outline" size="sm" className="border-primary/30 hover:border-primary hover:bg-primary/5" asChild>
               <a href="https://github.com" target="_blank" rel="noreferrer" className="inline-flex items-center">

@@ -116,10 +116,10 @@ function GridRowInner<T>({
     };
   }, [visibleColumns]);
 
-  const getPinnedBgStyle = useMemo((): React.CSSProperties => {
-    if (isSelected) return { backgroundColor: 'hsl(var(--primary) / 0.15)' };
-    if (isEven) return { backgroundColor: 'hsl(var(--muted))' };
-    return { backgroundColor: 'hsl(var(--background))' };
+  const getPinnedBgClass = useMemo(() => {
+    if (isSelected) return 'bg-primary/15';
+    if (isEven) return 'bg-muted';
+    return 'bg-background';
   }, [isSelected, isEven]);
 
   const renderCell = (
@@ -142,7 +142,8 @@ function GridRowInner<T>({
           'h-full',
           isPinned && 'sticky z-[2]',
           column.isLastPinned && column.pinned === 'left' && 'shadow-[2px_0_5px_-2px_rgba(0,0,0,0.3)]',
-          column.isFirstPinned && column.pinned === 'right' && 'shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.3)]'
+          column.isFirstPinned && column.pinned === 'right' && 'shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.3)]',
+          isPinned && getPinnedBgClass
         )}
         style={{
           width: column.computedWidth,
@@ -152,7 +153,6 @@ function GridRowInner<T>({
           flexGrow: 0,
           left: stickyLeft,
           right: stickyRight,
-          ...(isPinned ? getPinnedBgStyle : {}),
         }}
       >
         <GridCell
@@ -195,7 +195,7 @@ function GridRowInner<T>({
         isDropTarget && dropPosition === 'after' && 'border-b-2 border-b-primary',
         isChildRow && 'bg-muted/40'
       )}
-      style={{ height: rowHeight }}
+      style={{ height: `${rowHeight}px` }}
       onClick={onRowClick}
       onDoubleClick={onRowDoubleClick}
       draggable={rowDragEnabled}
@@ -220,12 +220,10 @@ function GridRowInner<T>({
 
       {showRowNumbers && (
         <div
-          className="flex items-center justify-center border-r border-border px-2 text-xs text-muted-foreground flex-shrink-0"
-          style={{ 
-            width: 50, 
-            minWidth: 50,
-            backgroundColor: isSelected ? 'hsl(var(--primary) / 0.15)' : isEven ? 'hsl(var(--muted))' : 'hsl(var(--background))',
-          }}
+          className={cn(
+            "flex items-center justify-center border-r border-border px-2 text-xs text-muted-foreground flex-shrink-0 fibogrid-row-number-column",
+            isSelected ? 'fibogrid-row-number-bg-selected' : isEven ? 'fibogrid-row-number-bg-even' : 'bg-background'
+          )}
         >
           {rowNumber}
         </div>
@@ -233,12 +231,11 @@ function GridRowInner<T>({
       
       {showCheckboxColumn && (
         <div
-          className="flex items-center justify-center border-r border-border px-2 flex-shrink-0"
-          style={{ 
-            width: 48, 
-            minWidth: 48,
-            backgroundColor: isSelected ? 'hsl(var(--primary) / 0.15)' : isEven ? 'hsl(var(--muted))' : 'hsl(var(--background))',
-          }}
+          className={cn(
+            "flex items-center justify-center px-2 flex-shrink-0 fibogrid-checkbox-column",
+            isSelected ? 'fibogrid-checkbox-column-bg-selected' : isEven ? 'fibogrid-checkbox-column-bg-even' : ''
+          )}
+          onClick={(e) => e.stopPropagation()}
         >
           {rowDragEnabled && (
             <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab mr-1" />
@@ -246,9 +243,11 @@ function GridRowInner<T>({
           <input
             type="checkbox"
             checked={isSelected}
-            onChange={(e) => onCheckboxChange?.(e.target.checked)}
+            onChange={(e) => {
+              e.stopPropagation();
+              onCheckboxChange?.(e.target.checked);
+            }}
             onClick={(e) => e.stopPropagation()}
-            className="h-4 w-4 rounded border-border pointer-events-none"
           />
         </div>
       )}

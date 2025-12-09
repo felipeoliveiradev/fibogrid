@@ -41,7 +41,7 @@ jobs:
           cp package.json README.md LICENSE node_modules/fibogrid/
 
       - name: Build documentation site
-        run: npm run build
+        run: npm run build:pages
         env:
           NODE_ENV: production
 

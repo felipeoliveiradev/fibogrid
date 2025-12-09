@@ -36,13 +36,12 @@ export function GroupRow<T>({
         'flex items-center border-b border-border bg-muted/70 hover:bg-muted cursor-pointer select-none',
         'font-medium'
       )}
-      style={{ height: rowHeight, width: totalWidth }}
+      style={{ height: `${rowHeight}px`, width: `${totalWidth}px` }}
       onClick={onToggleExpand}
     >
       {showCheckboxColumn && (
         <div
-          className="flex items-center justify-center border-r border-border px-2"
-          style={{ width: 48, minWidth: 48 }}
+          className="flex items-center justify-center border-r border-border px-2 fibogrid-checkbox-column"
           onClick={(e) => e.stopPropagation()}
         >
           <input

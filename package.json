@@ -41,13 +41,16 @@
   },
   "homepage": "https://felipeoliveiradev.github.io/fibogrid",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --mode development",
+    "dev:local": "vite --mode development",
     "build": "vite build",
     "build:lib": "vite build --config vite.config.lib.ts && tsc --project tsconfig.lib.json",
     "types": "tsc --project tsconfig.lib.json",
     "build:dev": "vite build --mode development",
+    "build:pages": "vite build --mode production",
     "lint": "eslint .",
     "preview": "vite preview",
+    "preview:pages": "vite preview --mode production",
     "prepublishOnly": "npm run build:lib"
   },
   "peerDependencies": {

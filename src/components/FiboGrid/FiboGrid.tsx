@@ -554,10 +554,10 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
       ref={containerRef}
       className={cn(
         'fibogrid',
-        'relative flex flex-col border border-border rounded-lg overflow-hidden bg-background focus:outline-none focus:ring-2 focus:ring-primary/50',
+        className, // Theme class should come before Tailwind classes to ensure proper CSS specificity
+        'relative flex flex-col rounded-lg overflow-hidden focus:outline-none focus:ring-2 focus:ring-primary/50',
         isResizing && 'cursor-col-resize select-none',
-        isSelecting && 'select-none cursor-crosshair',
-        className
+        isSelecting && 'select-none cursor-crosshair'
       )}
       style={{ height: height || '100%', minHeight: 400 }}
       tabIndex={0}
