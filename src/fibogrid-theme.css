@@ -1,0 +1,230 @@
+/* ================================
+   FiboGrid Theme System
+   Isolated CSS Variables
+   ================================ */
+
+/* Light Theme - Default */
+.fibogrid {
+  /* Colors - Background & Surface */
+  --fibogrid-bg: #ffffff;
+  --fibogrid-surface: #fafafa;
+  --fibogrid-surface-hover: #f5f5f5;
+  --fibogrid-surface-selected: #e8f4fd;
+  
+  /* Colors - Text */
+  --fibogrid-text: #1a1a1a;
+  --fibogrid-text-secondary: #666666;
+  --fibogrid-text-muted: #999999;
+  --fibogrid-text-inverse: #ffffff;
+  
+  /* Colors - Border */
+  --fibogrid-border: #e0e0e0;
+  --fibogrid-border-strong: #c0c0c0;
+  --fibogrid-border-hover: #b0b0b0;
+  
+  /* Colors - Primary (Gold) */
+  --fibogrid-primary: hsl(40, 65%, 45%);
+  --fibogrid-primary-hover: hsl(42, 70%, 50%);
+  --fibogrid-primary-active: hsl(38, 60%, 40%);
+  --fibogrid-primary-text: #ffffff;
+  
+  /* Colors - States */
+  --fibogrid-success: #22c55e;
+  --fibogrid-warning: #f59e0b;
+  --fibogrid-error: #ef4444;
+  --fibogrid-info: #3b82f6;
+  
+  /* Colors - Overlay & Shadow */
+  --fibogrid-overlay: rgba(0, 0, 0, 0.5);
+  --fibogrid-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --fibogrid-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --fibogrid-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  
+  /* Sizing */
+  --fibogrid-header-height: 44px;
+  --fibogrid-row-height: 40px;
+  --fibogrid-toolbar-height: 48px;
+  --fibogrid-statusbar-height: 36px;
+  --fibogrid-cell-padding: 12px;
+  
+  /* Typography */
+  --fibogrid-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --fibogrid-font-size: 14px;
+  --fibogrid-font-size-sm: 12px;
+  --fibogrid-font-size-lg: 16px;
+  --fibogrid-font-weight-normal: 400;
+  --fibogrid-font-weight-medium: 500;
+  --fibogrid-font-weight-semibold: 600;
+  --fibogrid-font-weight-bold: 700;
+  --fibogrid-line-height: 1.5;
+  
+  /* Spacing */
+  --fibogrid-spacing-xs: 4px;
+  --fibogrid-spacing-sm: 8px;
+  --fibogrid-spacing-md: 12px;
+  --fibogrid-spacing-lg: 16px;
+  --fibogrid-spacing-xl: 24px;
+  
+  /* Border Radius */
+  --fibogrid-radius-sm: 4px;
+  --fibogrid-radius-md: 6px;
+  --fibogrid-radius-lg: 8px;
+  
+  /* Transitions */
+  --fibogrid-transition: all 0.2s ease;
+  --fibogrid-transition-fast: all 0.1s ease;
+  
+  /* Z-Index */
+  --fibogrid-z-dropdown: 1000;
+  --fibogrid-z-modal: 1050;
+  --fibogrid-z-tooltip: 1100;
+  --fibogrid-z-header: 10;
+  
+  /* Selection */
+  --fibogrid-selection-bg: rgba(59, 130, 246, 0.1);
+  --fibogrid-selection-border: #3b82f6;
+  
+  /* Pinned Columns */
+  --fibogrid-pinned-shadow-left: 2px 0 5px rgba(0, 0, 0, 0.1);
+  --fibogrid-pinned-shadow-right: -2px 0 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Dark Theme */
+.fibogrid.fibogrid-dark,
+.dark .fibogrid {
+  /* Colors - Background & Surface */
+  --fibogrid-bg: #1a1a1a;
+  --fibogrid-surface: #262626;
+  --fibogrid-surface-hover: #333333;
+  --fibogrid-surface-selected: #1e3a5f;
+  
+  /* Colors - Text */
+  --fibogrid-text: #e5e5e5;
+  --fibogrid-text-secondary: #a3a3a3;
+  --fibogrid-text-muted: #737373;
+  --fibogrid-text-inverse: #1a1a1a;
+  
+  /* Colors - Border */
+  --fibogrid-border: #404040;
+  --fibogrid-border-strong: #525252;
+  --fibogrid-border-hover: #666666;
+  
+  /* Colors - Primary (Gold) */
+  --fibogrid-primary: hsl(42, 70%, 50%);
+  --fibogrid-primary-hover: hsl(44, 75%, 55%);
+  --fibogrid-primary-active: hsl(40, 65%, 45%);
+  --fibogrid-primary-text: #1a1a1a;
+  
+  /* Colors - States */
+  --fibogrid-success: #22c55e;
+  --fibogrid-warning: #f59e0b;
+  --fibogrid-error: #ef4444;
+  --fibogrid-info: #3b82f6;
+  
+  /* Colors - Overlay & Shadow */
+  --fibogrid-overlay: rgba(0, 0, 0, 0.7);
+  --fibogrid-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --fibogrid-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+  --fibogrid-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+  
+  /* Selection */
+  --fibogrid-selection-bg: rgba(59, 130, 246, 0.2);
+  --fibogrid-selection-border: #60a5fa;
+  
+  /* Pinned Columns */
+  --fibogrid-pinned-shadow-left: 2px 0 5px rgba(0, 0, 0, 0.3);
+  --fibogrid-pinned-shadow-right: -2px 0 5px rgba(0, 0, 0, 0.3);
+}
+
+/* ================================
+   FiboGrid Base Styles
+   ================================ */
+
+.fibogrid {
+  font-family: var(--fibogrid-font-family);
+  font-size: var(--fibogrid-font-size);
+  line-height: var(--fibogrid-line-height);
+  color: var(--fibogrid-text);
+  background-color: var(--fibogrid-bg);
+  border: 1px solid var(--fibogrid-border);
+  border-radius: var(--fibogrid-radius-md);
+  overflow: hidden;
+  position: relative;
+}
+
+.fibogrid * {
+  box-sizing: border-box;
+}
+
+.fibogrid-toolbar {
+  height: var(--fibogrid-toolbar-height);
+  background-color: var(--fibogrid-surface);
+  border-bottom: 1px solid var(--fibogrid-border);
+  padding: 0 var(--fibogrid-spacing-md);
+  display: flex;
+  align-items: center;
+  gap: var(--fibogrid-spacing-sm);
+}
+
+.fibogrid-header {
+  height: var(--fibogrid-header-height);
+  background-color: var(--fibogrid-surface);
+  border-bottom: 2px solid var(--fibogrid-border-strong);
+  font-weight: var(--fibogrid-font-weight-semibold);
+}
+
+.fibogrid-row {
+  height: var(--fibogrid-row-height);
+  border-bottom: 1px solid var(--fibogrid-border);
+  transition: var(--fibogrid-transition-fast);
+}
+
+.fibogrid-row:hover {
+  background-color: var(--fibogrid-surface-hover);
+}
+
+.fibogrid-row.fibogrid-row-selected {
+  background-color: var(--fibogrid-surface-selected);
+}
+
+.fibogrid-cell {
+  padding: 0 var(--fibogrid-cell-padding);
+  display: flex;
+  align-items: center;
+  border-right: 1px solid var(--fibogrid-border);
+}
+
+.fibogrid-statusbar {
+  height: var(--fibogrid-statusbar-height);
+  background-color: var(--fibogrid-surface);
+  border-top: 1px solid var(--fibogrid-border);
+  padding: 0 var(--fibogrid-spacing-md);
+  display: flex;
+  align-items: center;
+  gap: var(--fibogrid-spacing-lg);
+  font-size: var(--fibogrid-font-size-sm);
+  color: var(--fibogrid-text-secondary);
+}
+
+/* ================================
+   Customization Examples
+   ================================ */
+
+/*
+Custom theme example:
+
+.fibogrid.my-custom-theme {
+  --fibogrid-primary: #8b5cf6;
+  --fibogrid-primary-hover: #7c3aed;
+  --fibogrid-bg: #f8fafc;
+  --fibogrid-border: #cbd5e1;
+}
+
+Custom sizing example:
+
+.fibogrid.my-compact-grid {
+  --fibogrid-row-height: 32px;
+  --fibogrid-cell-padding: 8px;
+  --fibogrid-font-size: 13px;
+}
+*/
