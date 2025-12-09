@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.3] - 2025-12-09
+
+### Fixed
+- **CRITICAL: Removed global Tailwind styles** - CSS now fully isolated to `.fibogrid` container
+- Removed `@tailwind base` directive that was affecting user's application styles
+- Created isolated CSS system that doesn't conflict with user's styles
+- All styles are now scoped and won't affect elements outside the grid
+
+### Changed
+- Refactored CSS build process to exclude global resets
+- Created `fibogrid-isolated.css` with component-specific styles only
+- Updated build configuration to prevent style leakage
+
+### Added
+- Complete server-side integration documentation with examples
+- Backend API examples for Node.js/Express, Python/FastAPI, and Laravel/PHP
+- Debounced search hook example
+- Props reference for server-side operations
+
 ## [1.0.2] - 2025-12-09
 
 ### Added

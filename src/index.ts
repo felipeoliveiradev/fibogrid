@@ -1,5 +1,5 @@
-// Styles
-import './fibogrid.css';
+// Styles - use lib version for build that doesn't include Tailwind base
+import './fibogrid-lib.css';
 
 // Main exports
 export { FiboGrid } from './components/FiboGrid';

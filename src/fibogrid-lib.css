@@ -1,0 +1,14 @@
+/* FiboGrid Library CSS
+ * This file is processed during build and includes ONLY what's needed for the library
+ * WITHOUT affecting the user's application styles
+ */
+
+/* Import theme variables first - these are scoped to .fibogrid */
+@import './fibogrid-theme.css';
+
+/* Import isolated styles for any custom components */
+@import './fibogrid-isolated.css';
+
+/* Import ONLY Tailwind utilities and components, NOT base styles */
+@tailwind components;
+@tailwind utilities;

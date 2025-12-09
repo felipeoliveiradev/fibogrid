@@ -1,6 +1,5 @@
-/* FiboGrid - Main Styles */
-/* Import the isolated theme system */
-@import './fibogrid-theme.css';
-
-/* Import Tailwind for internal components (won't affect user's app) */
-@import './index.css';
+/* FiboGrid - Main Styles Entry Point
+ * This is the single CSS file users should import
+ * All styles are isolated and won't affect the user's application
+ */
+@import './fibogrid-isolated.css';
