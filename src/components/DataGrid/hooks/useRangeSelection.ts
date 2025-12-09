@@ -53,7 +53,8 @@ export function useRangeSelection(): RangeSelectionResult {
       // Only handle left click
       if (e.button !== 0) return;
       
-      e.preventDefault();
+      // Don't prevent default - it interferes with input focus
+      // e.preventDefault();
       
       const position = { rowIndex, colIndex };
       
