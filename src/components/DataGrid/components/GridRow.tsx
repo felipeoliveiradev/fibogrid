@@ -143,12 +143,14 @@ function GridRowInner<T>({
       <div
         key={column.field}
         className={cn(
-          'h-full',
+          'h-full flex-shrink-0',
           isPinned && 'sticky z-[2]',
           column.isLastPinned && column.pinned === 'left' && 'shadow-[2px_0_5px_-2px_rgba(0,0,0,0.3)]',
           column.isFirstPinned && column.pinned === 'right' && 'shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.3)]'
         )}
         style={{
+          width: column.computedWidth,
+          minWidth: column.minWidth || 50,
           left: stickyLeft,
           right: stickyRight,
           ...(isPinned ? getPinnedBgStyle : {}),
@@ -270,22 +272,12 @@ function GridRowInner<T>({
 
 // Ultra-optimized memo - minimize comparison work
 export const GridRow = memo(GridRowInner, (prevProps, nextProps) => {
-  // Check editing state FIRST - this is critical for cell editing to work
-  const prevEdit = prevProps.editingCell;
-  const nextEdit = nextProps.editingCell;
-  const rowId = prevProps.row.id;
-  
-  // Check if this row is being edited (either before or after)
-  const prevIsEditing = prevEdit?.rowId === rowId;
-  const nextIsEditing = nextEdit?.rowId === rowId;
-  
-  // If editing state changed for this row, MUST re-render
-  if (prevIsEditing !== nextIsEditing) return false;
-  
-  // If both editing same row - check if field or value changed
-  if (prevIsEditing && nextIsEditing) {
-    if (prevEdit?.field !== nextEdit?.field) return false;
-    if (prevEdit?.value !== nextEdit?.value) return false;
+  // Fast reference equality checks first - but MUST check columns for resize
+  if (prevProps.row === nextProps.row && 
+      prevProps.isSelected === nextProps.isSelected &&
+      prevProps.editingCell === nextProps.editingCell &&
+      prevProps.columns === nextProps.columns) {
+    return true;
   }
   
   // Quick checks for other common changes
@@ -295,13 +287,35 @@ export const GridRow = memo(GridRowInner, (prevProps, nextProps) => {
   if (prevProps.isDropTarget !== nextProps.isDropTarget) return false;
   if (prevProps.isExpanded !== nextProps.isExpanded) return false;
   
+  // Check editing state - include value for input updates
+  const prevEdit = prevProps.editingCell;
+  const nextEdit = nextProps.editingCell;
+  if (prevEdit?.rowId !== nextEdit?.rowId || prevEdit?.field !== nextEdit?.field || prevEdit?.value !== nextEdit?.value) return false;
+  
+  // If column layout changed (width/pin/order), MUST re-render
+  if (prevProps.columns !== nextProps.columns) {
+    if (prevProps.columns.length !== nextProps.columns.length) return false;
+    for (let i = 0; i < prevProps.columns.length; i++) {
+      const prevCol = prevProps.columns[i];
+      const nextCol = nextProps.columns[i];
+      if (
+        prevCol.field !== nextCol.field ||
+        prevCol.computedWidth !== nextCol.computedWidth ||
+        prevCol.pinned !== nextCol.pinned ||
+        prevCol.hide !== nextCol.hide
+      ) {
+        return false;
+      }
+    }
+  }
+  
   // Check row data reference - if same reference, skip field comparison
   if (prevProps.row.data === nextProps.row.data) return true;
-  
-  // Compare only visible column fields
+
+  // Compare only visible column fields for data changes
   const prevData = prevProps.row.data as Record<string, unknown>;
   const nextData = nextProps.row.data as Record<string, unknown>;
-  const cols = prevProps.columns;
+  const cols = nextProps.columns;
   const len = cols.length;
   
   for (let i = 0; i < len; i++) {

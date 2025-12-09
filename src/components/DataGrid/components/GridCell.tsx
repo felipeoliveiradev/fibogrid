@@ -172,7 +172,7 @@ export function GridCell<T>({
     }
 
     return (
-      <span className="truncate">{String(formattedValue ?? '')}</span>
+      <span className="truncate whitespace-nowrap">{String(formattedValue ?? '')}</span>
     );
   };
 
@@ -259,7 +259,7 @@ export function GridCell<T>({
   return (
     <div
       className={cn(
-        'flex items-center border-r border-border px-3 overflow-hidden text-sm flex-shrink-0',
+        'flex items-center border-r border-border px-3 overflow-hidden text-sm flex-shrink-0 whitespace-nowrap min-w-0',
         column.editable && !isEditing && 'cursor-pointer hover:bg-muted/50',
         isEditing && 'ring-2 ring-primary ring-inset p-0',
         isSelected && 'bg-primary/20',
@@ -267,8 +267,8 @@ export function GridCell<T>({
         cellClass
       )}
       style={{ 
-        width: column.computedWidth, 
-        minWidth: column.minWidth || 50,
+        width: '100%',
+        minWidth: '100%',
         height: rowHeight ? `${rowHeight}px` : '100%',
         paddingLeft: indent > 0 ? `${indent + 12}px` : undefined,
       }}
@@ -292,7 +292,7 @@ export function GridCell<T>({
           )}
         </button>
       )}
-      <div ref={contentRef} className="flex-1 overflow-hidden h-full flex items-center">
+      <div ref={contentRef} className="flex-1 overflow-hidden h-full flex items-center min-w-0 whitespace-nowrap">
         {renderContent()}
       </div>
     </div>

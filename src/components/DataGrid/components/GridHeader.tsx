@@ -234,6 +234,12 @@ export function GridHeader<T>({
   const renderFilterCell = (column: ProcessedColumn<T> & { stickyLeft?: number; stickyRight?: number; isLastPinned?: boolean; isFirstPinned?: boolean }, isPinned: boolean) => {
     const activeFilter = getActiveFilter(column.field);
     const hasActiveFilter = !!activeFilter;
+    const filterValue =
+      activeFilter?.value == null
+        ? ''
+        : Array.isArray(activeFilter.value)
+          ? activeFilter.value.join(', ')
+          : String(activeFilter.value);
     
     return (
       <div
@@ -258,6 +264,7 @@ export function GridHeader<T>({
           <div className="flex items-center w-full gap-1">
             <Input
               placeholder=""
+                  value={filterValue}
               className={cn(
                 "h-7 text-xs border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-primary",
                 hasActiveFilter && "bg-primary/10"
