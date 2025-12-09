@@ -1,9 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Palette } from 'lucide-react';
 
+// Import theme CSS files statically - Vite will handle the paths correctly
+import '../themes/compact.css';
+import '../themes/comfortable.css';
+import '../themes/material.css';
+import '../themes/minimal.css';
+import '../themes/dark-modern.css';
+import '../themes/light-airy.css';
+import '../themes/warm-sunset.css';
+
 export const themes = [
-  { value: '', label: 'Default (Golden Ratio)' },
+  { value: 'theme-default', label: 'Default (Golden Ratio)' },
   { value: 'theme-compact', label: 'Compact' },
   { value: 'theme-comfortable', label: 'Comfortable' },
   { value: 'theme-material', label: 'Material Design' },
@@ -19,27 +28,7 @@ interface ThemeSelectorProps {
 }
 
 export function ThemeSelector({ onThemeChange, className = '' }: ThemeSelectorProps) {
-  const [selectedTheme, setSelectedTheme] = useState('');
-
-  useEffect(() => {
-    // Load theme CSS files dynamically
-    const themeFiles = [
-      '/src/themes/compact.css',
-      '/src/themes/comfortable.css',
-      '/src/themes/material.css',
-      '/src/themes/minimal.css',
-      '/src/themes/dark-modern.css',
-      '/src/themes/light-airy.css',
-      '/src/themes/warm-sunset.css',
-    ];
-
-    themeFiles.forEach(file => {
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = file;
-      document.head.appendChild(link);
-    });
-  }, []);
+  const [selectedTheme, setSelectedTheme] = useState('theme-default');
 
   const handleThemeChange = (theme: string) => {
     setSelectedTheme(theme);

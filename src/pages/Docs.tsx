@@ -159,7 +159,7 @@ const sampleData = [
 
 export default function Docs() {
   const [activeSection, setActiveSection] = useState('installation');
-  const [themingGridTheme, setThemingGridTheme] = useState('');
+  const [themingGridTheme, setThemingGridTheme] = useState('theme-default');
 
   // Basic columns for preview
   const basicColumns: ColumnDef<typeof sampleData[0]>[] = useMemo(() => [
@@ -1509,7 +1509,7 @@ import 'fibogrid/styles.css';
                         </p>
                         <div className="border border-primary/10 rounded-lg overflow-hidden" style={{ height: 400 }}>
                           <FiboGrid
-                            className={themingGridTheme}
+                            className={themingGridTheme === 'theme-default' ? '' : themingGridTheme}
                             rowData={sampleData}
                             columnDefs={statusColumns}
                             getRowId={(row) => row.id}
