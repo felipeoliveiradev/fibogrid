@@ -11,7 +11,7 @@ import { ColumnDef } from '@/components/FiboGrid/types';
 import { 
   ArrowLeft, Copy, Check, BookOpen, Code, Zap, Settings, Layers, 
   Filter, ArrowUpDown, Pin, Edit3, Download, Move, Hexagon, 
-  Eye, Package, Palette, Bell, Link2, Terminal
+  Eye, Package, Palette, Bell, Link2, Terminal, Server
 } from 'lucide-react';
 
 // FiboGrid Logo Component
@@ -140,6 +140,7 @@ const sections = [
   { id: 'grouping', title: 'Row Grouping', icon: Layers },
   { id: 'drag-drop', title: 'Drag & Drop', icon: Move },
   { id: 'export', title: 'Export', icon: Download },
+  { id: 'server-side', title: 'Server-Side Integration', icon: Server },
   { id: 'events', title: 'Events', icon: Bell },
   { id: 'theming', title: 'Theming', icon: Palette },
   { id: 'linked-grids', title: 'Linked Grids', icon: Link2 },
@@ -858,6 +859,525 @@ exportToExcel(rows, columns, {
   fileName: 'export.xlsx',
   sheetName: 'Data'
 });`} />
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+
+                {activeSection === 'server-side' && (
+                  <div className="space-y-8 animate-fade-in">
+                    <h1 className="text-4xl md:text-5xl font-display font-bold text-gradient-gold">Server-Side Integration</h1>
+                    
+                    <Card className="paper-aged border-primary/10">
+                      <CardHeader>
+                        <CardTitle className="font-display text-xl flex items-center gap-2">
+                          <Server className="h-5 w-5 text-primary" />
+                          Overview
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <p className="font-body text-muted-foreground">
+                          FiboGrid supports full server-side data operations including pagination, sorting, filtering, and searching. This is essential for large datasets where loading all data at once would be inefficient.
+                        </p>
+                        <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
+                          <p className="font-body text-sm">
+                            <strong className="text-primary">✅ Server-side pagination</strong> - Load only the current page<br/>
+                            <strong className="text-primary">✅ Server-side sorting</strong> - Sort on the backend<br/>
+                            <strong className="text-primary">✅ Server-side filtering</strong> - Filter on the backend<br/>
+                            <strong className="text-primary">✅ Global search</strong> - Search across multiple columns<br/>
+                            <strong className="text-primary">✅ Real-time updates</strong> - Automatic refresh on parameter changes
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="paper-aged border-primary/10">
+                      <CardHeader>
+                        <CardTitle className="font-display text-xl">Complete Server-Side Example</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <CodeBlock code={`import { useState, useEffect, useMemo } from 'react';
+import { FiboGrid, ColumnDef } from 'fibogrid';
+import 'fibogrid/styles.css';
+
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  status: string;
+}
+
+interface ServerResponse {
+  data: User[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+function UserGrid() {
+  const [rowData, setRowData] = useState<User[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [totalRows, setTotalRows] = useState(0);
+  
+  // Server-side state
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [sortField, setSortField] = useState<string>('');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [searchText, setSearchText] = useState('');
+  const [filters, setFilters] = useState<Record<string, any>>({});
+
+  // Fetch data from server
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const params = new URLSearchParams({
+          page: page.toString(),
+          pageSize: pageSize.toString(),
+          sortField: sortField || '',
+          sortOrder: sortOrder,
+          search: searchText,
+          ...filters,
+        });
+
+        const response = await fetch(
+          \`/api/users?\${params}\`
+        );
+        const result: ServerResponse = await response.json();
+
+        setRowData(result.data);
+        setTotalRows(result.total);
+      } catch (error) {
+        console.error('Failed to fetch data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [page, pageSize, sortField, sortOrder, searchText, filters]);
+
+  const columns: ColumnDef<User>[] = useMemo(() => [
+    {
+      field: 'name',
+      headerName: 'Name',
+      sortable: true,
+      filterable: true,
+      width: 180,
+    },
+    {
+      field: 'email',
+      headerName: 'Email',
+      sortable: true,
+      filterable: true,
+      width: 220,
+    },
+    {
+      field: 'role',
+      headerName: 'Role',
+      sortable: true,
+      filterable: true,
+      filterType: 'select',
+      width: 140,
+    },
+    {
+      field: 'status',
+      headerName: 'Status',
+      sortable: true,
+      filterable: true,
+      filterType: 'select',
+      width: 120,
+      cellRenderer: ({ value }) => (
+        <span className={\`px-2 py-0.5 rounded text-xs font-medium \${
+          value === 'Active' 
+            ? 'bg-green-600/20 text-green-700' 
+            : 'bg-red-600/20 text-red-700'
+        }\`}>
+          {value}
+        </span>
+      ),
+    },
+  ], []);
+
+  return (
+    <FiboGrid
+      rowData={rowData}
+      columnDefs={columns}
+      loading={loading}
+      
+      // Server-side pagination
+      pagination={true}
+      paginationMode="server"
+      paginationPageSize={pageSize}
+      paginationTotalRows={totalRows}
+      onPaginationChanged={(event) => {
+        setPage(event.page);
+        setPageSize(event.pageSize);
+      }}
+      
+      // Server-side sorting
+      sortingMode="server"
+      onSortChanged={(event) => {
+        if (event.sortModel.length > 0) {
+          setSortField(event.sortModel[0].field);
+          setSortOrder(event.sortModel[0].sort);
+        } else {
+          setSortField('');
+          setSortOrder('asc');
+        }
+      }}
+      
+      // Server-side filtering
+      filterMode="server"
+      onFilterChanged={(event) => {
+        setFilters(event.filterModel);
+        setPage(1); // Reset to first page on filter
+      }}
+      
+      // Global search
+      enableGlobalSearch={true}
+      onGlobalSearchChanged={(value) => {
+        setSearchText(value);
+        setPage(1); // Reset to first page on search
+      }}
+    />
+  );
+}`} language="tsx" />
+                      </CardContent>
+                    </Card>
+
+                    <Card className="paper-aged border-primary/10">
+                      <CardHeader>
+                        <CardTitle className="font-display text-xl">Backend API Example (Node.js/Express)</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <CodeBlock code={`// Backend endpoint example
+app.get('/api/users', async (req, res) => {
+  const {
+    page = 1,
+    pageSize = 20,
+    sortField = 'name',
+    sortOrder = 'asc',
+    search = '',
+    ...filters
+  } = req.query;
+
+  try {
+    // Build query
+    let query = db('users');
+
+    // Apply global search
+    if (search) {
+      query = query.where(function() {
+        this.where('name', 'like', \`%\${search}%\`)
+          .orWhere('email', 'like', \`%\${search}%\`)
+          .orWhere('role', 'like', \`%\${search}%\`);
+      });
+    }
+
+    // Apply column filters
+    Object.keys(filters).forEach(field => {
+      if (filters[field]) {
+        query = query.where(field, filters[field]);
+      }
+    });
+
+    // Get total count before pagination
+    const [{ count: total }] = await query.clone().count('* as count');
+
+    // Apply sorting
+    query = query.orderBy(sortField, sortOrder);
+
+    // Apply pagination
+    const offset = (page - 1) * pageSize;
+    const data = await query.limit(pageSize).offset(offset);
+
+    res.json({
+      data,
+      total,
+      page: parseInt(page),
+      pageSize: parseInt(pageSize),
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch users' });
+  }
+});`} language="typescript" />
+                      </CardContent>
+                    </Card>
+
+                    <Card className="paper-aged border-primary/10">
+                      <CardHeader>
+                        <CardTitle className="font-display text-xl">Backend API Example (Python/FastAPI)</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <CodeBlock code={`from fastapi import FastAPI, Query
+from typing import Optional
+from sqlalchemy import select, func, or_
+
+app = FastAPI()
+
+@app.get("/api/users")
+async def get_users(
+    page: int = Query(1, ge=1),
+    pageSize: int = Query(20, ge=1, le=100),
+    sortField: str = Query("name"),
+    sortOrder: str = Query("asc"),
+    search: Optional[str] = Query(None),
+    role: Optional[str] = Query(None),
+    status: Optional[str] = Query(None),
+):
+    # Build base query
+    query = select(User)
+    
+    # Apply global search
+    if search:
+        search_filter = or_(
+            User.name.ilike(f"%{search}%"),
+            User.email.ilike(f"%{search}%"),
+            User.role.ilike(f"%{search}%"),
+        )
+        query = query.where(search_filter)
+    
+    # Apply column filters
+    if role:
+        query = query.where(User.role == role)
+    if status:
+        query = query.where(User.status == status)
+    
+    # Get total count
+    count_query = select(func.count()).select_from(User)
+    if search:
+        count_query = count_query.where(search_filter)
+    if role:
+        count_query = count_query.where(User.role == role)
+    if status:
+        count_query = count_query.where(User.status == status)
+    
+    total = await db.scalar(count_query)
+    
+    # Apply sorting
+    if sortOrder == "desc":
+        query = query.order_by(getattr(User, sortField).desc())
+    else:
+        query = query.order_by(getattr(User, sortField).asc())
+    
+    # Apply pagination
+    offset = (page - 1) * pageSize
+    query = query.offset(offset).limit(pageSize)
+    
+    # Execute query
+    result = await db.execute(query)
+    users = result.scalars().all()
+    
+    return {
+        "data": [user.to_dict() for user in users],
+        "total": total,
+        "page": page,
+        "pageSize": pageSize,
+    }`} language="python" />
+                      </CardContent>
+                    </Card>
+
+                    <Card className="paper-aged border-primary/10">
+                      <CardHeader>
+                        <CardTitle className="font-display text-xl">Backend API Example (Laravel/PHP)</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <CodeBlock code={`<?php
+// Laravel Controller
+class UserController extends Controller
+{
+    public function index(Request $request)
+    {
+        $page = $request->input('page', 1);
+        $pageSize = $request->input('pageSize', 20);
+        $sortField = $request->input('sortField', 'name');
+        $sortOrder = $request->input('sortOrder', 'asc');
+        $search = $request->input('search', '');
+        
+        // Build query
+        $query = User::query();
+        
+        // Apply global search
+        if (!empty($search)) {
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('role', 'like', "%{$search}%");
+            });
+        }
+        
+        // Apply column filters
+        if ($request->has('role')) {
+            $query->where('role', $request->input('role'));
+        }
+        if ($request->has('status')) {
+            $query->where('status', $request->input('status'));
+        }
+        
+        // Get total count
+        $total = $query->count();
+        
+        // Apply sorting and pagination
+        $users = $query
+            ->orderBy($sortField, $sortOrder)
+            ->skip(($page - 1) * $pageSize)
+            ->take($pageSize)
+            ->get();
+        
+        return response()->json([
+            'data' => $users,
+            'total' => $total,
+            'page' => (int) $page,
+            'pageSize' => (int) $pageSize,
+        ]);
+    }
+}`} language="php" />
+                      </CardContent>
+                    </Card>
+
+                    <Card className="paper-aged border-primary/10">
+                      <CardHeader>
+                        <CardTitle className="font-display text-xl">Props Reference</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-sm font-body">
+                            <thead>
+                              <tr className="border-b border-primary/10">
+                                <th className="text-left py-3 px-4 font-display">Prop</th>
+                                <th className="text-left py-3 px-4 font-display">Type</th>
+                                <th className="text-left py-3 px-4 font-display">Description</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {[
+                                ['paginationMode', '"client" | "server"', 'Controls whether pagination is handled client or server-side'],
+                                ['paginationTotalRows', 'number', 'Total number of rows (for server-side pagination)'],
+                                ['sortingMode', '"client" | "server"', 'Controls whether sorting is handled client or server-side'],
+                                ['filterMode', '"client" | "server"', 'Controls whether filtering is handled client or server-side'],
+                                ['loading', 'boolean', 'Shows loading overlay while data is being fetched'],
+                                ['onPaginationChanged', '(event) => void', 'Callback when page or page size changes'],
+                                ['onSortChanged', '(event) => void', 'Callback when sort model changes'],
+                                ['onFilterChanged', '(event) => void', 'Callback when filter model changes'],
+                                ['onGlobalSearchChanged', '(value: string) => void', 'Callback when global search text changes'],
+                              ].map(([prop, type, desc], i) => (
+                                <tr key={i} className="border-b border-primary/5">
+                                  <td className="py-3 px-4 font-mono text-primary">{prop}</td>
+                                  <td className="py-3 px-4 font-mono text-xs">{type}</td>
+                                  <td className="py-3 px-4">{desc}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="paper-aged border-primary/10">
+                      <CardHeader>
+                        <CardTitle className="font-display text-xl">Event Payloads</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div>
+                          <h4 className="font-display font-semibold mb-2">onPaginationChanged</h4>
+                          <CodeBlock code={`{
+  page: number;        // Current page (1-indexed)
+  pageSize: number;    // Items per page
+  totalPages: number;  // Total number of pages
+}`} language="typescript" />
+                        </div>
+                        <div>
+                          <h4 className="font-display font-semibold mb-2">onSortChanged</h4>
+                          <CodeBlock code={`{
+  sortModel: Array<{
+    field: string;           // Column field name
+    sort: 'asc' | 'desc';   // Sort direction
+  }>;
+}`} language="typescript" />
+                        </div>
+                        <div>
+                          <h4 className="font-display font-semibold mb-2">onFilterChanged</h4>
+                          <CodeBlock code={`{
+  filterModel: Record<string, any>;
+  // Example: { status: 'Active', role: 'Admin' }
+}`} language="typescript" />
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="paper-aged border-primary/10">
+                      <CardHeader>
+                        <CardTitle className="font-display text-xl">Best Practices</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <ul className="space-y-3 font-body">
+                          {[
+                            'Reset to page 1 when filters or search changes to avoid empty results',
+                            'Show loading state while fetching data for better UX',
+                            'Debounce search input to reduce API calls (300-500ms recommended)',
+                            'Implement error handling and show user-friendly messages',
+                            'Cache responses when appropriate to improve performance',
+                            'Add request cancellation for pending requests when parameters change',
+                            'Include proper indexes on database columns used for sorting and filtering',
+                            'Validate and sanitize all user inputs on the backend',
+                            'Consider implementing cursor-based pagination for very large datasets',
+                            'Return consistent error responses from your API',
+                          ].map((item, i) => (
+                            <li key={i} className="flex items-start gap-3">
+                              <div className="h-5 w-5 rounded bg-gradient-gold flex items-center justify-center shadow-gold flex-shrink-0 mt-0.5">
+                                <Check className="h-3 w-3 text-primary-foreground" />
+                              </div>
+                              <span>{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="paper-aged border-primary/10">
+                      <CardHeader>
+                        <CardTitle className="font-display text-xl">Debounced Search Hook</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <CodeBlock code={`import { useState, useEffect } from 'react';
+
+// Custom hook for debounced search
+function useDebounce<T>(value: T, delay: number = 500): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+
+// Usage in component
+function UserGrid() {
+  const [searchInput, setSearchInput] = useState('');
+  const debouncedSearch = useDebounce(searchInput, 300);
+  
+  useEffect(() => {
+    // Fetch data with debouncedSearch
+  }, [debouncedSearch]);
+  
+  return (
+    <FiboGrid
+      enableGlobalSearch={true}
+      onGlobalSearchChanged={setSearchInput}
+      // ... other props
+    />
+  );
+}`} language="tsx" />
                       </CardContent>
                     </Card>
                   </div>
