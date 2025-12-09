@@ -1,0 +1,15 @@
+/* FiboGrid - Compact Theme
+ * Smaller, denser layout for maximum information density
+ */
+
+.fibogrid.theme-compact {
+  --fibogrid-row-height: 32px;
+  --fibogrid-header-height: 36px;
+  --fibogrid-cell-padding: 8px;
+  --fibogrid-font-size: 13px;
+  --fibogrid-font-size-sm: 11px;
+  --fibogrid-spacing-sm: 4px;
+  --fibogrid-spacing-md: 8px;
+  --fibogrid-toolbar-height: 40px;
+  --fibogrid-statusbar-height: 28px;
+}

@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback, useRef, useEffect, startTransition } from 'react';
 import { Link } from 'react-router-dom';
-import { FiboGrid } from '@/components/FiboGrid';
-import { ColumnDef, GridApi, RowNode, ServerSideDataSource, ServerSideDataSourceRequest, ServerSideDataSourceResponse } from '@/components/FiboGrid/types';
+import { FiboGrid } from 'fibogrid';
+import { ColumnDef, GridApi, RowNode, ServerSideDataSource, ServerSideDataSourceRequest, ServerSideDataSourceResponse } from 'fibogrid';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';

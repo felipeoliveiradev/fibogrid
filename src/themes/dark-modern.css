@@ -1,0 +1,27 @@
+/* FiboGrid - Dark Modern Theme
+ * Sleek dark theme with vibrant accents
+ */
+
+.fibogrid.theme-dark-modern {
+  --fibogrid-primary: #8b5cf6;
+  --fibogrid-primary-hover: #7c3aed;
+  --fibogrid-primary-active: #6d28d9;
+  --fibogrid-primary-foreground: #ffffff;
+  
+  --fibogrid-bg: #0f172a;
+  --fibogrid-surface: #1e293b;
+  --fibogrid-surface-hover: #334155;
+  --fibogrid-surface-selected: #2d1b4e;
+  --fibogrid-surface-active: #3b2667;
+  
+  --fibogrid-text: #f1f5f9;
+  --fibogrid-text-secondary: #94a3b8;
+  
+  --fibogrid-border: #334155;
+  
+  --fibogrid-selection-bg: #2d1b4e;
+  --fibogrid-selection-hover: #3b2667;
+  
+  --fibogrid-radius-md: 8px;
+  --fibogrid-radius-lg: 12px;
+}

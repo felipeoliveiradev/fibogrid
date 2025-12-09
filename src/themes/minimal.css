@@ -1,0 +1,29 @@
+/* FiboGrid - Minimal Theme
+ * Clean, minimal design with less visual weight
+ */
+
+.fibogrid.theme-minimal {
+  --fibogrid-border: transparent;
+  --fibogrid-surface: transparent;
+  --fibogrid-surface-hover: #f9fafb;
+  --fibogrid-surface-selected: #f3f4f6;
+  --fibogrid-surface-active: #e5e7eb;
+  
+  --fibogrid-text: #111827;
+  --fibogrid-text-secondary: #6b7280;
+  
+  --fibogrid-radius-sm: 0;
+  --fibogrid-radius-md: 0;
+  --fibogrid-radius-lg: 0;
+}
+
+.dark .fibogrid.theme-minimal {
+  --fibogrid-border: transparent;
+  --fibogrid-surface: transparent;
+  --fibogrid-surface-hover: #1f2937;
+  --fibogrid-surface-selected: #374151;
+  --fibogrid-surface-active: #4b5563;
+  
+  --fibogrid-text: #f9fafb;
+  --fibogrid-text-secondary: #9ca3af;
+}

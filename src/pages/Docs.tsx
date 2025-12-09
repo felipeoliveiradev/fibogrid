@@ -6,8 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { FiboGrid } from '@/components/FiboGrid';
-import { ColumnDef } from '@/components/FiboGrid/types';
+import { ThemeSelector } from '@/components/ThemeSelector';
+import { FiboGrid, ColumnDef } from 'fibogrid';
 import { 
   ArrowLeft, Copy, Check, BookOpen, Code, Zap, Settings, Layers, 
   Filter, ArrowUpDown, Pin, Edit3, Download, Move, Hexagon, 
@@ -159,6 +159,7 @@ const sampleData = [
 
 export default function Docs() {
   const [activeSection, setActiveSection] = useState('installation');
+  const [themingGridTheme, setThemingGridTheme] = useState('');
 
   // Basic columns for preview
   const basicColumns: ColumnDef<typeof sampleData[0]>[] = useMemo(() => [
@@ -1492,6 +1493,36 @@ import 'fibogrid/styles.css';
 
 // The grid automatically gets the .fibogrid class
 <FiboGrid rowData={data} columnDefs={columns} />`} />
+                      </CardContent>
+                    </Card>
+
+                    <Card className="paper-aged border-primary/10">
+                      <CardHeader>
+                        <CardTitle className="font-display text-xl flex items-center justify-between">
+                          <span>Interactive Theme Preview</span>
+                          <ThemeSelector onThemeChange={setThemingGridTheme} />
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <p className="font-body text-sm text-muted-foreground">
+                          Try different pre-built themes in real-time. Notice how the grid theme changes independently from the documentation site's theme.
+                        </p>
+                        <div className="border border-primary/10 rounded-lg overflow-hidden" style={{ height: 400 }}>
+                          <FiboGrid
+                            className={themingGridTheme}
+                            rowData={sampleData}
+                            columnDefs={statusColumns}
+                            getRowId={(row) => row.id}
+                            rowSelection="multiple"
+                            showToolbar={true}
+                            showStatusBar={true}
+                          />
+                        </div>
+                        <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
+                          <p className="font-body text-sm">
+                            <strong className="text-primary">💡 Notice:</strong> Changing the grid theme above doesn't affect the documentation site's appearance. The grid has its own isolated theming system!
+                          </p>
+                        </div>
                       </CardContent>
                     </Card>
 

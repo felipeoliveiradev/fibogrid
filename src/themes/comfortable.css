@@ -1,0 +1,15 @@
+/* FiboGrid - Comfortable Theme
+ * More spacious layout for better readability
+ */
+
+.fibogrid.theme-comfortable {
+  --fibogrid-row-height: 48px;
+  --fibogrid-header-height: 52px;
+  --fibogrid-cell-padding: 16px;
+  --fibogrid-font-size: 15px;
+  --fibogrid-font-size-sm: 13px;
+  --fibogrid-spacing-md: 16px;
+  --fibogrid-spacing-lg: 24px;
+  --fibogrid-toolbar-height: 56px;
+  --fibogrid-statusbar-height: 40px;
+}

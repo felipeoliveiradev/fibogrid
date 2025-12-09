@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
-import { FiboGrid } from '@/components/FiboGrid';
-import { ColumnDef } from '@/components/FiboGrid/types';
+import { FiboGrid } from 'fibogrid';
+import { ColumnDef } from 'fibogrid';
 
 interface SimpleRow {
   id: string;

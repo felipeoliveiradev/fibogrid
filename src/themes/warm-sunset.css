@@ -1,0 +1,37 @@
+/* FiboGrid - Warm Sunset Theme
+ * Warm orange and amber tones
+ */
+
+.fibogrid.theme-warm-sunset {
+  --fibogrid-primary: #f97316;
+  --fibogrid-primary-hover: #ea580c;
+  --fibogrid-primary-active: #c2410c;
+  --fibogrid-primary-foreground: #ffffff;
+  
+  --fibogrid-bg: #fffbeb;
+  --fibogrid-surface: #fef3c7;
+  --fibogrid-surface-hover: #fde68a;
+  --fibogrid-surface-selected: #fed7aa;
+  --fibogrid-surface-active: #fdba74;
+  
+  --fibogrid-text: #78350f;
+  --fibogrid-text-secondary: #92400e;
+  
+  --fibogrid-border: #fde68a;
+  
+  --fibogrid-selection-bg: #fed7aa;
+  --fibogrid-selection-hover: #fdba74;
+}
+
+.dark .fibogrid.theme-warm-sunset {
+  --fibogrid-bg: #1c1917;
+  --fibogrid-surface: #292524;
+  --fibogrid-surface-hover: #3f3835;
+  --fibogrid-surface-selected: #422006;
+  --fibogrid-surface-active: #57340a;
+  
+  --fibogrid-text: #fef3c7;
+  --fibogrid-text-secondary: #fde68a;
+  
+  --fibogrid-border: #57340a;
+}

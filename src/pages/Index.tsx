@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { FiboGrid, GridProvider } from '@/components/FiboGrid';
-import { ColumnDef, GridApi, RowNode } from '@/components/FiboGrid/types';
+import { FiboGrid, GridProvider } from 'fibogrid';
+import { ColumnDef, GridApi, RowNode } from 'fibogrid';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';

@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { FiboGrid } from '@/components/FiboGrid';
-import { ColumnDef, GridApi } from '@/components/FiboGrid/types';
+import { FiboGrid } from 'fibogrid';
+import { ColumnDef, GridApi } from 'fibogrid';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
