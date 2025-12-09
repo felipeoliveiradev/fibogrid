@@ -12,7 +12,7 @@ interface GridCellProps<T> {
   editValue?: any;
   onStartEdit: () => void;
   onEditChange: (value: any) => void;
-  onStopEdit: (cancel?: boolean) => void;
+  onStopEdit: (cancel?: boolean, currentValue?: any) => void;
   onClick: (e: React.MouseEvent) => void;
   onDoubleClick: (e: React.MouseEvent) => void;
   isSelected?: boolean;
@@ -73,25 +73,29 @@ export function GridCell<T>({
   }, [registerCellRef, column.field, row.id]);
 
   const isStoppingRef = useRef(false);
+  const currentValueRef = useRef(editValue);
+  
+  // Keep ref updated with latest value
+  currentValueRef.current = editValue;
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       isStoppingRef.current = true;
-      onStopEdit(false);
+      onStopEdit(false, currentValueRef.current);
     } else if (e.key === 'Escape') {
       isStoppingRef.current = true;
       onStopEdit(true);
     } else if (e.key === 'Tab') {
       e.preventDefault();
       isStoppingRef.current = true;
-      onStopEdit(false);
+      onStopEdit(false, currentValueRef.current);
     }
   };
 
   const handleBlur = () => {
     // Prevent double-calling onStopEdit when Enter/Tab/Escape was pressed
     if (!isStoppingRef.current) {
-      onStopEdit(false);
+      onStopEdit(false, currentValueRef.current);
     }
     isStoppingRef.current = false;
   };

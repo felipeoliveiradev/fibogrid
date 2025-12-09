@@ -19,7 +19,7 @@ interface GridRowProps<T> {
   editingCell: EditingCell | null;
   onStartEdit: (field: string) => void;
   onEditChange: (value: any) => void;
-  onStopEdit: (cancel?: boolean) => void;
+  onStopEdit: (cancel?: boolean, currentValue?: any) => void;
   rowDragEnabled?: boolean;
   onRowDragStart?: (e: React.DragEvent) => void;
   onRowDragOver?: (e: React.DragEvent) => void;
