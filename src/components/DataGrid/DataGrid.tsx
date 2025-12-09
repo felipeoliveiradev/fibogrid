@@ -83,6 +83,9 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
   const [containerHeight, setContainerHeight] = useState(0);
   const [filterState, setFilterState] = useState<FilterState<T> | null>(null);
   const [quickFilterValue, setQuickFilterValue] = useState('');
+  
+  // Ref to always have latest editingCell value for callbacks
+  const editingCellRef = useRef<{ rowId: string; field: string; value: any; originalValue: any } | null>(null);
 
   // Resize observer
   useEffect(() => {
@@ -123,7 +126,8 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
     setColumnPinned,
   } = useGridState({ ...props, quickFilterText: quickFilterValue }, containerWidth);
 
-  // Grouping
+  // Keep ref in sync with editingCell state
+  editingCellRef.current = editingCell;
   const {
     displayRows: groupedDisplayRows,
     groupedRows,
@@ -639,14 +643,16 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
                         onStartEdit={(field) => api.startEditingCell(row.id, field)}
                         onEditChange={(value) => setEditingCell((prev) => (prev ? { ...prev, value } : null))}
                         onStopEdit={(cancel, currentValue) => {
-                          console.log('[DataGrid] onStopEdit called, cancel:', cancel, 'currentValue:', currentValue, 'editingCell:', editingCell);
-                          if (editingCell && !cancel) {
-                            const newValue = currentValue !== undefined ? currentValue : editingCell.value;
+                          // Use ref to get the latest editingCell value to avoid stale closure
+                          const currentEditingCell = editingCellRef.current;
+                          console.log('[DataGrid] onStopEdit called, cancel:', cancel, 'currentValue:', currentValue, 'editingCellRef:', currentEditingCell);
+                          if (currentEditingCell && !cancel) {
+                            const newValue = currentValue !== undefined ? currentValue : currentEditingCell.value;
                             console.log('[DataGrid] Calling onCellValueChanged with newValue:', newValue);
                             onCellValueChanged?.({
                               rowNode: row,
-                              column: columns.find((c) => c.field === editingCell.field)!,
-                              oldValue: editingCell.originalValue,
+                              column: columns.find((c) => c.field === currentEditingCell.field)!,
+                              oldValue: currentEditingCell.originalValue,
                               newValue,
                               api,
                             });
