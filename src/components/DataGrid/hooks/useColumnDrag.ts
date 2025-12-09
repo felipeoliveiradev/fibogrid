@@ -31,7 +31,7 @@ export function useColumnDrag(
       setDraggedColumn(column.field);
       draggedIndex.current = column.index;
       
-      // Set drag image
+
       if (e.dataTransfer) {
         e.dataTransfer.effectAllowed = 'move';
         e.dataTransfer.setData('text/plain', column.field);

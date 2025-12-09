@@ -56,7 +56,7 @@ export function ColumnPanel<T>({
 
   return (
     <div className="fixed right-0 top-0 bottom-0 w-72 bg-popover border-l border-border shadow-xl z-50 flex flex-col">
-      {/* Header */}
+      {}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
         <h3 className="font-semibold">Columns</h3>
         <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={onClose}>
@@ -64,7 +64,7 @@ export function ColumnPanel<T>({
         </Button>
       </div>
 
-      {/* Search */}
+      {}
       <div className="p-3 border-b border-border">
         <div className="relative">
           <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -77,7 +77,7 @@ export function ColumnPanel<T>({
         </div>
       </div>
 
-      {/* Column List */}
+      {}
       <ScrollArea className="flex-1">
         <div className="p-2 space-y-1">
           {filteredColumns.map((column, index) => (
@@ -124,7 +124,7 @@ export function ColumnPanel<T>({
         </div>
       </ScrollArea>
 
-      {/* Footer */}
+      {}
       <div className="p-3 border-t border-border flex gap-2">
         <Button
           variant="outline"

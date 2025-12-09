@@ -104,7 +104,7 @@ const Index = () => {
   const [showRowNumbers, setShowRowNumbers] = useState(true);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Columns for main grid
+
   const columns: ColumnDef<StockRow>[] = useMemo(() => [
     {
       field: 'ticker',
@@ -236,7 +236,7 @@ const Index = () => {
     },
   ], []);
 
-  // Columns for orders grid
+
   const orderColumns: ColumnDef<OrderRow>[] = useMemo(() => [
     { field: 'orderId', headerName: 'Order ID', width: 120, sortable: true },
     { 
@@ -287,12 +287,12 @@ const Index = () => {
     },
   ], []);
 
-  // Real-time price updates
+
   useEffect(() => {
     if (isRealTimeEnabled) {
       intervalRef.current = setInterval(() => {
         setRowData(prev => prev.map(stock => {
-          // Random price change
+
           const priceChange = (Math.random() - 0.5) * 2;
           const newPrice = Math.max(1, stock.price + priceChange);
           const newChange = stock.change + priceChange;
@@ -306,7 +306,7 @@ const Index = () => {
             volume: stock.volume + Math.floor(Math.random() * 10000),
           };
         }));
-      }, 100); // Update every 100ms for real-time feel
+      }, 100);
     } else {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
@@ -321,7 +321,7 @@ const Index = () => {
     };
   }, [isRealTimeEnabled]);
 
-  // Load orders when stock is selected
+
   useEffect(() => {
     if (selectedStock) {
       const orders = generateOrdersForStock(selectedStock.ticker);
@@ -400,7 +400,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
+      {}
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-20">
         <div className="max-w-[1900px] mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
@@ -411,7 +411,7 @@ const Index = () => {
               </p>
             </div>
             <div className="flex items-center gap-4">
-              {/* Real-time toggle */}
+              {}
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted">
                 {isRealTimeEnabled ? (
                   <Pause className="h-4 w-4 text-red-500" />
@@ -448,9 +448,9 @@ const Index = () => {
         </div>
       </header>
 
-      {/* Main Content */}
+      {}
       <main className="max-w-[1900px] mx-auto p-6">
-        {/* Controls */}
+        {}
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <span className="text-sm font-medium">Group By:</span>
@@ -495,7 +495,7 @@ const Index = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Main DataGrid */}
+          {}
           <div className="lg:col-span-3">
             <Card className="overflow-hidden">
               <CardHeader className="py-3 px-4 border-b border-border bg-muted/30">
@@ -543,9 +543,9 @@ const Index = () => {
             </Card>
           </div>
 
-          {/* Side Panel */}
+          {}
           <div className="lg:col-span-1 space-y-4">
-            {/* Orders Grid */}
+            {}
             <Card className="overflow-hidden">
               <CardHeader className="py-3 px-4 border-b border-border bg-muted/30">
                 <CardTitle className="text-base flex items-center gap-2">
@@ -582,7 +582,7 @@ const Index = () => {
               </CardContent>
             </Card>
 
-            {/* Stock Details */}
+            {}
             {selectedStock && (
               <Card>
                 <CardHeader className="py-3 px-4 border-b border-border">
@@ -634,7 +634,7 @@ const Index = () => {
               </Card>
             )}
 
-            {/* Features List */}
+            {}
             <Card>
               <CardHeader className="py-3 px-4 border-b border-border">
                 <CardTitle className="text-base">Features Demo</CardTitle>

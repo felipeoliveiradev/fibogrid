@@ -10,16 +10,14 @@ interface VirtualFilterListProps {
   overscan?: number;
 }
 
-/**
- * Virtualized list for filter values with lazy loading
- * Only renders visible items for better performance with large datasets
- */
+
+ 
 export function VirtualFilterList({
   values,
   selectedValues,
   onToggle,
-  height = 192, // h-48 = 12rem = 192px
-  itemHeight = 36, // py-1.5 + text height ≈ 36px
+  height = 192,
+  itemHeight = 36,
   overscan = 5,
 }: VirtualFilterListProps) {
   const [scrollTop, setScrollTop] = useState(0);

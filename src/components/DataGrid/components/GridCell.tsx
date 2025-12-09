@@ -19,14 +19,11 @@ interface GridCellProps<T> {
   isFocused?: boolean;
   onMouseDown?: (e: React.MouseEvent) => void;
   onMouseEnter?: () => void;
-  // Tree/hierarchy support
   indent?: number;
   showExpandIcon?: boolean;
   isExpanded?: boolean;
   onToggleExpand?: () => void;
-  // Cell ref for auto-size
   registerCellRef?: (field: string, rowId: string, element: HTMLElement | null) => void;
-  // Row height for 100% height
   rowHeight?: number;
 }
 
@@ -57,7 +54,6 @@ export function GridCell<T>({
   const contentRef = useRef<HTMLDivElement>(null);
   const value = getValueFromPath(row.data, column.field);
   
-  // Focus input when editing starts
   useEffect(() => {
     if (isEditing && inputRef.current) {
       inputRef.current.focus();
@@ -65,7 +61,6 @@ export function GridCell<T>({
     }
   }, [isEditing]);
 
-  // Register cell ref for measuring
   useEffect(() => {
     if (registerCellRef && contentRef.current) {
       registerCellRef(column.field, row.id, contentRef.current);
@@ -73,10 +68,8 @@ export function GridCell<T>({
     }
   }, [registerCellRef, column.field, row.id]);
 
-  // Track if we're currently stopping to prevent double-calls
   const isStoppingRef = useRef(false);
 
-  // Get the current value from the input element directly to avoid stale closure
   const getCurrentValue = () => {
     if (inputRef.current) {
       const inputType = inputRef.current.type;
@@ -111,7 +104,6 @@ export function GridCell<T>({
   };
 
   const handleBlur = () => {
-    // Prevent double-calling onStopEdit when Enter/Tab/Escape was pressed
     if (!isStoppingRef.current) {
       const currentValue = getCurrentValue();
       onStopEdit(false, currentValue);
@@ -120,12 +112,10 @@ export function GridCell<T>({
   };
 
   const handleCellClick = (e: React.MouseEvent) => {
-    // Don't stop propagation - let it bubble for row selection
     onClick(e);
   };
 
   const handleCellDoubleClick = (e: React.MouseEvent) => {
-    // Don't stop propagation - let it bubble
     onDoubleClick(e);
     if (column.editable) {
       onStartEdit();
@@ -133,12 +123,10 @@ export function GridCell<T>({
   };
 
   const handleMouseDownInternal = (e: React.MouseEvent) => {
-    // Don't interfere with editing - allow input clicks to focus
     if (isEditing) {
       return;
     }
     
-    // Call range selection handler if provided
     if (onMouseDown) {
       onMouseDown(e);
     }

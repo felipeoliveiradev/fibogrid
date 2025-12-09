@@ -57,7 +57,7 @@ export function ColumnMenu<T>({
     <DropdownMenu>
       <DropdownMenuTrigger asChild ref={triggerRef}>{children}</DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-52 bg-popover border border-border z-[100]">
-        {/* Sort Options */}
+        {}
         {column.sortable !== false && onSort && (
           <>
             <DropdownMenuItem onClick={() => onSort(column.field, 'asc')}>
@@ -72,7 +72,7 @@ export function ColumnMenu<T>({
           </>
         )}
 
-        {/* Pin Column Submenu */}
+        {}
         {onPin && (
           <>
             <DropdownMenuSub>
@@ -102,7 +102,7 @@ export function ColumnMenu<T>({
           </>
         )}
 
-        {/* Auto-size Options */}
+        {}
         {onAutoSize && (
           <DropdownMenuItem onClick={() => onAutoSize(column.field)}>
             <Maximize2 className="h-4 w-4 mr-2" />
@@ -119,7 +119,7 @@ export function ColumnMenu<T>({
 
         {(onAutoSize || onAutoSizeAll) && <DropdownMenuSeparator />}
 
-        {/* Filter */}
+        {}
         {column.filterable !== false && onFilterClick && (
           <>
             <DropdownMenuItem onClick={handleFilterClick}>
@@ -130,7 +130,7 @@ export function ColumnMenu<T>({
           </>
         )}
 
-        {/* Hide Column */}
+        {}
         {onHide && (
           <DropdownMenuItem onClick={() => onHide(column.field)}>
             <EyeOff className="h-4 w-4 mr-2" />

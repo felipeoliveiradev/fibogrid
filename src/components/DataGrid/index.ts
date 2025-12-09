@@ -5,7 +5,6 @@ export { GridProvider, useGridContext } from './context/GridContext';
 export * from './utils/grouping';
 export { exportToExcel } from './utils/excelExport';
 
-// Hooks exports for advanced usage
 export { useGridState } from './hooks/useGridState';
 export { useVirtualization } from './hooks/useVirtualization';
 export { useColumnResize } from './hooks/useColumnResize';
@@ -18,7 +17,6 @@ export { useCellSelection } from './hooks/useCellSelection';
 export { useUndoRedo } from './hooks/useUndoRedo';
 export { useFillHandle } from './hooks/useFillHandle';
 
-// Components exports for custom compositions
 export { GridToolbar } from './components/GridToolbar';
 export { GridStatusBar } from './components/GridStatusBar';
 export { ColumnMenu } from './components/ColumnMenu';

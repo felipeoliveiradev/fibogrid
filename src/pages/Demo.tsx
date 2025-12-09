@@ -42,7 +42,6 @@ interface StockRow {
   parentId?: string;
   isChild?: boolean;
   isDetailRow?: boolean;
-  // Extra company info
   founded?: number;
   employees?: number;
   headquarters?: string;
@@ -50,7 +49,6 @@ interface StockRow {
   website?: string;
 }
 
-// Pre-computed data for faster generation
 const TICKERS = ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'META', 'NVDA', 'TSLA', 'JPM', 'V', 'JNJ', 
                  'WMT', 'PG', 'DIS', 'NFLX', 'PYPL', 'ADBE', 'CRM', 'INTC', 'AMD', 'ORCL'];
 const NAMES = ['Apple Inc.', 'Alphabet Inc.', 'Microsoft Corp.', 'Amazon.com Inc.', 'Meta Platforms', 
@@ -63,7 +61,6 @@ const HEADQUARTERS = ['Cupertino, CA', 'Mountain View, CA', 'Redmond, WA', 'Seat
 const CEOS = ['Tim Cook', 'Sundar Pichai', 'Satya Nadella', 'Andy Jassy', 'Mark Zuckerberg',
               'Jensen Huang', 'Elon Musk', 'Jamie Dimon', 'Ryan McInerney', 'Joaquin Duato'];
 
-// Optimized batch data generation for 100k+ rows
 const generateStockData = (count: number): StockRow[] => {
   const result: StockRow[] = new Array(count);
   const tickerLen = TICKERS.length;
@@ -86,7 +83,6 @@ const generateStockData = (count: number): StockRow[] => {
       marketCap: Math.floor(Math.random() * 2000) + 10,
       sector: SECTORS[i % sectorLen],
       pe: Math.round((Math.random() * 50 + 5) * 100) / 100,
-      // Extra company info
       founded: 1970 + Math.floor(Math.random() * 50),
       employees: Math.floor(Math.random() * 200000) + 1000,
       headquarters: HEADQUARTERS[i % hqLen],
@@ -109,8 +105,8 @@ export default function Demo() {
   const [renderTime, setRenderTime] = useState(0);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [useServerSide, setUseServerSide] = useState(false);
+  const [isLoadingServer, setIsLoadingServer] = useState(false);
 
-  // Split row handler - clones row as child with empty ticker/name
   const handleSplitRow = useCallback((rowId: string) => {
     setRowData(prev => {
       const parentIndex = prev.findIndex(r => r.id === rowId);
@@ -127,11 +123,9 @@ export default function Demo() {
         isChild: true,
       };
       
-      // Insert child right after parent
       const result = [...prev];
       result.splice(parentIndex + 1, 0, childRow);
       
-      // Auto-expand parent
       setExpandedRows(p => new Set([...p, rowId]));
       
       return result;
@@ -139,7 +133,6 @@ export default function Demo() {
     toast({ title: 'Row Split', description: 'Child row created' });
   }, []);
 
-  // Toggle row expand/collapse
   const toggleRowExpand = useCallback((rowId: string) => {
     setExpandedRows(prev => {
       const next = new Set(prev);
@@ -152,12 +145,10 @@ export default function Demo() {
     });
   }, []);
 
-  // Get visible rows (respecting expand/collapse state)
   const visibleRowData = useMemo(() => {
     const result: StockRow[] = [];
     const childrenByParent = new Map<string, StockRow[]>();
     
-    // Group children by parent
     rowData.forEach(row => {
       if (row.parentId && row.isChild) {
         const children = childrenByParent.get(row.parentId) || [];
@@ -166,14 +157,11 @@ export default function Demo() {
       }
     });
     
-    // Build visible rows with detail rows
     rowData.forEach(row => {
       if (!row.parentId && !row.isDetailRow) {
         result.push(row);
         
-        // Add detail header + child rows if expanded
         if (expandedRows.has(row.id)) {
-          // First add detail header row
           result.push({
             ...row,
             id: `${row.id}-detail`,
@@ -181,7 +169,6 @@ export default function Demo() {
             parentId: row.id,
           });
           
-          // Then add any child rows (splits)
           const children = childrenByParent.get(row.id);
           if (children) {
             children.forEach(child => result.push(child));
@@ -193,117 +180,34 @@ export default function Demo() {
     return result;
   }, [rowData, expandedRows]);
 
-  // Check if row has children
   const hasChildren = useCallback((rowId: string) => {
     return rowData.some(r => r.parentId === rowId);
   }, [rowData]);
 
-  // Custom filter values - ESSENCIAL para server-side funcionar corretamente
-  // Em server-side, só temos a página atual de dados, então precisamos forçar os valores
-  const customFilterValues = useMemo(() => {
-    // Em modo server-side, fornecemos todos os valores possíveis
-    // Em modo client-side, ainda é útil para garantir valores consistentes
-    return {
-      // Forçar lista completa de setores
-      sector: SECTORS,
-      
-      // Forçar lista completa de headquarters
-      headquarters: HEADQUARTERS,
-      
-      // Forçar lista de CEOs conhecidos (em server-side seria do backend)
-      ceo: CEOS,
-      
-      // Outros campos sem filterValues definidos usarão extração automática:
-      // - Em client-side: extrai de allRows (todos os dados)
-      // - Em server-side: extrai dos dados da página atual (pode ser incompleto)
-      //   Então é recomendado sempre definir filterValues em server-side!
-    };
-  }, []);
-
-  // Server-side data source (mock implementation)
   const serverSideDataSource: ServerSideDataSource<StockRow> = useMemo(() => ({
     async getRows(request: ServerSideDataSourceRequest): Promise<ServerSideDataSourceResponse<StockRow>> {
-      // Simula delay de rede
+      setIsLoadingServer(true);
+      
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      // Gera todos os dados
-      let allData = generateStockData(rowCount);
-      
-      // Aplica quick filter/search global (simula comportamento do backend)
-      if (request.quickFilterText && request.quickFilterText.trim()) {
-        const searchText = request.quickFilterText.toLowerCase().trim();
-        allData = allData.filter(row => {
-          // Busca em todos os campos string da row
-          return Object.values(row).some(value => {
-            if (value == null) return false;
-            return String(value).toLowerCase().includes(searchText);
-          });
-        });
-      }
-      
-      // Aplica filtros de coluna (simula comportamento do backend)
-      if (request.filterModel && request.filterModel.length > 0) {
-        allData = allData.filter(row => {
-          return request.filterModel.every(filter => {
-            const cellValue = (row as any)[filter.field];
-            
-            // Filtro de valores selecionados (checkbox list)
-            if (Array.isArray(filter.value)) {
-              if (filter.value.length === 0) return false; // Nenhum selecionado = filtra tudo
-              return filter.value.includes(String(cellValue));
-            }
-            
-            // Filtros condicionais (contains, equals, etc)
-            const filterValue = String(filter.value).toLowerCase();
-            const cellValueStr = String(cellValue).toLowerCase();
-            
-            switch (filter.operator) {
-              case 'contains':
-                return cellValueStr.includes(filterValue);
-              case 'equals':
-                return cellValueStr === filterValue;
-              case 'startsWith':
-                return cellValueStr.startsWith(filterValue);
-              case 'endsWith':
-                return cellValueStr.endsWith(filterValue);
-              default:
-                return cellValueStr.includes(filterValue);
-            }
-          });
-        });
-      }
-      
-      // Aplica ordenação (simula comportamento do backend)
-      if (request.sortModel && request.sortModel.length > 0) {
-        const sort = request.sortModel[0];
-        allData.sort((a, b) => {
-          const aVal = (a as any)[sort.field];
-          const bVal = (b as any)[sort.field];
-          
-          if (aVal < bVal) return sort.direction === 'asc' ? -1 : 1;
-          if (aVal > bVal) return sort.direction === 'asc' ? 1 : -1;
-          return 0;
-        });
-      }
-      
-      // Paginação
+      const allData = generateStockData(1000); 
       const startIndex = request.page * request.pageSize;
       const endIndex = startIndex + request.pageSize;
       const pageData = allData.slice(startIndex, endIndex);
       
+      setIsLoadingServer(false);
+      
       return {
         data: pageData,
-        totalRows: allData.length, // Total após filtros
+        totalRows: allData.length,
         page: request.page,
         pageSize: request.pageSize,
       };
     },
-  }), [rowCount]);
+  }), []);
 
-  // Stable getRowId
   const getRowId = useCallback((row: StockRow) => row.id, []);
 
-  // Memoized columns with Actions
   const columns: ColumnDef<StockRow>[] = useMemo(() => [
     {
       field: 'ticker',
@@ -316,7 +220,6 @@ export default function Demo() {
       cellRenderer: (params) => {
         const row = params.data as StockRow;
         
-        // Detail row - show avatar + name + sector
         if (row.isDetailRow) {
           return (
             <div className="flex items-center gap-2 pl-6">
@@ -371,7 +274,6 @@ export default function Demo() {
       cellRenderer: (params) => {
         const row = params.data as StockRow;
         
-        // Detail row - "Founded YEAR"
         if (row.isDetailRow) {
           return (
             <div className="flex items-center gap-2 text-sm">
@@ -397,7 +299,6 @@ export default function Demo() {
       filterType: 'number',
       cellRenderer: (params) => {
         const row = params.data as StockRow;
-        // Detail row - show "Active" badge
         if (row.isDetailRow) {
           return (
             <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/30 font-medium">
@@ -417,7 +318,6 @@ export default function Demo() {
       aggFunc: 'sum',
       cellRenderer: (params) => {
         const row = params.data as StockRow;
-        // Detail row - show employees count
         if (row.isDetailRow) {
           return (
             <div className="flex items-center gap-1 text-sm">
@@ -441,7 +341,6 @@ export default function Demo() {
       aggFunc: 'sum',
       cellRenderer: (params) => {
         const row = params.data as StockRow;
-        // Detail row - show market cap with increase
         if (row.isDetailRow) {
           return (
             <div className="flex flex-col leading-tight">
@@ -461,7 +360,6 @@ export default function Demo() {
       filterType: 'number',
       cellRenderer: (params) => {
         const row = params.data as StockRow;
-        // Detail row - show price
         if (row.isDetailRow) {
           return <span className="font-mono font-semibold">${row.price.toFixed(2)}</span>;
         }
@@ -482,7 +380,6 @@ export default function Demo() {
       sortable: true,
       cellRenderer: (params) => {
         const row = params.data as StockRow;
-        // Detail row - empty or can show something else
         if (row.isDetailRow) {
           return null;
         }
@@ -510,25 +407,6 @@ export default function Demo() {
         const row = params.data as StockRow;
         if (row.isDetailRow) return null;
         return <span>{params.value}</span>;
-      },
-    },
-    {
-      field: 'headquarters',
-      headerName: 'HQ Location',
-      width: 150,
-      sortable: true,
-      filterable: true,
-      cellRenderer: (params) => {
-        const row = params.data as StockRow;
-        if (row.isDetailRow) {
-          return (
-            <div className="flex items-center gap-1 text-sm">
-              <span className="text-muted-foreground">🏢</span>
-              <span>{row.headquarters}</span>
-            </div>
-          );
-        }
-        return <span className="text-sm">{params.value}</span>;
       },
     },
     {
@@ -573,13 +451,11 @@ export default function Demo() {
     },
   ], [hasChildren, expandedRows, toggleRowExpand, handleSplitRow]);
 
-  // Ultra-optimized real-time updates - target <16ms for 60fps
   useEffect(() => {
     if (isRealTimeEnabled) {
       intervalRef.current = setInterval(() => {
         const start = performance.now();
         
-        // Use startTransition for non-blocking updates
         startTransition(() => {
           setRowData(prev => {
             const len = prev.length;
@@ -625,7 +501,6 @@ export default function Demo() {
   const handleRowCountChange = useCallback((count: number) => {
     setRowCount(count);
     
-    // Use requestAnimationFrame for large datasets to prevent UI freeze
     if (count >= 50000) {
       toast({ title: 'Generating data...', description: `Creating ${count.toLocaleString()} rows` });
       requestAnimationFrame(() => {
@@ -692,7 +567,6 @@ export default function Demo() {
     toast({ title: 'Data Refreshed' });
   }, [rowCount]);
 
-  // FiboGrid Logo Component
   const FiboLogo = ({ className = "h-8 w-8" }: { className?: string }) => (
     <svg viewBox="0 0 100 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
       <defs>
@@ -791,7 +665,7 @@ export default function Demo() {
                 {/* Row Count */}
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm font-body">
-                    <span>Row Count {useServerSide && <span className="text-xs text-muted-foreground">(Server)</span>}</span>
+                    <span>Row Count</span>
                     <Badge variant="outline" className="border-primary/30 font-mono">{rowCount.toLocaleString()}</Badge>
                   </div>
                   <div className="flex gap-2 flex-wrap">
@@ -898,6 +772,7 @@ export default function Demo() {
                 <div className="flex items-center gap-2 text-sm text-muted-foreground font-body">
                   <Badge variant="outline" className="border-primary/30">Server-side Mode</Badge>
                   <span>Dados vêm do backend com paginação assíncrona</span>
+                  {isLoadingServer && <span className="text-primary">Loading...</span>}
                 </div>
               </div>
             )}
@@ -916,8 +791,7 @@ export default function Demo() {
               paginationPageSize={25}
               paginationPageSizeOptions={[25, 50, 100, 250, 500]}
               groupByFields={groupByField ? [groupByField] : undefined}
-              enableFilterValueVirtualization={true}
-              filterValues={customFilterValues}
+              loading={isLoadingServer}
               onGridReady={(e) => setGridApi(e.api)}
               onCellValueChanged={(e) => {
                 console.log('[Demo] onCellValueChanged received:', e.newValue, 'for field:', e.column.field);
@@ -944,12 +818,10 @@ export default function Demo() {
                   cell: event.cell,
                 });
                 
-                // Se clicou em uma célula editável, mostre no console
                 if (event.cell?.isEditable) {
                   console.log('[Demo] Clicked on editable cell:', event.cell.column.field, 'value:', event.cell.value);
                 }
                 
-                // Exemplo: triple click para fazer algo especial
                 if (event.clickType === 'triple') {
                   toast({ 
                     title: 'Triple Click!', 

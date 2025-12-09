@@ -31,7 +31,6 @@ import {
 // FiboGrid Logo Component
 const FiboLogo = ({ className = "h-8 w-8" }: { className?: string }) => (
   <svg viewBox="0 0 100 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-    {/* Golden spiral based on Fibonacci */}
     <defs>
       <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
         <stop offset="0%" stopColor="hsl(42 70% 55%)" />
@@ -39,20 +38,17 @@ const FiboLogo = ({ className = "h-8 w-8" }: { className?: string }) => (
         <stop offset="100%" stopColor="hsl(38 60% 35%)" />
       </linearGradient>
     </defs>
-    {/* Fibonacci spiral squares */}
     <rect x="10" y="10" width="34" height="34" stroke="url(#goldGradient)" strokeWidth="2" fill="none" rx="2"/>
     <rect x="44" y="10" width="21" height="21" stroke="url(#goldGradient)" strokeWidth="2" fill="none" rx="1"/>
     <rect x="44" y="31" width="13" height="13" stroke="url(#goldGradient)" strokeWidth="2" fill="none" rx="1"/>
     <rect x="57" y="31" width="8" height="8" stroke="url(#goldGradient)" strokeWidth="2" fill="none" rx="1"/>
     <rect x="57" y="39" width="5" height="5" stroke="url(#goldGradient)" strokeWidth="2" fill="none" rx="0.5"/>
-    {/* Grid representation */}
     <rect x="10" y="50" width="55" height="40" stroke="url(#goldGradient)" strokeWidth="2" fill="none" rx="3"/>
     <line x1="10" y1="60" x2="65" y2="60" stroke="url(#goldGradient)" strokeWidth="1.5"/>
     <line x1="10" y1="70" x2="65" y2="70" stroke="url(#goldGradient)" strokeWidth="1"/>
     <line x1="10" y1="80" x2="65" y2="80" stroke="url(#goldGradient)" strokeWidth="1"/>
     <line x1="30" y1="50" x2="30" y2="90" stroke="url(#goldGradient)" strokeWidth="1"/>
     <line x1="50" y1="50" x2="50" y2="90" stroke="url(#goldGradient)" strokeWidth="1"/>
-    {/* Golden circle accent */}
     <circle cx="80" cy="70" r="12" stroke="url(#goldGradient)" strokeWidth="2" fill="none"/>
     <circle cx="80" cy="70" r="7" stroke="url(#goldGradient)" strokeWidth="1.5" fill="hsl(40 65% 45% / 0.2)"/>
   </svg>
@@ -173,16 +169,10 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background relative">
-      {/* Texture overlay for parchment effect */}
       <div className="fixed inset-0 texture-overlay pointer-events-none" />
-      
-      {/* Hero Section */}
       <header className="relative overflow-hidden">
-        {/* Background - Da Vinci inspired */}
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/5" />
         <div className="absolute inset-0 grid-fibonacci opacity-30" />
-        
-        {/* Navigation */}
         <nav className="relative z-10 max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <FiboLogo className="h-10 w-10" />
@@ -197,15 +187,13 @@ export default function Home() {
             </Link>
             <ThemeToggle />
             <Button variant="outline" size="sm" className="border-primary/30 hover:border-primary hover:bg-primary/5" asChild>
-              <a href="https://github.com" target="_blank" rel="noopener">
+              <a href="https://github.com" target="_blank" rel="noreferrer" className="inline-flex items-center">
                 <Github className="h-4 w-4 mr-2" />
                 GitHub
               </a>
             </Button>
           </div>
         </nav>
-
-        {/* Hero Content */}
         <div className="relative z-10 max-w-7xl mx-auto px-6 pt-20 pb-28">
           <div className="text-center max-w-4xl mx-auto mb-16">
             <Badge className="mb-6 px-4 py-1.5 bg-primary/10 text-primary border-primary/30 font-body">
@@ -237,8 +225,6 @@ export default function Home() {
               </Button>
             </div>
           </div>
-
-          {/* Stats - Golden ratio inspired */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto mb-20">
             {stats.map((stat, i) => (
               <div key={i} className="text-center animate-fade-up" style={{ animationDelay: `${i * 100}ms` }}>
@@ -247,8 +233,6 @@ export default function Home() {
               </div>
             ))}
           </div>
-
-          {/* Interactive Demo Grid */}
           <div className="relative rounded-xl overflow-hidden border border-primary/20 shadow-parchment glow-gold">
             <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-transparent pointer-events-none z-10" />
             <DataGrid
@@ -265,8 +249,6 @@ export default function Home() {
           </div>
         </div>
       </header>
-
-      {/* Features Section */}
       <section className="py-28 relative">
         <div className="absolute inset-0 bg-card/50" />
         <div className="relative max-w-7xl mx-auto px-6">
@@ -297,8 +279,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
-      {/* Performance Section */}
       <section className="py-28">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid md:grid-cols-2 gap-16 items-center">
@@ -345,7 +325,7 @@ export default function Home() {
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-gold rounded-2xl blur-3xl opacity-20" />
               <div className="relative paper-aged rounded-xl border border-primary/20 p-8 font-mono text-sm shadow-parchment">
-                <div className="text-muted-foreground mb-4 font-body italic">// Elegantly simple</div>
+                <div className="text-muted-foreground mb-4 font-body italic">
                 <div className="space-y-2">
                   <div><span className="text-primary">import</span> {'{'} DataGrid {'}'} <span className="text-primary">from</span> <span className="text-accent">'fibogrid'</span>;</div>
                   <div className="mt-6"><span className="text-accent">{'<FiboGrid'}</span></div>
@@ -357,12 +337,11 @@ export default function Home() {
                   <div><span className="text-accent">{'/>'}</span></div>
                 </div>
               </div>
+              </div>
             </div>
           </div>
         </div>
       </section>
-
-      {/* CTA Section */}
       <section className="py-28 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-background to-accent/5" />
         <div className="absolute inset-0 grid-fibonacci opacity-20" />
@@ -386,8 +365,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
-      {/* Footer */}
       <footer className="border-t border-primary/10 py-16 relative">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">

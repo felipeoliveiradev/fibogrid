@@ -76,7 +76,7 @@ export function useFillHandle<T>({
       return;
     }
 
-    // Calculate cells to fill
+
     const startRowIndex = getRowIndex(fillRange.start.rowId);
     const endRowIndex = getRowIndex(fillRange.end.rowId);
     const startColIndex = getColumnIndex(fillRange.start.field);
@@ -94,7 +94,7 @@ export function useFillHandle<T>({
         const row = rows[r];
         const col = columns[c];
         if (row && col) {
-          // Skip the source cell
+
           if (row.id === sourcePositionRef.current.rowId && 
               col.field === sourcePositionRef.current.field) {
             continue;

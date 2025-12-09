@@ -37,7 +37,7 @@ export function FilterPanel<T>({
 
   return (
     <div className="fixed right-0 top-0 bottom-0 w-72 bg-popover border-l border-border shadow-xl z-50 flex flex-col">
-      {/* Header */}
+      {}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
         <div className="flex items-center gap-2">
           <Filter className="h-4 w-4" />
@@ -53,7 +53,7 @@ export function FilterPanel<T>({
         </Button>
       </div>
 
-      {/* Search */}
+      {}
       <div className="p-3 border-b border-border">
         <div className="relative">
           <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -66,7 +66,7 @@ export function FilterPanel<T>({
         </div>
       </div>
 
-      {/* Active Filters */}
+      {}
       {filterModel.length > 0 && (
         <div className="p-3 border-b border-border">
           <div className="flex items-center justify-between mb-2">
@@ -104,7 +104,7 @@ export function FilterPanel<T>({
         </div>
       )}
 
-      {/* Column List */}
+      {}
       <ScrollArea className="flex-1">
         <div className="p-2 space-y-1">
           {filteredColumns.map(column => {

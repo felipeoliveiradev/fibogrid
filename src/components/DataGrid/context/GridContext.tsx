@@ -2,16 +2,16 @@ import React, { createContext, useContext, useState, useCallback, ReactNode } fr
 import { RowNode, GridApi } from '../types';
 
 interface GridContextValue<T = any> {
-  // Shared selection state
+
   selectedRow: RowNode<T> | null;
   setSelectedRow: (row: RowNode<T> | null) => void;
   
-  // Grid API registry
+
   registerGrid: (id: string, api: GridApi<T>) => void;
   unregisterGrid: (id: string) => void;
   getGridApi: (id: string) => GridApi<T> | undefined;
   
-  // Event handlers for cross-grid communication
+
   onRowSelect: (gridId: string, row: RowNode<T>) => void;
   subscribeToRowSelect: (callback: (gridId: string, row: RowNode<T>) => void) => () => void;
 }

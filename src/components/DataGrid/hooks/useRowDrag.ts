@@ -35,7 +35,7 @@ export function useRowDrag<T>(
         e.dataTransfer.effectAllowed = 'move';
         e.dataTransfer.setData('text/plain', row.id);
         
-        // Create custom drag image
+
         const dragImage = document.createElement('div');
         dragImage.className = 'bg-primary text-primary-foreground px-4 py-2 rounded shadow-lg';
         dragImage.textContent = `Moving row ${row.rowIndex + 1}`;
@@ -65,7 +65,7 @@ export function useRowDrag<T>(
         e.dataTransfer.dropEffect = 'move';
       }
       
-      // Determine drop position based on mouse position
+
       const rect = e.currentTarget.getBoundingClientRect();
       const midY = rect.top + rect.height / 2;
       const position = e.clientY < midY ? 'before' : 'after';

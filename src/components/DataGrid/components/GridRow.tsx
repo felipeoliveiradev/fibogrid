@@ -90,7 +90,6 @@ function GridRowInner<T>({
   const indentWidth = level * 20;
   const isChildRow = (row as any).isChildRow;
 
-  // Memoize pinned columns calculation
   const { leftPinnedColumns, centerColumns, rightPinnedColumns } = useMemo(() => {
     const left = visibleColumns.filter(c => c.pinned === 'left');
     const center = visibleColumns.filter(c => !c.pinned);
@@ -117,7 +116,6 @@ function GridRowInner<T>({
     };
   }, [visibleColumns]);
 
-  // Memoize background style calculation
   const getPinnedBgStyle = useMemo((): React.CSSProperties => {
     if (isSelected) return { backgroundColor: 'hsl(var(--primary) / 0.15)' };
     if (isEven) return { backgroundColor: 'hsl(var(--muted))' };
@@ -206,27 +204,20 @@ function GridRowInner<T>({
       onDragEnd={onRowDragEnd}
       onDrop={onRowDrop}
       onMouseDown={(e) => {
-        // Only trigger on left click and not on specific interactive elements
         if (e.button === 0 && !(e.target as HTMLElement).closest('input, button')) {
-          // Don't prevent default - let click event fire normally
-          // Just track that mouse is down for potential drag
           if (onRowRangeMouseDown && onCheckboxChange) {
-            // Pass the real toggle function - it will only be called if we start dragging
             onRowRangeMouseDown(row.id, isSelected, () => onCheckboxChange(!isSelected));
           }
         }
       }}
       onMouseEnter={(e) => {
-        // Only process if mouse button is actually pressed
         if (e.buttons === 1 && onRowRangeMouseEnter && onCheckboxChange) {
           onRowRangeMouseEnter(row.id, isSelected, () => onCheckboxChange(!isSelected));
         }
       }}
     >
-      {/* Left Pinned Columns */}
       {leftPinnedColumns.map((column) => renderCell(column, true, column.stickyLeft, undefined))}
 
-      {/* Row Number Column */}
       {showRowNumbers && (
         <div
           className="flex items-center justify-center border-r border-border px-2 text-xs text-muted-foreground flex-shrink-0"
@@ -240,7 +231,6 @@ function GridRowInner<T>({
         </div>
       )}
       
-      {/* Checkbox Column */}
       {showCheckboxColumn && (
         <div
           className="flex items-center justify-center border-r border-border px-2 flex-shrink-0"
@@ -263,13 +253,10 @@ function GridRowInner<T>({
         </div>
       )}
 
-      {/* Center Columns */}
       {centerColumns.map((column) => renderCell(column, false, undefined, undefined))}
 
-      {/* Right Pinned Columns */}
       {rightPinnedColumns.map((column) => renderCell(column, true, undefined, column.stickyRight))}
 
-      {/* Add Child Button */}
       {onAddChildRow && !isChildRow && (
         <Button
           variant="ghost"
@@ -288,32 +275,27 @@ function GridRowInner<T>({
   );
 }
 
-// Ultra-optimized memo - minimize comparison work
 export const GridRow = memo(GridRowInner, (prevProps, nextProps) => {
-  // Fast reference equality checks first - but MUST check columns for resize
   if (prevProps.row === nextProps.row && 
       prevProps.isSelected === nextProps.isSelected &&
       prevProps.editingCell === nextProps.editingCell &&
       prevProps.columns === nextProps.columns &&
       prevProps.isCellSelected === nextProps.isCellSelected) {
-    return true;
-  }
-  
-  // Quick checks for other common changes
-  if (prevProps.isSelected !== nextProps.isSelected) return false;
+      return true;
+    }
+    
+    if (prevProps.isSelected !== nextProps.isSelected) return false;
   if (prevProps.row.id !== nextProps.row.id) return false;
   if (prevProps.isDragging !== nextProps.isDragging) return false;
   if (prevProps.isDropTarget !== nextProps.isDropTarget) return false;
   if (prevProps.isExpanded !== nextProps.isExpanded) return false;
-  if (prevProps.isCellSelected !== nextProps.isCellSelected) return false;
-  
-  // Check editing state - include value for input updates
-  const prevEdit = prevProps.editingCell;
+    if (prevProps.isCellSelected !== nextProps.isCellSelected) return false;
+    
+    const prevEdit = prevProps.editingCell;
   const nextEdit = nextProps.editingCell;
-  if (prevEdit?.rowId !== nextEdit?.rowId || prevEdit?.field !== nextEdit?.field || prevEdit?.value !== nextEdit?.value) return false;
-  
-  // If column layout changed (width/pin/order), MUST re-render
-  if (prevProps.columns !== nextProps.columns) {
+    if (prevEdit?.rowId !== nextEdit?.rowId || prevEdit?.field !== nextEdit?.field || prevEdit?.value !== nextEdit?.value) return false;
+    
+    if (prevProps.columns !== nextProps.columns) {
     if (prevProps.columns.length !== nextProps.columns.length) return false;
     for (let i = 0; i < prevProps.columns.length; i++) {
       const prevCol = prevProps.columns[i];
@@ -329,10 +311,8 @@ export const GridRow = memo(GridRowInner, (prevProps, nextProps) => {
     }
   }
   
-  // Check row data reference - if same reference, skip field comparison
   if (prevProps.row.data === nextProps.row.data) return true;
 
-  // Compare only visible column fields for data changes
   const prevData = prevProps.row.data as Record<string, unknown>;
   const nextData = nextProps.row.data as Record<string, unknown>;
   const cols = nextProps.columns;

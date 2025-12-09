@@ -1,7 +1,7 @@
 import { useRef, useCallback } from 'react';
 
 interface ClickDetectorOptions {
-  doubleClickDelay?: number; // ms to wait to determine if it's a multi-click
+  doubleClickDelay?: number;
 }
 
 export function useClickDetector(options: ClickDetectorOptions = {}) {
@@ -16,7 +16,7 @@ export function useClickDetector(options: ClickDetectorOptions = {}) {
       const now = Date.now();
       const timeSinceLastClick = now - lastClickTimeRef.current;
       
-      // If time between clicks is greater than delay, reset counter
+
       if (timeSinceLastClick > doubleClickDelay) {
         clickCountRef.current = 0;
       }
@@ -24,16 +24,16 @@ export function useClickDetector(options: ClickDetectorOptions = {}) {
       clickCountRef.current++;
       lastClickTimeRef.current = now;
       
-      // Clear existing timer
+
       if (clickTimerRef.current) {
         clearTimeout(clickTimerRef.current);
       }
       
-      // Wait to see if more clicks are coming
+
       clickTimerRef.current = setTimeout(() => {
         const count = clickCountRef.current;
         
-        // Determine click type
+
         let clickType: 'single' | 'double' | 'triple' | number;
         if (count === 1) {
           clickType = 'single';
@@ -45,10 +45,10 @@ export function useClickDetector(options: ClickDetectorOptions = {}) {
           clickType = count;
         }
         
-        // Execute callback
+
         callback(clickType);
         
-        // Reset counter after processing
+
         clickCountRef.current = 0;
       }, doubleClickDelay);
     },

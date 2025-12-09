@@ -29,13 +29,13 @@ export function useVirtualization<T>(
   const containerRef = useRef<HTMLDivElement>(null);
   const rafIdRef = useRef<number | null>(null);
 
-  // Memoize total height calculation
+
   const totalHeight = useMemo(() => rows.length * rowHeight, [rows.length, rowHeight]);
   
-  // Optimized virtual rows calculation with larger overscan for smoother scrolling
+
   const { startIndex, endIndex, virtualRows, offsetTop } = useMemo(() => {
     const visibleRowCount = Math.ceil(containerHeight / rowHeight);
-    // Increase overscan for 100k rows to prevent flicker
+
     const dynamicOverscan = Math.min(overscan * 2, 30);
     const start = Math.max(0, Math.floor(scrollTop / rowHeight) - dynamicOverscan);
     const end = Math.min(rows.length, start + visibleRowCount + dynamicOverscan * 2);
@@ -48,16 +48,16 @@ export function useVirtualization<T>(
     };
   }, [rows, scrollTop, rowHeight, containerHeight, overscan]);
 
-  // Optimized scroll handler - directly update without RAF for immediate response
+
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     const newScrollTop = e.currentTarget.scrollTop;
     
-    // Cancel pending RAF
+
     if (rafIdRef.current !== null) {
       cancelAnimationFrame(rafIdRef.current);
     }
     
-    // Use RAF for batching but update immediately for responsiveness
+
     rafIdRef.current = requestAnimationFrame(() => {
       setScrollTop(newScrollTop);
       rafIdRef.current = null;

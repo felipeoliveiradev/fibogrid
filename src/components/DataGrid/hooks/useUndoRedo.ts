@@ -33,14 +33,14 @@ export function useUndoRedo<T>(
     
     setUndoStack(prev => {
       const newStack = [...prev, changes];
-      // Limit stack size
+
       if (newStack.length > maxHistory) {
         return newStack.slice(-maxHistory);
       }
       return newStack;
     });
     
-    // Clear redo stack when new change is made
+
     setRedoStack([]);
   }, [maxHistory]);
 
@@ -54,7 +54,7 @@ export function useUndoRedo<T>(
       changes = newStack.pop() || null;
       
       if (changes) {
-        // Reverse the changes for undo
+
         const reversedChanges = changes.map(c => ({
           ...c,
           oldValue: c.newValue,

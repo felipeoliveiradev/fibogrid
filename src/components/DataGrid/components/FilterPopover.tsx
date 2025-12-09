@@ -43,7 +43,7 @@ export function FilterPopover<T>({
   const filterType = column.filterType || 'text';
   const operators = getOperatorsForType(filterType);
 
-  // Get unique values for the column
+
   const uniqueValues = useMemo(() => {
     const values = new Set<string>();
     allValues.forEach(v => {
@@ -54,7 +54,7 @@ export function FilterPopover<T>({
     return Array.from(values).sort();
   }, [allValues]);
 
-  // Filter values by search term
+
   const filteredValues = useMemo(() => {
     if (!searchTerm) return uniqueValues;
     return uniqueValues.filter(v => 
@@ -62,7 +62,7 @@ export function FilterPopover<T>({
     );
   }, [uniqueValues, searchTerm]);
 
-  // Initialize selected values once when uniqueValues changes
+
   useEffect(() => {
     if (uniqueValues.length === 0) return;
     
@@ -78,7 +78,7 @@ export function FilterPopover<T>({
     }
   }, [uniqueValues, currentFilter, isInitialized]);
 
-  // Handle click outside
+
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
@@ -115,11 +115,11 @@ export function FilterPopover<T>({
     console.log('selectAll:', selectAll, 'uniqueValues.length:', uniqueValues.length, 'selectedValues.size:', selectedValues.size);
     
     if (selectAll) {
-      // All selected = no filter
+
       console.log('All selected, clearing filter');
       onFilterChange(null);
     } else if (selectedValues.size === 0) {
-      // None selected = filter everything out
+
       console.log('None selected, filtering all out');
       onFilterChange({
         field: column.field,
@@ -128,7 +128,7 @@ export function FilterPopover<T>({
         operator: 'equals',
       });
     } else {
-      // Some selected = filter to selected values
+
       console.log('Some selected, filtering to:', Array.from(selectedValues));
       onFilterChange({
         field: column.field,
@@ -181,14 +181,14 @@ export function FilterPopover<T>({
     }
   };
 
-  // Calculate position relative to container
+
   const style = useMemo(() => {
     if (!anchorRect) return { top: 0, left: 0 };
     
     const containerRect = containerRef?.current?.getBoundingClientRect();
     
     if (containerRect) {
-      // Position relative to container for proper scrolling
+
       return {
         position: 'absolute' as const,
         top: anchorRect.bottom - containerRect.top + 4,
@@ -196,7 +196,7 @@ export function FilterPopover<T>({
       };
     }
     
-    // Fallback to viewport positioning
+
     return {
       position: 'fixed' as const,
       top: anchorRect.bottom + 4,
@@ -212,7 +212,7 @@ export function FilterPopover<T>({
       onClick={(e) => e.stopPropagation()}
     >
       <div className="flex flex-col">
-        {/* Header */}
+        {}
         <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-muted/50 rounded-t-lg">
           <div className="flex items-center gap-2">
             <Filter className="h-4 w-4 text-muted-foreground" />
@@ -223,7 +223,7 @@ export function FilterPopover<T>({
           </Button>
         </div>
 
-        {/* Sort Options */}
+        {}
         {onSort && (
           <div className="flex gap-1 px-3 py-2 border-b border-border">
             <Button 
@@ -263,10 +263,10 @@ export function FilterPopover<T>({
             </TabsTrigger>
           </TabsList>
 
-          {/* Values Tab - Excel-like checkbox list */}
+          {}
           <TabsContent value="values" className="mt-0">
             <div className="p-3 space-y-2">
-              {/* Search */}
+              {}
               <div className="relative">
                 <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -277,7 +277,7 @@ export function FilterPopover<T>({
                 />
               </div>
 
-              {/* Select All */}
+              {}
               <label 
                 className="flex items-center gap-2 py-1.5 px-2 hover:bg-muted rounded cursor-pointer"
               >
@@ -288,7 +288,7 @@ export function FilterPopover<T>({
                 <span className="text-sm font-medium">(Select All)</span>
               </label>
 
-              {/* Value List */}
+              {}
               {enableVirtualization ? (
                 <VirtualFilterList
                   values={filteredValues}
@@ -322,7 +322,7 @@ export function FilterPopover<T>({
                 </ScrollArea>
               )}
 
-              {/* Apply Button */}
+              {}
               <div className="flex gap-2 pt-2">
                 <Button variant="outline" className="flex-1" onClick={handleClear}>
                   Clear
@@ -334,7 +334,7 @@ export function FilterPopover<T>({
             </div>
           </TabsContent>
 
-          {/* Condition Tab - Traditional filter */}
+          {}
           <TabsContent value="condition" className="mt-0">
             <div className="p-3 space-y-3">
               <Select value={operator} onValueChange={setOperator}>

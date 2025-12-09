@@ -1,6 +1,5 @@
 import { RowNode, ColumnDef, ProcessedColumn, SortModel, FilterModel } from '../types';
 
-// Generate unique row IDs
 export function generateRowId<T>(data: T, index: number, getRowId?: (data: T) => string): string {
   if (getRowId) {
     return getRowId(data);
@@ -8,7 +7,6 @@ export function generateRowId<T>(data: T, index: number, getRowId?: (data: T) =>
   return `row-${index}`;
 }
 
-// Create RowNode from data
 export function createRowNode<T>(
   data: T,
   index: number,
@@ -24,7 +22,6 @@ export function createRowNode<T>(
   };
 }
 
-// Process columns with computed widths - Fixed widths, no flex redistribution
 export function processColumns<T>(
   columns: ColumnDef<T>[],
   containerWidth: number,
@@ -37,7 +34,7 @@ export function processColumns<T>(
 
   let currentLeft = 0;
   return mergedColumns.map((col, index) => {
-    // Use fixed width - no flex redistribution
+
     const computedWidth = col.width || 150;
 
     const processed: ProcessedColumn<T> = {
@@ -53,7 +50,6 @@ export function processColumns<T>(
   });
 }
 
-// Sort rows - optimized with pre-computed comparators
 export function sortRows<T>(
   rows: RowNode<T>[],
   sortModel: SortModel[],
@@ -61,20 +57,20 @@ export function sortRows<T>(
 ): RowNode<T>[] {
   if (sortModel.length === 0 || rows.length === 0) return rows;
 
-  // Pre-compute column map for O(1) lookups
+
   const columnMap = new Map<string, ProcessedColumn<T>>();
   for (let i = 0; i < columns.length; i++) {
     columnMap.set(columns[i].field, columns[i]);
   }
 
-  // Pre-compute sort config for each sort model entry
+
   const sortConfigs = sortModel.map(sort => ({
     field: sort.field,
     direction: sort.direction,
     column: columnMap.get(sort.field),
   }));
 
-  // Create shallow copy and sort
+
   const result = rows.slice();
   
   result.sort((a, b) => {
@@ -103,22 +99,20 @@ export function sortRows<T>(
   return result;
 }
 
-// Fast comparator optimized for numbers (most common in real-time grids)
 export function fastComparator(a: unknown, b: unknown): number {
   if (a === b) return 0;
   if (a == null) return -1;
   if (b == null) return 1;
 
-  // Fast path for numbers - most common case in real-time data
+
   if (typeof a === 'number' && typeof b === 'number') {
     return a - b;
   }
 
-  // Fallback for strings and other types
+
   return String(a).localeCompare(String(b));
 }
 
-// Default value comparator
 export function defaultComparator(a: any, b: any): number {
   if (a == null && b == null) return 0;
   if (a == null) return -1;
@@ -135,7 +129,6 @@ export function defaultComparator(a: any, b: any): number {
   return String(a).localeCompare(String(b));
 }
 
-// Filter rows - optimized with pre-computed column map
 export function filterRows<T>(
   rows: RowNode<T>[],
   filterModel: FilterModel[],
@@ -145,13 +138,13 @@ export function filterRows<T>(
   if (rows.length === 0) return rows;
   if (filterModel.length === 0 && !quickFilterText) return rows;
 
-  // Pre-compute column map
+
   const columnMap = new Map<string, ProcessedColumn<T>>();
   for (let i = 0; i < columns.length; i++) {
     columnMap.set(columns[i].field, columns[i]);
   }
 
-  // Pre-compute filter functions for each filter
+
   const filterFns = filterModel.map(filter => {
     const column = columnMap.get(filter.field);
     return {
@@ -162,7 +155,7 @@ export function filterRows<T>(
     };
   });
 
-  // Pre-allocate result array (estimate)
+
   const result: RowNode<T>[] = [];
   
   for (let i = 0; i < rows.length; i++) {
@@ -170,7 +163,7 @@ export function filterRows<T>(
     const data = row.data as Record<string, unknown>;
     let passes = true;
 
-    // Check each filter
+
     for (let j = 0; j < filterFns.length && passes; j++) {
       const { field, filter, customFn } = filterFns[j];
       const value = data[field];
@@ -187,7 +180,7 @@ export function filterRows<T>(
     }
   }
 
-  // Apply quick filter if needed
+
   if (quickFilterText) {
     const lowerFilter = quickFilterText.toLowerCase();
     const quickFiltered: RowNode<T>[] = [];
@@ -210,18 +203,17 @@ export function filterRows<T>(
   return result;
 }
 
-// Default filter comparator - Fixed for select filter type
 export function defaultFilterComparator(filter: FilterModel, value: any): boolean {
   const filterValue = filter.value;
   
-  // Handle select filter type (array of values)
+
   if (filter.filterType === 'select' && Array.isArray(filterValue)) {
-    // Empty array means filter everything out
+
     if (filterValue.length === 0) {
       return false;
     }
     
-    // Check if value is in the selected values
+
     const stringValue = String(value);
     const isIncluded = filterValue.some(fv => String(fv) === stringValue);
     return isIncluded;
@@ -252,12 +244,10 @@ export function defaultFilterComparator(filter: FilterModel, value: any): boolea
   }
 }
 
-// Get value from nested path (e.g., "user.name")
 export function getValueFromPath(obj: any, path: string): any {
   return path.split('.').reduce((current, key) => current?.[key], obj);
 }
 
-// Set value at nested path
 export function setValueAtPath(obj: any, path: string, value: any): any {
   const keys = path.split('.');
   const result = { ...obj };
@@ -272,7 +262,6 @@ export function setValueAtPath(obj: any, path: string, value: any): any {
   return result;
 }
 
-// Paginate rows
 export function paginateRows<T>(
   rows: RowNode<T>[],
   page: number,
@@ -282,7 +271,6 @@ export function paginateRows<T>(
   return rows.slice(start, start + pageSize);
 }
 
-// Export to CSV
 export function exportToCsv<T>(
   rows: RowNode<T>[],
   columns: ProcessedColumn<T>[],
@@ -329,7 +317,6 @@ function downloadCSV(content: string, fileName: string): void {
   URL.revokeObjectURL(link.href);
 }
 
-// Copy to clipboard
 export async function copyToClipboard<T>(
   rows: RowNode<T>[],
   columns: ProcessedColumn<T>[],
@@ -354,7 +341,6 @@ export async function copyToClipboard<T>(
   await navigator.clipboard.writeText(text);
 }
 
-// Calculate aggregate values
 export function calculateAggregate(values: any[], aggFunc: string | ((values: any[]) => any)): any {
   if (typeof aggFunc === 'function') {
     return aggFunc(values);
@@ -380,7 +366,6 @@ export function calculateAggregate(values: any[], aggFunc: string | ((values: an
   }
 }
 
-// Debounce function
 export function debounce<T extends (...args: any[]) => any>(
   fn: T,
   delay: number
@@ -392,7 +377,6 @@ export function debounce<T extends (...args: any[]) => any>(
   };
 }
 
-// Throttle function
 export function throttle<T extends (...args: any[]) => any>(
   fn: T,
   limit: number

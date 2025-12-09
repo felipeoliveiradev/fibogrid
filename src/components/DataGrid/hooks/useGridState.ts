@@ -37,7 +37,6 @@ export function useGridState<T>(props: DataGridProps<T>, containerWidth: number)
     serverSideDataSource,
   } = props;
 
-  // State - consolidated to reduce re-renders
   const [sortModel, setSortModel] = useState<SortModel[]>([]);
   const [filterModel, setFilterModel] = useState<FilterModel[]>([]);
   const [selection, setSelection] = useState<SelectionState>({
@@ -62,11 +61,9 @@ export function useGridState<T>(props: DataGridProps<T>, containerWidth: number)
   const [pinnedColumns, setPinnedColumns] = useState<Record<string, 'left' | 'right' | null>>({});
   const [internalQuickFilter, setInternalQuickFilter] = useState(quickFilterText || '');
 
-  // Refs for stable callbacks
   const rowsRef = useRef<RowNode<T>[]>([]);
   const displayedRowsRef = useRef<RowNode<T>[]>([]);
 
-  // Process columns - memoized
   const columns = useMemo(() => {
     const orderedDefs = columnOrder
       .map((field) => columnDefs.find((c) => c.field === field))
@@ -82,7 +79,7 @@ export function useGridState<T>(props: DataGridProps<T>, containerWidth: number)
       orderedDefs.map((col) => {
         const pinnedState = pinnedColumns[col.field];
         const pinned = pinnedState !== undefined ? pinnedState : col.pinned;
-        
+
         return {
           ...col,
           width: columnWidths[col.field] ?? col.width,
@@ -101,12 +98,10 @@ export function useGridState<T>(props: DataGridProps<T>, containerWidth: number)
     return [...leftPinned, ...center, ...rightPinned];
   }, [columnDefs, columnOrder, columnWidths, hiddenColumns, pinnedColumns, containerWidth, defaultColDef]);
 
-  // Reset overrides when external data changes (by reference)
   useEffect(() => {
     setOverrides({});
   }, [rowData]);
 
-  // Server-side data fetching without useEffect bloat
   const serverSideRequest: ServerSideDataSourceRequest = useMemo(() => ({
     page: paginationState.currentPage,
     pageSize: paginationState.pageSize,
@@ -121,7 +116,6 @@ export function useGridState<T>(props: DataGridProps<T>, containerWidth: number)
     serverSideRequest
   );
 
-  // Create row nodes - ultra-optimized with pre-allocation and local overrides
   const rows = useMemo(() => {
     const sourceData = paginationMode === 'server' ? serverSideState.data : rowData;
     const len = sourceData.length;
@@ -142,36 +136,31 @@ export function useGridState<T>(props: DataGridProps<T>, containerWidth: number)
     return result;
   }, [rowData, serverSideState.data, paginationMode, getRowId, overrides]);
 
-  // Update refs synchronously
   rowsRef.current = rows;
 
-  // Filter rows - ultra-optimized
   const filteredRows = useMemo(() => {
-    // Server-side mode: skip client-side filtering
+
     if (paginationMode === 'server') {
       return rows;
     }
 
     const quickFilter = quickFilterText || internalQuickFilter;
-    
-    // Fast path - no filters
+
     if (filterModel.length === 0 && !quickFilter) {
       return rows;
     }
 
-    // Use optimized filter function
     return filterRows(rows, filterModel, columns, quickFilter);
   }, [rows, filterModel, columns, quickFilterText, internalQuickFilter, paginationMode]);
 
-  // Sort rows - avoid rowIndex reassignment when possible
   const sortedRows = useMemo(() => {
-    // Server-side mode: skip client-side sorting
+
     if (paginationMode === 'server') {
       return filteredRows;
     }
 
     if (sortModel.length === 0) {
-      // No sort - just ensure rowIndex is correct
+
       let needsUpdate = false;
       for (let i = 0; i < filteredRows.length; i++) {
         if (filteredRows[i].rowIndex !== i) {
@@ -180,7 +169,7 @@ export function useGridState<T>(props: DataGridProps<T>, containerWidth: number)
         }
       }
       if (!needsUpdate) return filteredRows;
-      
+
       const len = filteredRows.length;
       const result: RowNode<T>[] = new Array(len);
       for (let i = 0; i < len; i++) {
@@ -189,8 +178,7 @@ export function useGridState<T>(props: DataGridProps<T>, containerWidth: number)
       }
       return result;
     }
-    
-    // Sort required
+
     const sorted = sortRows(filteredRows, sortModel, columns);
     const len = sorted.length;
     const result: RowNode<T>[] = new Array(len);
@@ -201,7 +189,6 @@ export function useGridState<T>(props: DataGridProps<T>, containerWidth: number)
     return result;
   }, [filteredRows, sortModel, columns, paginationMode]);
 
-  // Paginate rows - optimized
   const { displayedRows, paginationInfo } = useMemo(() => {
     if (!pagination) {
       return {
@@ -215,14 +202,13 @@ export function useGridState<T>(props: DataGridProps<T>, containerWidth: number)
       };
     }
 
-    // Server-side pagination: rows are already paginated by the server
     if (paginationMode === 'server') {
       const pageSize = paginationState.pageSize;
       const totalPages = Math.ceil(serverSideState.totalRows / pageSize) || 1;
       const currentPage = Math.min(paginationState.currentPage, totalPages - 1);
 
       return {
-        displayedRows: sortedRows, // Already paginated by server
+        displayedRows: sortedRows,
         paginationInfo: {
           currentPage,
           pageSize,
@@ -232,7 +218,6 @@ export function useGridState<T>(props: DataGridProps<T>, containerWidth: number)
       };
     }
 
-    // Client-side pagination
     const totalRows = sortedRows.length;
     const pageSize = paginationState.pageSize;
     const totalPages = Math.ceil(totalRows / pageSize) || 1;
@@ -251,10 +236,8 @@ export function useGridState<T>(props: DataGridProps<T>, containerWidth: number)
     };
   }, [sortedRows, pagination, paginationMode, serverSideState.totalRows, paginationState.currentPage, paginationState.pageSize]);
 
-  // Update displayed rows ref synchronously
   displayedRowsRef.current = displayedRows;
 
-  // Merge pagination info with state for the final pagination object
   const finalPaginationState: PaginationState = {
     enabled: pagination,
     pageSize: paginationState.pageSize,
@@ -263,7 +246,6 @@ export function useGridState<T>(props: DataGridProps<T>, containerWidth: number)
     totalPages: paginationInfo.totalPages,
   };
 
-  // Selection handlers - stable callbacks
   const selectRow = useCallback(
     (rowId: string, selected: boolean, shift = false, ctrl = false) => {
       if (!rowSelection) return;
@@ -318,10 +300,9 @@ export function useGridState<T>(props: DataGridProps<T>, containerWidth: number)
     }));
   }, []);
 
-  // API object - memoized with stable references
   const api = useMemo((): GridApi<T> => ({
     getRowData: () => rowData,
-    setRowData: () => {}, // Read-only in this implementation
+    setRowData: () => {},
     updateRowData: () => {},
     getRowNode: (id) => rowsRef.current.find((r) => r.id === id) || null,
     forEachNode: (callback) => rowsRef.current.forEach(callback),
@@ -454,7 +435,7 @@ export function useGridState<T>(props: DataGridProps<T>, containerWidth: number)
 
   return {
     rows,
-    allRows: rows, // Unfiltered rows for filter value extraction
+    allRows: rows,
     displayedRows,
     columns,
     sortModel,

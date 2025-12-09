@@ -19,7 +19,7 @@ interface UseCellSelectionResult {
   handleCellMouseUp: () => void;
   clearSelection: () => void;
   getSelectedCells: () => CellPosition[];
-  // Fill handle
+
   fillHandlePosition: CellPosition | null;
   isFillHandleDragging: boolean;
   handleFillHandleMouseDown: (e: React.MouseEvent) => void;
@@ -78,7 +78,7 @@ export function useCellSelection(
     field: string,
     e: React.MouseEvent
   ) => {
-    if (e.button !== 0) return; // Only left click
+    if (e.button !== 0) return;
     
     const position: CellPosition = { rowId, field };
     startCellRef.current = position;
@@ -145,7 +145,7 @@ export function useCellSelection(
     return cells;
   }, [selectedRange, rows, columns, getRowIndex, getColumnIndex]);
 
-  // Fill handle position is at the bottom-right of the selection
+
   const fillHandlePosition = selectedRange?.end || null;
 
   return {

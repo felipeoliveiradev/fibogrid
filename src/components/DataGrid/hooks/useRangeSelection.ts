@@ -22,27 +22,26 @@ export function useRangeSelection(): RangeSelectionResult {
   const [selectionStart, setSelectionStart] = useState<CellPosition | null>(null);
   const [selectionEnd, setSelectionEnd] = useState<CellPosition | null>(null);
   const [selectedCells, setSelectedCells] = useState<Set<string>>(new Set());
-  
+
   const isSelectingRef = useRef(false);
   const startPosRef = useRef<CellPosition | null>(null);
 
-  // Calculate selected cells based on start and end positions
   const calculateSelectedCells = useCallback(
     (start: CellPosition | null, end: CellPosition | null): Set<string> => {
       if (!start || !end) return new Set();
-      
+
       const cells = new Set<string>();
       const minRow = Math.min(start.rowIndex, end.rowIndex);
       const maxRow = Math.max(start.rowIndex, end.rowIndex);
       const minCol = Math.min(start.colIndex, end.colIndex);
       const maxCol = Math.max(start.colIndex, end.colIndex);
-      
+
       for (let row = minRow; row <= maxRow; row++) {
         for (let col = minCol; col <= maxCol; col++) {
           cells.add(`${row}-${col}`);
         }
       }
-      
+
       return cells;
     },
     []
@@ -50,27 +49,24 @@ export function useRangeSelection(): RangeSelectionResult {
 
   const handleCellMouseDown = useCallback(
     (rowIndex: number, colIndex: number, e: React.MouseEvent) => {
-      // Only handle left click
+
       if (e.button !== 0) return;
-      
-      // Prevent default text selection during drag
+
       e.preventDefault();
-      
+
       const position = { rowIndex, colIndex };
-      
-      // Shift-click extends selection from anchor
+
       if (e.shiftKey && startPosRef.current) {
         setSelectionEnd(position);
         setSelectedCells(calculateSelectedCells(startPosRef.current, position));
       } else {
-        // Start new selection and enable drag
+
         setSelectionStart(position);
         setSelectionEnd(position);
         setSelectedCells(new Set([`${rowIndex}-${colIndex}`]));
         startPosRef.current = position;
       }
-      
-      // Always enable drag selection on mouse down
+
       setIsSelecting(true);
       isSelectingRef.current = true;
     },
@@ -80,7 +76,7 @@ export function useRangeSelection(): RangeSelectionResult {
   const handleCellMouseEnter = useCallback(
     (rowIndex: number, colIndex: number) => {
       if (!isSelectingRef.current || !startPosRef.current) return;
-      
+
       const position = { rowIndex, colIndex };
       setSelectionEnd(position);
       setSelectedCells(calculateSelectedCells(startPosRef.current, position));
@@ -109,14 +105,13 @@ export function useRangeSelection(): RangeSelectionResult {
     [selectedCells]
   );
 
-  // Global mouse up listener
   useEffect(() => {
     const handleGlobalMouseUp = () => {
       if (isSelectingRef.current) {
         handleMouseUp();
       }
     };
-    
+
     document.addEventListener('mouseup', handleGlobalMouseUp);
     return () => document.removeEventListener('mouseup', handleGlobalMouseUp);
   }, [handleMouseUp]);

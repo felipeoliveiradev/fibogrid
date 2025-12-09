@@ -59,8 +59,8 @@ export function useKeyboardNavigation<T>({
 
       if (rowIndex === -1 || colIndex === -1) return;
 
-      // When editing, don't intercept keyboard events - let the input handle them
-      // The GridCell component will call onStopEdit with the correct value
+
+
       if (isEditing) {
         return;
       }
@@ -153,7 +153,7 @@ export function useKeyboardNavigation<T>({
 
         case ' ':
           e.preventDefault();
-          // Toggle selection
+
           api.selectRow(focusedCell.rowId);
           break;
 
@@ -186,7 +186,7 @@ export function useKeyboardNavigation<T>({
     ]
   );
 
-  // Add event listener
+
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;

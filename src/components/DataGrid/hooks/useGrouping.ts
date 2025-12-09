@@ -30,7 +30,7 @@ interface UseGroupingResult<T> {
   setGroupByFields: (fields: string[]) => void;
   groupByFields: string[];
   isGroupRow: (row: RowNode<T>) => boolean;
-  // Child row management
+
   addChildToRow: (parentId: string, childData: T[]) => void;
   expandedRows: Set<string>;
   toggleRowExpand: (rowId: string) => void;
@@ -48,7 +48,7 @@ export function useGrouping<T>({
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [childRowsMap, setChildRowsMap] = useState<Map<string, T[]>>(new Map());
 
-  // Apply child rows to rows
+
   const rowsWithChildren = useMemo(() => {
     let result = rows as RegularRowNode<T>[];
     
@@ -59,7 +59,7 @@ export function useGrouping<T>({
     return result;
   }, [rows, childRowsMap, getRowId]);
 
-  // Apply grouping
+
   const groupedRows = useMemo(() => {
     if (groupByFields.length > 0) {
       return groupRowsByFields(rowsWithChildren, groupByFields, aggregations);
@@ -67,7 +67,7 @@ export function useGrouping<T>({
     return rowsWithChildren;
   }, [rowsWithChildren, groupByFields, aggregations]);
 
-  // Calculate split points
+
   const { rows: splitRows, splitPoints } = useMemo(() => {
     if (splitByField && groupByFields.length === 0) {
       return splitRowsByField(rowsWithChildren, splitByField);
@@ -75,15 +75,15 @@ export function useGrouping<T>({
     return { rows: rowsWithChildren, splitPoints: [] };
   }, [rowsWithChildren, splitByField, groupByFields]);
 
-  // Flatten for display (respecting expansion state)
+
   const displayRows = useMemo(() => {
     if (groupByFields.length > 0) {
-      // Use expanded groups for group rows
+
       const allGroupIds = groupedRows
         .filter(r => isGroupNode(r))
         .map(r => r.id);
       
-      // If no groups expanded yet, expand all by default
+
       const effectiveExpanded = expandedGroups.size === 0 
         ? new Set(allGroupIds)
         : expandedGroups;
@@ -91,7 +91,7 @@ export function useGrouping<T>({
       return flattenGroupedRows(groupedRows, effectiveExpanded);
     }
     
-    // For split rows or regular rows, handle child rows
+
     const result: RegularRowNode<T>[] = [];
     (splitByField ? splitRows : rowsWithChildren).forEach(row => {
       result.push(row);
@@ -144,7 +144,7 @@ export function useGrouping<T>({
       next.set(parentId, [...existing, ...childData]);
       return next;
     });
-    // Auto-expand the parent row
+
     setExpandedRows(prev => {
       const next = new Set(prev);
       next.add(parentId);

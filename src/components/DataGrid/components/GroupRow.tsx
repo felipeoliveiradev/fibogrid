@@ -89,7 +89,7 @@ export function GroupRow<T>({
           </span>
         </span>
         
-        {/* Aggregated values */}
+        {}
         {row.aggregatedValues && Object.keys(row.aggregatedValues).length > 0 && (
           <div className="ml-4 flex items-center gap-4 text-xs text-muted-foreground">
             {Object.entries(row.aggregatedValues).map(([field, value]) => (

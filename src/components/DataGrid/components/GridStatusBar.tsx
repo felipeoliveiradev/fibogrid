@@ -16,7 +16,7 @@ export function GridStatusBar<T>({
   columns,
   aggregations,
 }: GridStatusBarProps<T>) {
-  // Calculate aggregations for numeric columns if selected rows exist
+
   const numericColumns = columns.filter(
     (col) => col.filterType === 'number' || col.aggFunc
   );

@@ -54,15 +54,12 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
     filterValues,
     height,
     gridId,
-    // Grouping
     groupByFields: initialGroupByFields,
     splitByField,
     groupAggregations,
-    // Tree data
     treeData,
     getChildRows,
     childRowsField,
-    // Events
     onRowSelected,
     onSelectionChanged,
     onCellClicked,
@@ -89,10 +86,7 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
   const [filterState, setFilterState] = useState<FilterState<T> | null>(null);
   const [quickFilterValue, setQuickFilterValue] = useState('');
   
-  // Ref to always have latest editingCell value for callbacks
   const editingCellRef = useRef<{ rowId: string; field: string; value: any; originalValue: any } | null>(null);
-
-  // Resize observer
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -109,7 +103,6 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
     return () => observer.disconnect();
   }, []);
 
-  // Grid state
   const {
     displayedRows,
     allRows,
@@ -133,15 +126,12 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
     serverSideLoading,
   } = useGridState({ ...props, quickFilterText: quickFilterValue }, containerWidth);
 
-  // Combine loading states
   const isLoading = loading || serverSideLoading;
 
-  // keep latest editing cell in a ref to avoid stale closures when committing
   useEffect(() => {
     editingCellRef.current = editingCell;
   }, [editingCell]);
 
-  // Grouping
   const {
     displayRows: groupedDisplayRows,
     groupedRows,
@@ -164,12 +154,10 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
     getRowId: props.getRowId,
   });
 
-  // Use grouped rows if grouping is enabled
   const finalDisplayedRows = useMemo(() => {
     return groupByFields.length > 0 || splitByField ? groupedDisplayRows : displayedRows;
   }, [groupByFields, splitByField, groupedDisplayRows, displayedRows]);
 
-  // Grid context for shared state
   const gridContext = useGridContext<T>();
   
   useEffect(() => {
@@ -179,19 +167,16 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
     }
   }, [gridContext, gridId, api]);
 
-  // Fire grid ready event
   useEffect(() => {
     onGridReady?.({ api });
   }, [api, onGridReady]);
 
-  // Calculate heights - use prop height or container height
   const effectiveContainerHeight = typeof height === 'number' ? height : (containerHeight || 600);
   const toolbarHeight = showToolbar ? 48 : 0;
   const statusBarHeight = showStatusBar ? 36 : 0;
   const paginationHeight = pagination ? 52 : 0;
   const bodyHeight = effectiveContainerHeight - headerHeight - toolbarHeight - statusBarHeight - paginationHeight;
 
-  // Calculate total content width for horizontal scroll
   const totalContentWidth = useMemo(() => {
     const checkboxWidth = rowSelection ? 48 : 0;
     const rowNumberWidth = showRowNumbers ? 50 : 0;
@@ -199,7 +184,6 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
     return checkboxWidth + rowNumberWidth + columnsWidth;
   }, [columns, rowSelection, showRowNumbers]);
 
-  // Virtualization - ensure minimum height for proper row calculation
   const virtualizationHeight = Math.max(bodyHeight, 400);
   
   const {
@@ -214,7 +198,6 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
     containerHeight: virtualizationHeight,
   });
 
-  // Column resize with double-click support
   const { isResizing, resizingColumn, handleResizeStart, handleResizeDoubleClick } = useColumnResize(
     (field, width) => {
       setColumnWidths((prev) => ({ ...prev, [field]: width }));
@@ -225,14 +208,12 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
     }
   );
 
-  // Measure column content width more accurately
   const measureColumnContent = useCallback((field: string): number => {
     const columnCells = cellContentRefs.current.get(field);
     if (!columnCells || columnCells.size === 0) return 100;
     
     let maxWidth = 0;
     columnCells.forEach((cell) => {
-      // Create a temporary span to measure the full text width
       const span = document.createElement('span');
       span.style.visibility = 'hidden';
       span.style.position = 'absolute';
@@ -251,7 +232,6 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
     return Math.max(80, maxWidth);
   }, []);
 
-  // Register cell refs for measuring
   const registerCellRef = useCallback((field: string, rowId: string, element: HTMLElement | null) => {
     if (!cellContentRefs.current.has(field)) {
       cellContentRefs.current.set(field, new Map());
@@ -264,7 +244,6 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
     }
   }, []);
 
-  // Column drag
   const {
     draggedColumn,
     dragOverColumn,
@@ -285,7 +264,6 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
     }
   });
 
-  // Row drag
   const {
     isDragging: isRowDragging,
     draggedRow,
@@ -320,7 +298,6 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
     (row, target) => onRowDragMove?.({ rowNode: row, overNode: target, api })
   );
 
-  // Range selection - only enable if prop is true
   const rangeSelectionHook = useRangeSelection();
   const {
     isCellSelected,
@@ -334,18 +311,15 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
     isSelecting: false,
   };
 
-  // Row range selection for dragging on checkbox/row number columns
   const {
     isDraggingRows,
     handleRowMouseDown: handleRowRangeMouseDown,
     handleRowMouseEnter: handleRowRangeMouseEnter,
   } = useRowRangeSelection();
 
-  // Click detectors for fallback - separate for row and cell clicks
   const { detectClick: detectRowClick } = useClickDetector({ doubleClickDelay: 300 });
   const { detectClick: detectCellClick } = useClickDetector({ doubleClickDelay: 300 });
 
-  // Keyboard navigation
   const {
     focusedCell,
     focusCell,
@@ -360,7 +334,6 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
     isEditing: !!editingCell,
   });
 
-  // Sort handler
   const handleSort = useCallback(
     (field: string, direction?: 'asc' | 'desc') => {
       setSortModel((prev) => {
@@ -368,7 +341,6 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
         let newModel: SortModel[];
 
         if (direction) {
-          // Explicit direction provided - set it directly
           if (existing) {
             newModel = prev.map((s) =>
               s.field === field ? { ...s, direction } : s
@@ -377,7 +349,6 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
             newModel = [...prev, { field, direction }];
           }
         } else {
-          // Toggle behavior
           if (!existing) {
             newModel = [...prev, { field, direction: 'asc' }];
           } else if (existing.direction === 'asc') {
@@ -396,7 +367,6 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
     [setSortModel, onSortChanged]
   );
 
-  // Filter handler
   const handleFilterChange = useCallback(
     (filter: FilterModel | null) => {
       setFilterModel((prev) => {
@@ -419,27 +389,23 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
     [setFilterModel, filterState, onFilterChanged]
   );
 
-  // Handle filter click from header
   const handleFilterClick = useCallback((column: ProcessedColumn<T>, anchorRect: DOMRect) => {
     setFilterState({ column, anchorRect });
   }, []);
 
-  // Close filter
   const handleCloseFilter = useCallback(() => {
     setFilterState(null);
   }, []);
 
-  // Column pin handler
   const handlePinColumn = useCallback((field: string, pinned: 'left' | 'right' | null) => {
     setColumnPinned(field, pinned);
   }, [setColumnPinned]);
 
-  // Column hide handler
+
   const handleHideColumn = useCallback((field: string) => {
     api.setColumnVisible(field, false);
   }, [api]);
 
-  // Auto-size single column handler
   const handleAutoSize = useCallback((field: string) => {
     const contentWidth = measureColumnContent(field);
     const column = columns.find(c => c.field === field);
@@ -451,7 +417,6 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
     }
   }, [columns, measureColumnContent, setColumnWidths]);
 
-  // Auto-size all columns handler
   const handleAutoSizeAll = useCallback(() => {
     columns.forEach(column => {
       if (!column.hide) {
@@ -460,7 +425,6 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
     });
   }, [columns, handleAutoSize]);
 
-  // Quick column filter handler
   const handleQuickColumnFilter = useCallback((field: string, value: string) => {
     if (!value.trim()) {
       setFilterModel(prev => prev.filter(f => f.field !== field));
@@ -483,18 +447,14 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
     }
   }, [setFilterModel]);
 
-  // Selection handlers
   const handleRowClick = useCallback(
     (rowId: string, e: React.MouseEvent) => {
-      // Don't process if dragging
       if (isRowDragging || isDraggingRows) return;
       
-      // Handle row selection if enabled
       if (rowSelection) {
         selectRow(rowId, true, e.shiftKey, e.ctrlKey || e.metaKey);
       }
       
-      // Handle fallback callback if provided (for row clicks without cell info)
       if (onRowClickFallback) {
         const row = displayedRows.find(r => r.id === rowId);
         if (row) {
@@ -514,7 +474,6 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
     [rowSelection, selectRow, isRowDragging, isDraggingRows, onRowClickFallback, displayedRows, detectRowClick, api]
   );
 
-  // Fire selection changed event
   useEffect(() => {
     if (onSelectionChanged) {
       const selectedRows = displayedRows.filter((r) => selection.selectedRows.has(r.id));
@@ -527,7 +486,6 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
     displayedRows.every((r) => selection.selectedRows.has(r.id));
   const someSelected = displayedRows.some((r) => selection.selectedRows.has(r.id));
 
-  // Default context menu items
   const getDefaultContextMenuItems = useCallback(
     (): ContextMenuItem[] => [
       {
@@ -554,7 +512,6 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
     [api, selection.selectedRows.size]
   );
 
-  // Pagination change handler
   const handlePageChange = useCallback(
     (page: number) => {
       setPaginationState((prev) => {
@@ -577,7 +534,6 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
     [setPaginationState, onPaginationChanged]
   );
 
-  // Column visibility handler
   const handleColumnVisibilityChange = useCallback(
     (field: string, visible: boolean) => {
       api.setColumnVisible(field, visible);
@@ -585,7 +541,6 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
     [api]
   );
 
-  // Add child row handler
   const handleAddChildRow = useCallback((parentId: string) => {
     const parentRow = displayedRows.find(r => r.id === parentId);
     if (parentRow) {
@@ -606,7 +561,6 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
       style={{ height: height || '100%', minHeight: 400 }}
       tabIndex={0}
     >
-      {/* Toolbar */}
       {showToolbar && (
         <GridToolbar
           api={api}
@@ -624,16 +578,13 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
         />
       )}
 
-      {/* Scrollable container for header + body */}
       <div className="flex-1 flex flex-col overflow-hidden">
         <div
           ref={scrollContainerRef}
           className="flex-1 overflow-auto"
           onScroll={handleScroll}
         >
-          {/* Content wrapper with min-width for horizontal scroll */}
           <div style={{ minWidth: totalContentWidth }}>
-            {/* Header */}
             <div className="sticky top-0 z-10">
               <GridHeader
                 columns={columns}
@@ -666,11 +617,9 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
               />
             </div>
 
-            {/* Body */}
             <div style={{ height: totalHeight, position: 'relative' }}>
               <div style={{ transform: `translateY(${offsetTop}px)` }}>
                 {virtualRows.map((row, index) => {
-                  // Fast path for regular rows (most common case)
                   if (!isGroupRow(row)) {
                     const isSelected = selection.selectedRows.has(row.id);
                     const regularRow = row as any;
@@ -685,10 +634,8 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
                         onRowClick={(e) => handleRowClick(row.id, e)}
                         onRowDoubleClick={onRowDoubleClicked ? (e) => onRowDoubleClicked({ rowNode: row, event: e, api }) : () => {}}
                         onCellClick={(col, e) => {
-                          // Stop propagation to prevent row click from firing (we'll handle selection here)
                           e.stopPropagation();
                           
-                          // Toggle row selection on cell click too (unless dragging)
                           if (rowSelection && !isRowDragging && !isDraggingRows) {
                             selectRow(row.id, true, e.shiftKey, e.ctrlKey || e.metaKey);
                           }
@@ -696,7 +643,6 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
                           focusCell(row.id, col.field);
                           onCellClicked?.({ rowNode: row, column: col, value: (row.data as any)[col.field], event: e, api });
                           
-                          // Call fallback with cell info - use separate detector to avoid conflict with row click
                           if (onRowClickFallback) {
                             detectCellClick((clickType) => {
                               onRowClickFallback({
@@ -747,7 +693,6 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
                           const currentEditing = editingCellRef.current;
                           
                           if (currentEditing && !cancel && currentValue !== undefined) {
-                            // Update the ref with the current value from the input
                             currentEditing.value = currentValue;
                             editingCellRef.current = currentEditing;
                             
@@ -787,11 +732,10 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
                         onRowRangeMouseDown={handleRowRangeMouseDown}
                         onRowRangeMouseEnter={handleRowRangeMouseEnter}
                       />
-                    );
-                  }
-                  
-                  // Group row handling
-                  const groupRow = row as unknown as GroupRowNode<T>;
+                  );
+                }
+                
+                const groupRow = row as unknown as GroupRowNode<T>;
                   const isExpanded = expandedGroups.has(row.id);
                   
                   return (
@@ -817,7 +761,6 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
         </div>
       </div>
 
-      {/* Pagination */}
       {pagination && (
         <GridPagination
           pagination={paginationState}
@@ -827,7 +770,6 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
         />
       )}
 
-      {/* Status Bar */}
       {showStatusBar && (
         <GridStatusBar
           displayedRows={displayedRows}
@@ -837,7 +779,6 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
         />
       )}
 
-      {/* Overlays */}
       {isLoading && (
         <GridOverlay 
           type="loading" 
@@ -857,9 +798,7 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
         />
       )}
 
-      {/* Filter Popover - Positioned relative to grid */}
       {filterState && (() => {
-        // Use custom filter values if provided, otherwise extract from ALL rows (unfiltered)
         const columnField = filterState.column.field;
         const allValues = filterValues?.[columnField] 
           ? filterValues[columnField]

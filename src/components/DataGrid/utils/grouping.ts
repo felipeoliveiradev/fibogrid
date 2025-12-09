@@ -22,7 +22,6 @@ export function isGroupNode<T>(node: RowNode<T>): node is GroupRowNode<T> {
   return (node as GroupRowNode<T>).isGroup === true;
 }
 
-// Group rows by one or more fields
 export function groupRowsByFields<T>(
   rows: RowNode<T>[],
   groupFields: string[],
@@ -54,7 +53,7 @@ export function groupRowsByFields<T>(
       groupValues[field] = keyParts[i];
     });
 
-    // Calculate aggregations
+
     const aggregatedValues: Record<string, any> = {};
     if (aggregations) {
       Object.entries(aggregations).forEach(([field, aggFunc]) => {
@@ -83,7 +82,7 @@ export function groupRowsByFields<T>(
 
     const groupNode: GroupRowNode<T> = {
       id: `group-${groupKey}`,
-      data: groupRows[0].data, // Use first row's data as representative
+      data: groupRows[0].data,
       rowIndex: result.length,
       selected: false,
       expanded: true,
@@ -101,7 +100,6 @@ export function groupRowsByFields<T>(
   return result;
 }
 
-// Split/expand rows - create visual separation between groups
 export function splitRowsByField<T>(
   rows: RowNode<T>[],
   splitField: string
@@ -132,7 +130,6 @@ export function splitRowsByField<T>(
   return { rows: result, splitPoints };
 }
 
-// Add child rows to a parent row
 export function addChildRows<T>(
   rows: RowNode<T>[],
   parentId: string,
@@ -165,7 +162,6 @@ export function addChildRows<T>(
   return result;
 }
 
-// Flatten grouped rows (when group is expanded)
 export function flattenGroupedRows<T>(
   groupedRows: GroupableRowNode<T>[],
   expandedGroups: Set<string>
@@ -197,7 +193,7 @@ export function flattenGroupedRows<T>(
         isGroup: false,
       } as RegularRowNode<T>);
       
-      // Add child rows if parent is expanded
+
       const regularRow = row as RegularRowNode<T>;
       if (regularRow.childRows && regularRow.expanded !== false) {
         regularRow.childRows.forEach(child => {

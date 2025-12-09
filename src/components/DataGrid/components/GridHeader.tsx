@@ -13,34 +13,25 @@ interface GridHeaderProps<T> {
   onResizeStart: (e: React.MouseEvent, column: ProcessedColumn<T>) => void;
   onResizeDoubleClick?: (column: ProcessedColumn<T>, measureContent: () => number) => void;
   resizingColumn: string | null;
-  // Column drag
   onDragStart: (e: React.DragEvent, column: ProcessedColumn<T>) => void;
   onDragOver: (e: React.DragEvent, column: ProcessedColumn<T>) => void;
   onDragEnd: () => void;
   onDrop: (e: React.DragEvent, column: ProcessedColumn<T>) => void;
   draggedColumn: string | null;
   dragOverColumn: string | null;
-  // Selection
   showCheckboxColumn?: boolean;
   allSelected?: boolean;
   someSelected?: boolean;
   onSelectAll?: () => void;
-  // Filter
   onFilterClick?: (column: ProcessedColumn<T>, anchorRect: DOMRect) => void;
   onQuickColumnFilter?: (field: string, value: string) => void;
   headerHeight: number;
-  // For measuring column content
   measureColumnContent?: (field: string) => number;
-  // Row numbers
   showRowNumbers?: boolean;
-  // Column pinning
   onPinColumn?: (field: string, pinned: 'left' | 'right' | null) => void;
-  // Column hide
   onHideColumn?: (field: string) => void;
-  // Auto-size
   onAutoSize?: (field: string) => void;
   onAutoSizeAll?: () => void;
-  // Show filter row
   showFilterRow?: boolean;
 }
 
@@ -89,13 +80,11 @@ export function GridHeader<T>({
 
   const visibleColumns = columns.filter((col) => !col.hide);
 
-  // Calculate sticky positions for pinned columns
   const { leftPinnedColumns, centerColumns, rightPinnedColumns } = useMemo(() => {
     const left = visibleColumns.filter(c => c.pinned === 'left');
     const center = visibleColumns.filter(c => !c.pinned);
     const right = visibleColumns.filter(c => c.pinned === 'right');
     
-    // Calculate cumulative left positions - start from 0 since other columns are not sticky
     let leftOffset = 0;
     const leftWithPositions = left.map((col, idx) => {
       const pos = leftOffset;
@@ -103,7 +92,6 @@ export function GridHeader<T>({
       return { ...col, stickyLeft: pos, isLastPinned: idx === left.length - 1 };
     });
     
-    // Calculate cumulative right positions
     let rightOffset = 0;
     const rightWithPositions = [...right].reverse().map((col, idx) => {
       const pos = rightOffset;
@@ -135,11 +123,9 @@ export function GridHeader<T>({
 
   const filterRowHeight = showFilterRow ? 36 : 0;
   
-  // Track if we just finished resizing to prevent sort trigger
   const wasResizingRef = useRef(false);
 
   const handleHeaderClick = useCallback((column: ProcessedColumn<T>) => {
-    // Don't sort if we just finished resizing
     if (wasResizingRef.current || resizingColumn) {
       wasResizingRef.current = false;
       return;
@@ -155,7 +141,6 @@ export function GridHeader<T>({
     wasResizingRef.current = true;
     onResizeStart(e, column);
     
-    // Reset the flag after a short delay (after mouseup)
     const handleMouseUp = () => {
       setTimeout(() => {
         wasResizingRef.current = false;
@@ -181,9 +166,7 @@ export function GridHeader<T>({
           isDragging && 'opacity-50',
           isDragOver && 'bg-primary/20',
           isPinned && 'sticky z-[2]',
-          // Add shadow to last left-pinned column
           column.isLastPinned && column.pinned === 'left' && 'shadow-[2px_0_5px_-2px_rgba(0,0,0,0.3)]',
-          // Add shadow to first right-pinned column  
           column.isFirstPinned && column.pinned === 'right' && 'shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.3)]'
         )}
         style={{ 
@@ -224,12 +207,10 @@ export function GridHeader<T>({
           </div>
         )}
 
-        {/* Filter indicator - only show when column has active filter */}
         {hasFilter && (
           <Filter className="h-3 w-3 ml-1 text-primary flex-shrink-0" />
         )}
         
-        {/* Column Menu Button - appears on hover */}
         <ColumnMenu
           column={column}
           onSort={onSort}
@@ -247,7 +228,6 @@ export function GridHeader<T>({
           </button>
         </ColumnMenu>
         
-        {/* Resize Handle */}
         {column.resizable !== false && (
           <div
             className={cn(
@@ -280,9 +260,7 @@ export function GridHeader<T>({
         className={cn(
           'flex items-center border-r border-border px-1',
           isPinned && 'sticky z-[2]',
-          // Add shadow to last left-pinned column
           column.isLastPinned && column.pinned === 'left' && 'shadow-[2px_0_5px_-2px_rgba(0,0,0,0.3)]',
-          // Add shadow to first right-pinned column  
           column.isFirstPinned && column.pinned === 'right' && 'shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.3)]'
         )}
         style={{ 
@@ -328,15 +306,12 @@ export function GridHeader<T>({
 
   return (
     <div className="flex flex-col border-b border-border" style={{ backgroundColor: 'hsl(var(--muted))' }}>
-      {/* Main Header Row */}
       <div
         className="flex"
         style={{ height: headerHeight }}
       >
-        {/* Left Pinned Column Headers - FIRST so they are sticky at left:0 */}
         {leftPinnedColumns.map((column) => renderColumnHeader(column, true))}
 
-        {/* Row Numbers Header */}
         {showRowNumbers && (
           <div
             className="flex items-center justify-center border-r border-border px-2 flex-shrink-0"
@@ -350,7 +325,6 @@ export function GridHeader<T>({
           </div>
         )}
         
-        {/* Checkbox Header */}
         {showCheckboxColumn && (
           <div
             className="flex items-center justify-center border-r border-border px-2 flex-shrink-0"
@@ -372,23 +346,18 @@ export function GridHeader<T>({
           </div>
         )}
         
-        {/* Center Column Headers */}
         {centerColumns.map((column) => renderColumnHeader(column, false))}
         
-        {/* Right Pinned Column Headers */}
         {rightPinnedColumns.map((column) => renderColumnHeader(column, true))}
       </div>
 
-      {/* Filter Row - Like AG Grid */}
       {showFilterRow && (
         <div
           className="flex border-t border-border"
           style={{ height: filterRowHeight, backgroundColor: 'hsl(var(--background))' }}
         >
-          {/* Left Pinned Filter Cells - FIRST */}
           {leftPinnedColumns.map((column) => renderFilterCell(column, true))}
 
-          {/* Row Numbers placeholder */}
           {showRowNumbers && (
             <div
               className="border-r border-border flex-shrink-0"
@@ -400,7 +369,6 @@ export function GridHeader<T>({
             />
           )}
           
-          {/* Checkbox placeholder */}
           {showCheckboxColumn && (
             <div
               className="border-r border-border flex-shrink-0"
@@ -412,10 +380,8 @@ export function GridHeader<T>({
             />
           )}
           
-          {/* Center Filter Cells */}
           {centerColumns.map((column) => renderFilterCell(column, false))}
           
-          {/* Right Pinned Filter Cells */}
           {rightPinnedColumns.map((column) => renderFilterCell(column, true))}
         </div>
       )}

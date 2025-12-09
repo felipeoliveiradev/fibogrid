@@ -10,7 +10,7 @@ interface GridOverlayProps {
 }
 
 export function GridOverlay({ type, customComponent, headerHeight = 44, toolbarHeight = 0, filterRowHeight = 0 }: GridOverlayProps) {
-  // Calculate top offset to not cover header/toolbar/filter row
+
   const topOffset = toolbarHeight + headerHeight + filterRowHeight;
   
   const overlayStyle = {
