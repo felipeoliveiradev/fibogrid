@@ -553,6 +553,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     <div
       ref={containerRef}
       className={cn(
+        'fibogrid',
         'relative flex flex-col border border-border rounded-lg overflow-hidden bg-background focus:outline-none focus:ring-2 focus:ring-primary/50',
         isResizing && 'cursor-col-resize select-none',
         isSelecting && 'select-none cursor-crosshair',
