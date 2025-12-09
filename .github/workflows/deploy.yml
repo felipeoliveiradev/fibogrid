@@ -31,7 +31,16 @@ jobs:
       - name: Install dependencies
         run: npm install --legacy-peer-deps
 
-      - name: Build
+      - name: Build library first
+        run: npm run build:lib
+
+      - name: Copy built library to node_modules
+        run: |
+          mkdir -p node_modules/fibogrid
+          cp -r dist node_modules/fibogrid/
+          cp package.json README.md LICENSE node_modules/fibogrid/
+
+      - name: Build documentation site
         run: npm run build
         env:
           NODE_ENV: production
