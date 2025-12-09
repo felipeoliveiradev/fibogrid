@@ -945,37 +945,264 @@ exportToExcel(rows, columns, {
                       <CardHeader>
                         <CardTitle className="font-display text-xl flex items-center gap-2">
                           <Palette className="h-5 w-5 text-primary" />
-                          Theme Configuration
+                          Isolated CSS Variables System
                         </CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-4">
                         <p className="font-body text-muted-foreground">
-                          FiboGrid supports light, dark, and auto themes. The grid automatically inherits your app's design system.
+                          FiboGrid uses an isolated CSS Variables system that won't conflict with your application's styles. All variables are prefixed with <code className="px-2 py-1 bg-primary/10 rounded text-sm font-mono">--fibogrid-*</code> and scoped under the <code className="px-2 py-1 bg-primary/10 rounded text-sm font-mono">.fibogrid</code> class.
                         </p>
-                        <CodeBlock code={`<FiboGrid
-  rowData={data}
-  columnDefs={columns}
-  theme="auto"  // 'light' | 'dark' | 'auto'
-  className="custom-grid-class"
+                        <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
+                          <p className="font-body text-sm">
+                            <strong className="text-primary">✅ Zero conflicts</strong> - Won't affect your app's styles<br/>
+                            <strong className="text-primary">✅ Easy customization</strong> - Override just what you need<br/>
+                            <strong className="text-primary">✅ Predictable</strong> - All variables have <code className="px-1 bg-primary/10 rounded text-xs">--fibogrid-*</code> prefix
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="paper-aged border-primary/10">
+                      <CardHeader>
+                        <CardTitle className="font-display text-xl">Quick Start</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <CodeBlock code={`import { FiboGrid } from 'fibogrid';
+import 'fibogrid/styles.css';
+
+// The grid automatically gets the .fibogrid class
+<FiboGrid rowData={data} columnDefs={columns} />`} />
+                      </CardContent>
+                    </Card>
+
+                    <Card className="paper-aged border-primary/10">
+                      <CardHeader>
+                        <CardTitle className="font-display text-xl">Available CSS Variables</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <Tabs defaultValue="colors" className="w-full">
+                          <TabsList className="bg-primary/5 border border-primary/10">
+                            <TabsTrigger value="colors">Colors</TabsTrigger>
+                            <TabsTrigger value="sizing">Sizing</TabsTrigger>
+                            <TabsTrigger value="typography">Typography</TabsTrigger>
+                            <TabsTrigger value="spacing">Spacing</TabsTrigger>
+                          </TabsList>
+                          <TabsContent value="colors" className="mt-4 space-y-4">
+                            <div>
+                              <h4 className="font-display font-semibold mb-2">Background & Surface</h4>
+                              <CodeBlock code={`--fibogrid-bg: #ffffff;
+--fibogrid-surface: #fafafa;
+--fibogrid-surface-hover: #f5f5f5;
+--fibogrid-surface-selected: #e8f4fd;`} language="css" />
+                            </div>
+                            <div>
+                              <h4 className="font-display font-semibold mb-2">Text Colors</h4>
+                              <CodeBlock code={`--fibogrid-text: #1a1a1a;
+--fibogrid-text-secondary: #666666;
+--fibogrid-text-muted: #999999;
+--fibogrid-text-inverse: #ffffff;`} language="css" />
+                            </div>
+                            <div>
+                              <h4 className="font-display font-semibold mb-2">Primary (Gold)</h4>
+                              <CodeBlock code={`--fibogrid-primary: hsl(40, 65%, 45%);
+--fibogrid-primary-hover: hsl(42, 70%, 50%);
+--fibogrid-primary-active: hsl(38, 60%, 40%);
+--fibogrid-primary-text: #ffffff;`} language="css" />
+                            </div>
+                            <div>
+                              <h4 className="font-display font-semibold mb-2">State Colors</h4>
+                              <CodeBlock code={`--fibogrid-success: #22c55e;
+--fibogrid-warning: #f59e0b;
+--fibogrid-error: #ef4444;
+--fibogrid-info: #3b82f6;`} language="css" />
+                            </div>
+                          </TabsContent>
+                          <TabsContent value="sizing" className="mt-4">
+                            <CodeBlock code={`--fibogrid-header-height: 44px;
+--fibogrid-row-height: 40px;
+--fibogrid-toolbar-height: 48px;
+--fibogrid-statusbar-height: 36px;
+--fibogrid-cell-padding: 12px;`} language="css" />
+                          </TabsContent>
+                          <TabsContent value="typography" className="mt-4">
+                            <CodeBlock code={`--fibogrid-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto;
+--fibogrid-font-size: 14px;
+--fibogrid-font-size-sm: 12px;
+--fibogrid-font-size-lg: 16px;
+--fibogrid-font-weight-normal: 400;
+--fibogrid-font-weight-medium: 500;
+--fibogrid-font-weight-semibold: 600;
+--fibogrid-font-weight-bold: 700;
+--fibogrid-line-height: 1.5;`} language="css" />
+                          </TabsContent>
+                          <TabsContent value="spacing" className="mt-4">
+                            <CodeBlock code={`--fibogrid-spacing-xs: 4px;
+--fibogrid-spacing-sm: 8px;
+--fibogrid-spacing-md: 12px;
+--fibogrid-spacing-lg: 16px;
+--fibogrid-spacing-xl: 24px;
+
+--fibogrid-radius-sm: 4px;
+--fibogrid-radius-md: 6px;
+--fibogrid-radius-lg: 8px;`} language="css" />
+                          </TabsContent>
+                        </Tabs>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="paper-aged border-primary/10">
+                      <CardHeader>
+                        <CardTitle className="font-display text-xl">Custom Theme - Option 1: CSS Class</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <p className="font-body text-sm text-muted-foreground">Create a custom theme by overriding variables in your CSS:</p>
+                        <CodeBlock code={`/* your-app.css */
+.fibogrid.my-purple-theme {
+  --fibogrid-primary: #8b5cf6;
+  --fibogrid-primary-hover: #7c3aed;
+  --fibogrid-primary-active: #6d28d9;
+  --fibogrid-bg: #f8fafc;
+  --fibogrid-border: #cbd5e1;
+}`} language="css" />
+                        <p className="font-body text-sm text-muted-foreground">Then apply the class:</p>
+                        <CodeBlock code={`<FiboGrid 
+  className="my-purple-theme"
+  rowData={data} 
+  columnDefs={columns} 
 />`} />
                       </CardContent>
                     </Card>
 
                     <Card className="paper-aged border-primary/10">
                       <CardHeader>
-                        <CardTitle className="font-display text-xl">CSS Variables</CardTitle>
+                        <CardTitle className="font-display text-xl">Custom Theme - Option 2: Inline Styles</CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <CodeBlock code={`/* Override grid colors with CSS variables */
-.fibogrid {
-  --grid-background: hsl(var(--background));
-  --grid-foreground: hsl(var(--foreground));
-  --grid-border: hsl(var(--border));
-  --grid-header-bg: hsl(var(--muted));
-  --grid-row-hover: hsl(var(--accent));
-  --grid-row-selected: hsl(var(--primary) / 0.1);
-  --grid-cell-focus: hsl(var(--ring));
-}`} />
+                        <CodeBlock code={`<FiboGrid 
+  style={{
+    '--fibogrid-primary': '#8b5cf6',
+    '--fibogrid-row-height': '32px',
+    '--fibogrid-font-size': '13px',
+  } as React.CSSProperties}
+  rowData={data} 
+  columnDefs={columns} 
+/>`} />
+                      </CardContent>
+                    </Card>
+
+                    <Card className="paper-aged border-primary/10">
+                      <CardHeader>
+                        <CardTitle className="font-display text-xl">Pre-built Themes</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <Tabs defaultValue="compact" className="w-full">
+                          <TabsList className="bg-primary/5 border border-primary/10">
+                            <TabsTrigger value="compact">Compact</TabsTrigger>
+                            <TabsTrigger value="comfortable">Comfortable</TabsTrigger>
+                            <TabsTrigger value="material">Material</TabsTrigger>
+                            <TabsTrigger value="minimal">Minimal</TabsTrigger>
+                          </TabsList>
+                          <TabsContent value="compact" className="mt-4">
+                            <p className="text-sm text-muted-foreground mb-3">Smaller, denser layout for maximum information density:</p>
+                            <CodeBlock code={`.fibogrid.fibogrid-compact {
+  --fibogrid-row-height: 32px;
+  --fibogrid-header-height: 36px;
+  --fibogrid-cell-padding: 8px;
+  --fibogrid-font-size: 13px;
+}`} language="css" />
+                          </TabsContent>
+                          <TabsContent value="comfortable" className="mt-4">
+                            <p className="text-sm text-muted-foreground mb-3">More spacious layout for better readability:</p>
+                            <CodeBlock code={`.fibogrid.fibogrid-comfortable {
+  --fibogrid-row-height: 48px;
+  --fibogrid-header-height: 52px;
+  --fibogrid-cell-padding: 16px;
+  --fibogrid-font-size: 15px;
+}`} language="css" />
+                          </TabsContent>
+                          <TabsContent value="material" className="mt-4">
+                            <p className="text-sm text-muted-foreground mb-3">Material Design inspired theme:</p>
+                            <CodeBlock code={`.fibogrid.fibogrid-material {
+  --fibogrid-primary: #1976d2;
+  --fibogrid-primary-hover: #1565c0;
+  --fibogrid-primary-active: #0d47a1;
+  --fibogrid-border: #e0e0e0;
+  --fibogrid-radius-sm: 4px;
+  --fibogrid-radius-md: 4px;
+}`} language="css" />
+                          </TabsContent>
+                          <TabsContent value="minimal" className="mt-4">
+                            <p className="text-sm text-muted-foreground mb-3">Clean, minimal design with less visual weight:</p>
+                            <CodeBlock code={`.fibogrid.fibogrid-minimal {
+  --fibogrid-border: transparent;
+  --fibogrid-surface: transparent;
+  --fibogrid-surface-hover: #f9fafb;
+}`} language="css" />
+                          </TabsContent>
+                        </Tabs>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="paper-aged border-primary/10">
+                      <CardHeader>
+                        <CardTitle className="font-display text-xl">Dark Mode Support</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <p className="font-body text-sm text-muted-foreground">FiboGrid automatically supports dark mode:</p>
+                        <CodeBlock code={`// Automatic (respects Tailwind's dark mode)
+<html class="dark">
+  <FiboGrid rowData={data} columnDefs={columns} />
+</html>
+
+// Or force dark mode
+<FiboGrid 
+  className="fibogrid-dark"
+  rowData={data} 
+  columnDefs={columns} 
+/>`} />
+                        <p className="font-body text-sm text-muted-foreground mt-4">
+                          All <code className="px-1 bg-primary/10 rounded text-xs">--fibogrid-*</code> variables have dark mode variants automatically applied.
+                        </p>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="paper-aged border-primary/10">
+                      <CardHeader>
+                        <CardTitle className="font-display text-xl">Complete Custom Theme Example</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <CodeBlock code={`/* custom-grid-theme.css */
+.fibogrid.my-brand-theme {
+  /* Brand colors */
+  --fibogrid-primary: #ff6b6b;
+  --fibogrid-primary-hover: #ff5252;
+  --fibogrid-primary-active: #ff3838;
+  
+  /* Custom backgrounds */
+  --fibogrid-bg: #fef2f2;
+  --fibogrid-surface: #fee2e2;
+  --fibogrid-surface-hover: #fecaca;
+  --fibogrid-surface-selected: #fca5a5;
+  
+  /* Custom text */
+  --fibogrid-text: #7f1d1d;
+  --fibogrid-text-secondary: #991b1b;
+  
+  /* Custom sizing */
+  --fibogrid-row-height: 44px;
+  --fibogrid-font-size: 15px;
+  --fibogrid-radius-md: 12px;
+}
+
+// Usage
+import 'fibogrid/styles.css';
+import './custom-grid-theme.css';
+
+<FiboGrid 
+  className="my-brand-theme"
+  rowData={data} 
+  columnDefs={columns} 
+/>`} language="tsx" />
                       </CardContent>
                     </Card>
                   </div>
