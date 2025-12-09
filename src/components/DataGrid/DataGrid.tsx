@@ -642,22 +642,6 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
                           onRowSelected?.({ rowNode: row, selected: checked, api });
                         }}
                         editingCell={editingCell}
-<<<<<<< HEAD
-                        onStartEdit={(field) => api.startEditingCell(row.id, field)}
-                        onEditChange={(value) => setEditingCell((prev) => (prev ? { ...prev, value } : null))}
-                        onStopEdit={(cancel, currentValue) => {
-                          // Use ref to get the latest editingCell value to avoid stale closure
-                          const currentEditingCell = editingCellRef.current;
-                          console.log('[DataGrid] onStopEdit called, cancel:', cancel, 'currentValue:', currentValue, 'editingCellRef:', currentEditingCell);
-                          if (currentEditingCell && !cancel) {
-                            const newValue = currentValue !== undefined ? currentValue : currentEditingCell.value;
-                            console.log('[DataGrid] Calling onCellValueChanged with newValue:', newValue);
-                            onCellValueChanged?.({
-                              rowNode: row,
-                              column: columns.find((c) => c.field === currentEditingCell.field)!,
-                              oldValue: currentEditingCell.originalValue,
-                              newValue,
-=======
                         onStartEdit={(field) => {
                           const value = (row.data as any)[field];
                           const edit: EditingCell = {
@@ -684,7 +668,6 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
                               column: columns.find((c) => c.field === currentEditing.field)!,
                               oldValue: currentEditing.originalValue,
                               newValue: currentEditing.value,
->>>>>>> 41914fb (♻️ refactor: optimize DataGrid component state management)
                               api,
                             });
                           }

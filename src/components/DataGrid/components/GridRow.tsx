@@ -127,12 +127,6 @@ function GridRowInner<T>({
     stickyRight?: number
   ) => {
     const isEditing = editingCell?.rowId === row.id && editingCell?.field === column.field;
-    
-    // Debug log for editing
-    if (editingCell && editingCell.rowId === row.id) {
-      console.log('[GridRow] renderCell for editing row:', row.id, 'field:', column.field, 'editingCell:', editingCell, 'isEditing:', isEditing);
-    }
-    
     const globalColIndex = columns.findIndex(c => c.field === column.field);
     const cellSelected = isCellSelected?.(row.rowIndex, globalColIndex);
     const cellFocused = isCellFocused?.(row.id, column.field);
@@ -143,14 +137,17 @@ function GridRowInner<T>({
       <div
         key={column.field}
         className={cn(
-          'h-full flex-shrink-0',
+          'h-full',
           isPinned && 'sticky z-[2]',
           column.isLastPinned && column.pinned === 'left' && 'shadow-[2px_0_5px_-2px_rgba(0,0,0,0.3)]',
           column.isFirstPinned && column.pinned === 'right' && 'shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.3)]'
         )}
         style={{
           width: column.computedWidth,
-          minWidth: column.minWidth || 50,
+          minWidth: column.computedWidth,
+          maxWidth: column.computedWidth,
+          flexShrink: 0,
+          flexGrow: 0,
           left: stickyLeft,
           right: stickyRight,
           ...(isPinned ? getPinnedBgStyle : {}),

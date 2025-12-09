@@ -216,8 +216,6 @@ export function defaultFilterComparator(filter: FilterModel, value: any): boolea
   
   // Handle select filter type (array of values)
   if (filter.filterType === 'select' && Array.isArray(filterValue)) {
-    console.log('Select filter - filterValue:', filterValue, 'cellValue:', value);
-    
     // Empty array means filter everything out
     if (filterValue.length === 0) {
       return false;
@@ -226,7 +224,6 @@ export function defaultFilterComparator(filter: FilterModel, value: any): boolea
     // Check if value is in the selected values
     const stringValue = String(value);
     const isIncluded = filterValue.some(fv => String(fv) === stringValue);
-    console.log('Value included:', isIncluded);
     return isIncluded;
   }
   

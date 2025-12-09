@@ -146,7 +146,7 @@ export function GridHeader<T>({
       <div
         key={column.field}
         className={cn(
-          'relative flex items-center border-r border-border px-3 select-none group flex-shrink-0',
+          'relative flex items-center border-r border-border px-3 select-none group',
           column.sortable !== false && 'cursor-pointer',
           isDragging && 'opacity-50',
           isDragOver && 'bg-primary/20',
@@ -158,7 +158,10 @@ export function GridHeader<T>({
         )}
         style={{ 
           width: column.computedWidth, 
-          minWidth: column.minWidth || 50,
+          minWidth: column.computedWidth,
+          maxWidth: column.computedWidth,
+          flexShrink: 0,
+          flexGrow: 0,
           left: column.stickyLeft !== undefined ? column.stickyLeft : undefined,
           right: column.stickyRight !== undefined ? column.stickyRight : undefined,
           backgroundColor: 'hsl(var(--muted))',
@@ -245,7 +248,7 @@ export function GridHeader<T>({
       <div
         key={`filter-${column.field}`}
         className={cn(
-          'flex items-center border-r border-border px-1 flex-shrink-0',
+          'flex items-center border-r border-border px-1',
           isPinned && 'sticky z-[2]',
           // Add shadow to last left-pinned column
           column.isLastPinned && column.pinned === 'left' && 'shadow-[2px_0_5px_-2px_rgba(0,0,0,0.3)]',
@@ -254,7 +257,10 @@ export function GridHeader<T>({
         )}
         style={{ 
           width: column.computedWidth, 
-          minWidth: column.minWidth || 50,
+          minWidth: column.computedWidth,
+          maxWidth: column.computedWidth,
+          flexShrink: 0,
+          flexGrow: 0,
           left: column.stickyLeft !== undefined ? column.stickyLeft : undefined,
           right: column.stickyRight !== undefined ? column.stickyRight : undefined,
           backgroundColor: 'hsl(var(--background))',
