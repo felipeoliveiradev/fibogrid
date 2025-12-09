@@ -110,6 +110,28 @@ export interface PaginationState {
   totalPages: number;
 }
 
+// Server-side pagination types
+export type PaginationMode = 'client' | 'server';
+
+export interface ServerSideDataSourceRequest {
+  page: number;
+  pageSize: number;
+  sortModel: SortModel[];
+  filterModel: FilterModel[];
+  quickFilterText?: string;
+}
+
+export interface ServerSideDataSourceResponse<T = any> {
+  data: T[];
+  totalRows: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface ServerSideDataSource<T = any> {
+  getRows: (request: ServerSideDataSourceRequest) => Promise<ServerSideDataSourceResponse<T>>;
+}
+
 export interface EditingCell {
   rowId: string;
   field: string;
@@ -185,6 +207,21 @@ export interface ExportParams {
   skipHeader?: boolean;
 }
 
+export interface RowClickFallbackEvent<T = any> {
+  clickType: 'single' | 'double' | 'triple' | number;
+  rowData: T;
+  allRowsData: T[];
+  rowNode: RowNode<T>;
+  event: React.MouseEvent;
+  api: GridApi<T>;
+  // Cell information if clicked on a specific cell
+  cell?: {
+    column: ProcessedColumn<T>;
+    value: any;
+    isEditable: boolean;
+  };
+}
+
 export interface GridEvents<T = any> {
   onRowSelected?: (event: RowSelectedEvent<T>) => void;
   onSelectionChanged?: (event: SelectionChangedEvent<T>) => void;
@@ -193,6 +230,7 @@ export interface GridEvents<T = any> {
   onCellValueChanged?: (event: CellValueChangedEvent<T>) => void;
   onRowClicked?: (event: RowClickedEvent<T>) => void;
   onRowDoubleClicked?: (event: RowDoubleClickedEvent<T>) => void;
+  onRowClickFallback?: (event: RowClickFallbackEvent<T>) => void;
   onRowDragStart?: (event: RowDragEvent<T>) => void;
   onRowDragEnd?: (event: RowDragEvent<T>) => void;
   onRowDragMove?: (event: RowDragEvent<T>) => void;
@@ -296,6 +334,8 @@ export interface DataGridProps<T = any> extends GridEvents<T> {
   pagination?: boolean;
   paginationPageSize?: number;
   paginationPageSizeOptions?: number[];
+  paginationMode?: PaginationMode;
+  serverSideDataSource?: ServerSideDataSource<T>;
   
   rowSelection?: 'single' | 'multiple';
   rangeCellSelection?: boolean;
