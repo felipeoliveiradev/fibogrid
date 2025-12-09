@@ -59,6 +59,7 @@ export function GridCell<T>({
   
   // Focus input when editing starts
   useEffect(() => {
+    console.log('[GridCell] useEffect isEditing:', isEditing, 'inputRef:', inputRef.current);
     if (isEditing && inputRef.current) {
       inputRef.current.focus();
       inputRef.current.select();
@@ -129,8 +130,10 @@ export function GridCell<T>({
 
   const handleCellDoubleClick = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent row double click
+    console.log('[GridCell] Double click on cell, editable:', column.editable);
     onDoubleClick(e);
     if (column.editable) {
+      console.log('[GridCell] Calling onStartEdit');
       onStartEdit();
     }
   };
@@ -216,11 +219,11 @@ export function GridCell<T>({
           <input
             ref={inputRef}
             type="number"
-            value={editValue ?? ''}
-            onChange={(e) => onEditChange(parseFloat(e.target.value) || 0)}
+            defaultValue={editValue ?? ''}
             onBlur={handleBlur}
             onKeyDown={handleKeyDown}
             className="w-full h-full bg-background border-none outline-none px-1"
+            autoFocus
           />
         );
 
@@ -229,24 +232,25 @@ export function GridCell<T>({
           <input
             ref={inputRef}
             type="date"
-            value={editValue ?? ''}
-            onChange={(e) => onEditChange(e.target.value)}
+            defaultValue={editValue ?? ''}
             onBlur={handleBlur}
             onKeyDown={handleKeyDown}
             className="w-full h-full bg-background border-none outline-none px-1"
+            autoFocus
           />
         );
 
       default:
+        console.log('[GridCell] Rendering text editor with editValue:', editValue);
         return (
           <input
             ref={inputRef}
             type="text"
-            value={editValue ?? ''}
-            onChange={(e) => onEditChange(e.target.value)}
+            defaultValue={editValue ?? ''}
             onBlur={handleBlur}
             onKeyDown={handleKeyDown}
             className="w-full h-full bg-background border-none outline-none px-1"
+            autoFocus
           />
         );
     }
