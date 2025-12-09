@@ -6,6 +6,8 @@ import { useColumnResize } from './hooks/useColumnResize';
 import { useColumnDrag } from './hooks/useColumnDrag';
 import { useRowDrag } from './hooks/useRowDrag';
 import { useRangeSelection } from './hooks/useRangeSelection';
+import { useRowRangeSelection } from './hooks/useRowRangeSelection';
+import { useClickDetector } from './hooks/useClickDetector';
 import { useKeyboardNavigation } from './hooks/useKeyboardNavigation';
 import { useGrouping } from './hooks/useGrouping';
 import { useGridContext } from './context/GridContext';
@@ -36,8 +38,8 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
     paginationPageSize = 100,
     paginationPageSizeOptions = [25, 50, 100, 250, 500],
     rowSelection,
-    rangeCellSelection = false,
-    rowDragEnabled = false,
+    rangeCellSelection = true,
+    rowDragEnabled = true,
     rowDragManaged = true,
     loading = false,
     loadingOverlayComponent,
@@ -75,6 +77,7 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
     onColumnMoved,
     onGridReady,
     onPaginationChanged,
+    onRowClickFallback,
   } = props;
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -310,12 +313,30 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
     (row, target) => onRowDragMove?.({ rowNode: row, overNode: target, api })
   );
 
-  // Range selection
+  // Range selection - only enable if prop is true
+  const rangeSelectionHook = useRangeSelection();
   const {
     isCellSelected,
     handleCellMouseDown,
     handleCellMouseEnter,
-  } = useRangeSelection();
+    isSelecting,
+  } = rangeCellSelection ? rangeSelectionHook : {
+    isCellSelected: () => false,
+    handleCellMouseDown: () => {},
+    handleCellMouseEnter: () => {},
+    isSelecting: false,
+  };
+
+  // Row range selection for dragging on checkbox/row number columns
+  const {
+    isDraggingRows,
+    handleRowMouseDown: handleRowRangeMouseDown,
+    handleRowMouseEnter: handleRowRangeMouseEnter,
+  } = useRowRangeSelection();
+
+  // Click detectors for fallback - separate for row and cell clicks
+  const { detectClick: detectRowClick } = useClickDetector({ doubleClickDelay: 300 });
+  const { detectClick: detectCellClick } = useClickDetector({ doubleClickDelay: 300 });
 
   // Keyboard navigation
   const {
@@ -458,10 +479,32 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
   // Selection handlers
   const handleRowClick = useCallback(
     (rowId: string, e: React.MouseEvent) => {
-      if (!rowSelection || isRowDragging) return;
-      selectRow(rowId, true, e.shiftKey, e.ctrlKey || e.metaKey);
+      // Don't process if dragging
+      if (isRowDragging || isDraggingRows) return;
+      
+      // Handle row selection if enabled
+      if (rowSelection) {
+        selectRow(rowId, true, e.shiftKey, e.ctrlKey || e.metaKey);
+      }
+      
+      // Handle fallback callback if provided (for row clicks without cell info)
+      if (onRowClickFallback) {
+        const row = displayedRows.find(r => r.id === rowId);
+        if (row) {
+          detectRowClick((clickType) => {
+            onRowClickFallback({
+              clickType,
+              rowData: row.data,
+              allRowsData: displayedRows.map(r => r.data),
+              rowNode: row,
+              event: e,
+              api,
+            });
+          });
+        }
+      }
     },
-    [rowSelection, selectRow, isRowDragging]
+    [rowSelection, selectRow, isRowDragging, isDraggingRows, onRowClickFallback, displayedRows, detectRowClick, api]
   );
 
   // Fire selection changed event
@@ -550,6 +593,7 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
       className={cn(
         'relative flex flex-col border border-border rounded-lg overflow-hidden bg-background focus:outline-none focus:ring-2 focus:ring-primary/50',
         isResizing && 'cursor-col-resize select-none',
+        isSelecting && 'select-none cursor-crosshair',
         className
       )}
       style={{ height: height || '100%', minHeight: 400 }}
@@ -629,8 +673,35 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
                         onRowClick={(e) => handleRowClick(row.id, e)}
                         onRowDoubleClick={onRowDoubleClicked ? (e) => onRowDoubleClicked({ rowNode: row, event: e, api }) : () => {}}
                         onCellClick={(col, e) => {
+                          // Stop propagation to prevent row click from firing (we'll handle selection here)
+                          e.stopPropagation();
+                          
+                          // Toggle row selection on cell click too (unless dragging)
+                          if (rowSelection && !isRowDragging && !isDraggingRows) {
+                            selectRow(row.id, true, e.shiftKey, e.ctrlKey || e.metaKey);
+                          }
+                          
                           focusCell(row.id, col.field);
                           onCellClicked?.({ rowNode: row, column: col, value: (row.data as any)[col.field], event: e, api });
+                          
+                          // Call fallback with cell info - use separate detector to avoid conflict with row click
+                          if (onRowClickFallback) {
+                            detectCellClick((clickType) => {
+                              onRowClickFallback({
+                                clickType,
+                                rowData: row.data,
+                                allRowsData: displayedRows.map(r => r.data),
+                                rowNode: row,
+                                event: e,
+                                api,
+                                cell: {
+                                  column: col,
+                                  value: (row.data as any)[col.field],
+                                  isEditable: !!col.editable,
+                                },
+                              });
+                            });
+                          }
                         }}
                         onCellDoubleClick={(col, e) => {
                           if (col.editable) api.startEditingCell(row.id, col.field);
@@ -660,21 +731,26 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
                             return next;
                           });
                         }}
-                        onStopEdit={(cancel) => {
+                        onStopEdit={(cancel, currentValue) => {
                           const currentEditing = editingCellRef.current;
-                          if (currentEditing && !cancel) {
+                          
+                          if (currentEditing && !cancel && currentValue !== undefined) {
+                            // Update the ref with the current value from the input
+                            currentEditing.value = currentValue;
+                            editingCellRef.current = currentEditing;
+                            
                             onCellValueChanged?.({
-                              rowNode: { ...row, data: { ...row.data, [currentEditing.field]: currentEditing.value } },
+                              rowNode: { ...row, data: { ...row.data, [currentEditing.field]: currentValue } },
                               column: columns.find((c) => c.field === currentEditing.field)!,
                               oldValue: currentEditing.originalValue,
-                              newValue: currentEditing.value,
+                              newValue: currentValue,
                               api,
                             });
                           }
                           editingCellRef.current = null;
                           api.stopEditing(cancel);
                         }}
-                        rowDragEnabled={rowDragEnabled}
+                        rowDragEnabled={rowDragEnabled && !rangeCellSelection}
                         onRowDragStart={(e) => handleRowDragStart(e, row)}
                         onRowDragOver={(e) => handleRowDragOver(e, row)}
                         onRowDragEnd={handleRowDragEnd}
@@ -696,6 +772,8 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
                         showRowNumbers={showRowNumbers}
                         rowNumber={row.rowIndex + 1}
                         onAddChildRow={handleAddChildRow}
+                        onRowRangeMouseDown={handleRowRangeMouseDown}
+                        onRowRangeMouseEnter={handleRowRangeMouseEnter}
                       />
                     );
                   }
