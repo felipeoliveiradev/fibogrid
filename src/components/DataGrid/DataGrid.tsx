@@ -50,6 +50,8 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
     showToolbar = true,
     showStatusBar = true,
     showRowNumbers = false,
+    enableFilterValueVirtualization = false,
+    filterValues,
     height,
     gridId,
     // Grouping
@@ -110,6 +112,7 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
   // Grid state
   const {
     displayedRows,
+    allRows,
     columns,
     sortModel,
     setSortModel,
@@ -613,6 +616,11 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
           onColumnVisibilityChange={handleColumnVisibilityChange}
           selectedCount={selection.selectedRows.size}
           totalCount={displayedRows.length}
+          filterModel={filterModel}
+          onResetFilters={() => {
+            setFilterModel([]);
+            setQuickFilterValue('');
+          }}
         />
       )}
 
@@ -823,34 +831,57 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
       {showStatusBar && (
         <GridStatusBar
           displayedRows={displayedRows}
-          totalRows={props.rowData.length}
+          totalRows={paginationState.totalRows}
           selectedCount={selection.selectedRows.size}
           columns={columns}
         />
       )}
 
       {/* Overlays */}
-      {isLoading && <GridOverlay type="loading" customComponent={loadingOverlayComponent} />}
+      {isLoading && (
+        <GridOverlay 
+          type="loading" 
+          customComponent={loadingOverlayComponent} 
+          headerHeight={headerHeight}
+          toolbarHeight={showToolbar ? toolbarHeight : 0}
+          filterRowHeight={36}
+        />
+      )}
       {!isLoading && displayedRows.length === 0 && (
-        <GridOverlay type="noRows" customComponent={noRowsOverlayComponent} />
+        <GridOverlay 
+          type="noRows" 
+          customComponent={noRowsOverlayComponent}
+          headerHeight={headerHeight}
+          toolbarHeight={showToolbar ? toolbarHeight : 0}
+          filterRowHeight={36}
+        />
       )}
 
       {/* Filter Popover - Positioned relative to grid */}
-      {filterState && (
-        <FilterPopover
-          column={filterState.column}
-          currentFilter={filterModel.find((f) => f.field === filterState.column.field)}
-          onFilterChange={handleFilterChange}
-          onClose={handleCloseFilter}
-          allValues={props.rowData.map((r) => (r as any)[filterState.column.field])}
-          onSort={(direction) => {
-            setSortModel([{ field: filterState.column.field, direction }]);
-            handleCloseFilter();
-          }}
-          anchorRect={filterState.anchorRect}
-          containerRef={containerRef}
-        />
-      )}
+      {filterState && (() => {
+        // Use custom filter values if provided, otherwise extract from ALL rows (unfiltered)
+        const columnField = filterState.column.field;
+        const allValues = filterValues?.[columnField] 
+          ? filterValues[columnField]
+          : allRows.map((r) => (r.data as any)[columnField]);
+        
+        return (
+          <FilterPopover
+            column={filterState.column}
+            currentFilter={filterModel.find((f) => f.field === columnField)}
+            onFilterChange={handleFilterChange}
+            onClose={handleCloseFilter}
+            allValues={allValues}
+            onSort={(direction) => {
+              setSortModel([{ field: columnField, direction }]);
+              handleCloseFilter();
+            }}
+            anchorRect={filterState.anchorRect}
+            containerRef={containerRef}
+            enableVirtualization={enableFilterValueVirtualization}
+          />
+        );
+      })()}
     </div>
   );
 

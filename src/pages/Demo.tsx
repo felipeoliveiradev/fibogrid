@@ -109,7 +109,6 @@ export default function Demo() {
   const [renderTime, setRenderTime] = useState(0);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [useServerSide, setUseServerSide] = useState(false);
-  const [isLoadingServer, setIsLoadingServer] = useState(false);
 
   // Split row handler - clones row as child with empty ticker/name
   const handleSplitRow = useCallback((rowId: string) => {
@@ -199,25 +198,102 @@ export default function Demo() {
     return rowData.some(r => r.parentId === rowId);
   }, [rowData]);
 
+  // Custom filter values - ESSENCIAL para server-side funcionar corretamente
+  // Em server-side, só temos a página atual de dados, então precisamos forçar os valores
+  const customFilterValues = useMemo(() => {
+    // Em modo server-side, fornecemos todos os valores possíveis
+    // Em modo client-side, ainda é útil para garantir valores consistentes
+    return {
+      // Forçar lista completa de setores
+      sector: SECTORS,
+      
+      // Forçar lista completa de headquarters
+      headquarters: HEADQUARTERS,
+      
+      // Forçar lista de CEOs conhecidos (em server-side seria do backend)
+      ceo: CEOS,
+      
+      // Outros campos sem filterValues definidos usarão extração automática:
+      // - Em client-side: extrai de allRows (todos os dados)
+      // - Em server-side: extrai dos dados da página atual (pode ser incompleto)
+      //   Então é recomendado sempre definir filterValues em server-side!
+    };
+  }, []);
+
   // Server-side data source (mock implementation)
   const serverSideDataSource: ServerSideDataSource<StockRow> = useMemo(() => ({
     async getRows(request: ServerSideDataSourceRequest): Promise<ServerSideDataSourceResponse<StockRow>> {
-      setIsLoadingServer(true);
-      
       // Simula delay de rede
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      // Simula backend retornando dados paginados baseado no rowCount
-      const allData = generateStockData(rowCount); // Backend usa rowCount configurado
+      // Gera todos os dados
+      let allData = generateStockData(rowCount);
+      
+      // Aplica quick filter/search global (simula comportamento do backend)
+      if (request.quickFilterText && request.quickFilterText.trim()) {
+        const searchText = request.quickFilterText.toLowerCase().trim();
+        allData = allData.filter(row => {
+          // Busca em todos os campos string da row
+          return Object.values(row).some(value => {
+            if (value == null) return false;
+            return String(value).toLowerCase().includes(searchText);
+          });
+        });
+      }
+      
+      // Aplica filtros de coluna (simula comportamento do backend)
+      if (request.filterModel && request.filterModel.length > 0) {
+        allData = allData.filter(row => {
+          return request.filterModel.every(filter => {
+            const cellValue = (row as any)[filter.field];
+            
+            // Filtro de valores selecionados (checkbox list)
+            if (Array.isArray(filter.value)) {
+              if (filter.value.length === 0) return false; // Nenhum selecionado = filtra tudo
+              return filter.value.includes(String(cellValue));
+            }
+            
+            // Filtros condicionais (contains, equals, etc)
+            const filterValue = String(filter.value).toLowerCase();
+            const cellValueStr = String(cellValue).toLowerCase();
+            
+            switch (filter.operator) {
+              case 'contains':
+                return cellValueStr.includes(filterValue);
+              case 'equals':
+                return cellValueStr === filterValue;
+              case 'startsWith':
+                return cellValueStr.startsWith(filterValue);
+              case 'endsWith':
+                return cellValueStr.endsWith(filterValue);
+              default:
+                return cellValueStr.includes(filterValue);
+            }
+          });
+        });
+      }
+      
+      // Aplica ordenação (simula comportamento do backend)
+      if (request.sortModel && request.sortModel.length > 0) {
+        const sort = request.sortModel[0];
+        allData.sort((a, b) => {
+          const aVal = (a as any)[sort.field];
+          const bVal = (b as any)[sort.field];
+          
+          if (aVal < bVal) return sort.direction === 'asc' ? -1 : 1;
+          if (aVal > bVal) return sort.direction === 'asc' ? 1 : -1;
+          return 0;
+        });
+      }
+      
+      // Paginação
       const startIndex = request.page * request.pageSize;
       const endIndex = startIndex + request.pageSize;
       const pageData = allData.slice(startIndex, endIndex);
       
-      setIsLoadingServer(false);
-      
       return {
         data: pageData,
-        totalRows: allData.length,
+        totalRows: allData.length, // Total após filtros
         page: request.page,
         pageSize: request.pageSize,
       };
@@ -434,6 +510,25 @@ export default function Demo() {
         const row = params.data as StockRow;
         if (row.isDetailRow) return null;
         return <span>{params.value}</span>;
+      },
+    },
+    {
+      field: 'headquarters',
+      headerName: 'HQ Location',
+      width: 150,
+      sortable: true,
+      filterable: true,
+      cellRenderer: (params) => {
+        const row = params.data as StockRow;
+        if (row.isDetailRow) {
+          return (
+            <div className="flex items-center gap-1 text-sm">
+              <span className="text-muted-foreground">🏢</span>
+              <span>{row.headquarters}</span>
+            </div>
+          );
+        }
+        return <span className="text-sm">{params.value}</span>;
       },
     },
     {
@@ -803,7 +898,6 @@ export default function Demo() {
                 <div className="flex items-center gap-2 text-sm text-muted-foreground font-body">
                   <Badge variant="outline" className="border-primary/30">Server-side Mode</Badge>
                   <span>Dados vêm do backend com paginação assíncrona</span>
-                  {isLoadingServer && <span className="text-primary">Loading...</span>}
                 </div>
               </div>
             )}
@@ -822,7 +916,8 @@ export default function Demo() {
               paginationPageSize={25}
               paginationPageSizeOptions={[25, 50, 100, 250, 500]}
               groupByFields={groupByField ? [groupByField] : undefined}
-              loading={isLoadingServer}
+              enableFilterValueVirtualization={true}
+              filterValues={customFilterValues}
               onGridReady={(e) => setGridApi(e.api)}
               onCellValueChanged={(e) => {
                 console.log('[Demo] onCellValueChanged received:', e.newValue, 'for field:', e.column.field);

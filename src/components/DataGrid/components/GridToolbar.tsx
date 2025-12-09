@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ProcessedColumn, GridApi } from '../types';
+import { ProcessedColumn, GridApi, FilterModel } from '../types';
 import { cn } from '@/lib/utils';
 import {
   Search,
@@ -11,6 +11,7 @@ import {
   X,
   Eye,
   EyeOff,
+  FilterX,
 } from 'lucide-react';
 import {
   Popover,
@@ -30,6 +31,8 @@ interface GridToolbarProps<T> {
   onColumnVisibilityChange: (field: string, visible: boolean) => void;
   selectedCount: number;
   totalCount: number;
+  filterModel?: FilterModel[];
+  onResetFilters?: () => void;
 }
 
 export function GridToolbar<T>({
@@ -40,6 +43,8 @@ export function GridToolbar<T>({
   onColumnVisibilityChange,
   selectedCount,
   totalCount,
+  filterModel = [],
+  onResetFilters,
 }: GridToolbarProps<T>) {
   const [copied, setCopied] = useState(false);
 
@@ -57,8 +62,77 @@ export function GridToolbar<T>({
     api.refreshCells();
   };
 
+  const hasActiveFilters = filterModel.length > 0 || quickFilterValue.length > 0;
+  
+  const getFilterLabel = (filter: FilterModel): string => {
+    const column = columns.find(c => c.field === filter.field);
+    const columnName = column?.headerName || filter.field;
+    
+    if (Array.isArray(filter.value)) {
+      const count = filter.value.length;
+      return `${columnName}: ${count} selected`;
+    }
+    
+    return `${columnName}: ${filter.value}`;
+  };
+
   return (
-    <div className="flex items-center gap-2 p-2 border-b border-border bg-muted/30">
+    <div className="flex flex-col">
+      {/* Filter Chips Row */}
+      {hasActiveFilters && (
+        <div className="flex items-center gap-2 px-3 py-2 border-b border-border bg-muted/20">
+          <span className="text-xs text-muted-foreground font-medium">Active Filters:</span>
+          
+          {/* Quick Filter Chip */}
+          {quickFilterValue && (
+            <div className="flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded-md text-xs">
+              <Search className="h-3 w-3" />
+              <span>{quickFilterValue}</span>
+              <button
+                onClick={() => onQuickFilterChange('')}
+                className="ml-1 hover:bg-primary/20 rounded p-0.5"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          )}
+          
+          {/* Column Filter Chips */}
+          {filterModel.map((filter, idx) => (
+            <div
+              key={`${filter.field}-${idx}`}
+              className="flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded-md text-xs"
+            >
+              <span>{getFilterLabel(filter)}</span>
+              <button
+                onClick={() => {
+                  const newFilters = filterModel.filter((_, i) => i !== idx);
+                  api.setFilterModel(newFilters);
+                }}
+                className="ml-1 hover:bg-primary/20 rounded p-0.5"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          ))}
+          
+          {/* Reset All Button */}
+          {onResetFilters && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 px-2 ml-auto text-xs"
+              onClick={onResetFilters}
+            >
+              <FilterX className="h-3 w-3 mr-1" />
+              Reset All
+            </Button>
+          )}
+        </div>
+      )}
+      
+      {/* Main Toolbar */}
+      <div className="flex items-center gap-2 p-2 border-b border-border bg-muted/30">
       {/* Quick Filter */}
       <div className="relative flex-1 max-w-sm">
         <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -180,6 +254,7 @@ export function GridToolbar<T>({
           <RefreshCw className="h-4 w-4" />
         </Button>
       </div>
+    </div>
     </div>
   );
 }

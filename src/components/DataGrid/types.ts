@@ -362,6 +362,10 @@ export interface DataGridProps<T = any> extends GridEvents<T> {
   // Quick filter
   quickFilterText?: string;
   
+  // Filter options
+  enableFilterValueVirtualization?: boolean;
+  filterValues?: Record<string, any[]>; // Custom filter values per column field
+  
   // Toolbar & Status bar
   showToolbar?: boolean;
   showStatusBar?: boolean;

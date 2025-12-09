@@ -454,6 +454,7 @@ export function useGridState<T>(props: DataGridProps<T>, containerWidth: number)
 
   return {
     rows,
+    allRows: rows, // Unfiltered rows for filter value extraction
     displayedRows,
     columns,
     sortModel,

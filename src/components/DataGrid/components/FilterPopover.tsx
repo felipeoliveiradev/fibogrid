@@ -7,6 +7,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Filter, X, Search, SortAsc, SortDesc } from 'lucide-react';
+import { VirtualFilterList } from './VirtualFilterList';
 
 interface FilterPopoverProps<T> {
   column: ProcessedColumn<T>;
@@ -17,6 +18,7 @@ interface FilterPopoverProps<T> {
   onSort?: (direction: 'asc' | 'desc') => void;
   anchorRect?: DOMRect | null;
   containerRef?: React.RefObject<HTMLDivElement>;
+  enableVirtualization?: boolean;
 }
 
 export function FilterPopover<T>({
@@ -28,6 +30,7 @@ export function FilterPopover<T>({
   onSort,
   anchorRect,
   containerRef,
+  enableVirtualization = false,
 }: FilterPopoverProps<T>) {
   const popoverRef = useRef<HTMLDivElement>(null);
   const [value, setValue] = useState(currentFilter?.value ?? '');
@@ -286,27 +289,38 @@ export function FilterPopover<T>({
               </label>
 
               {/* Value List */}
-              <ScrollArea className="h-48 border border-border rounded bg-background">
-                <div className="p-1">
-                  {filteredValues.map((val) => (
-                    <label
-                      key={val}
-                      className="flex items-center gap-2 py-1.5 px-2 hover:bg-muted rounded cursor-pointer"
-                    >
-                      <Checkbox 
-                        checked={selectedValues.has(val)}
-                        onCheckedChange={() => toggleValue(val)}
-                      />
-                      <span className="text-sm truncate">{val || '(Blank)'}</span>
-                    </label>
-                  ))}
-                  {filteredValues.length === 0 && (
-                    <div className="text-sm text-muted-foreground text-center py-4">
-                      No values found
-                    </div>
-                  )}
-                </div>
-              </ScrollArea>
+              {enableVirtualization ? (
+                <VirtualFilterList
+                  values={filteredValues}
+                  selectedValues={selectedValues}
+                  onToggle={toggleValue}
+                  height={192}
+                  itemHeight={36}
+                  overscan={5}
+                />
+              ) : (
+                <ScrollArea className="h-48 border border-border rounded bg-background">
+                  <div className="p-1">
+                    {filteredValues.map((val) => (
+                      <label
+                        key={val}
+                        className="flex items-center gap-2 py-1.5 px-2 hover:bg-muted rounded cursor-pointer"
+                      >
+                        <Checkbox 
+                          checked={selectedValues.has(val)}
+                          onCheckedChange={() => toggleValue(val)}
+                        />
+                        <span className="text-sm truncate">{val || '(Blank)'}</span>
+                      </label>
+                    ))}
+                    {filteredValues.length === 0 && (
+                      <div className="text-sm text-muted-foreground text-center py-4">
+                        No values found
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
+              )}
 
               {/* Apply Button */}
               <div className="flex gap-2 pt-2">

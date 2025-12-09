@@ -35,6 +35,7 @@ export function useServerSideData<T>(
   const listenersRef = useRef<Set<() => void>>(new Set());
   const currentRequestRef = useRef<string>('');
   const abortControllerRef = useRef<AbortController | null>(null);
+  const dataSourceRef = useRef<ServerSideDataSource<T> | undefined>(undefined);
 
   // Create cache key from request
   const getCacheKey = useCallback((req: ServerSideDataSourceRequest): string => {
@@ -104,14 +105,21 @@ export function useServerSideData<T>(
   const getSnapshot = useCallback(() => {
     const cacheKey = getCacheKey(request);
     
-    // Trigger fetch if needed (only when key changes)
-    if (currentRequestRef.current !== cacheKey) {
+    // Check if dataSource changed (by reference)
+    const dataSourceChanged = dataSourceRef.current !== dataSource;
+    if (dataSourceChanged) {
+      dataSourceRef.current = dataSource;
+      currentRequestRef.current = ''; // Invalidate cache
+    }
+    
+    // Trigger fetch if needed (when key changes or dataSource changes)
+    if (currentRequestRef.current !== cacheKey || dataSourceChanged) {
       // Use queueMicrotask to avoid setState during render
       queueMicrotask(() => fetchData(request));
     }
     
     return stateRef.current;
-  }, [request, getCacheKey, fetchData]);
+  }, [request, dataSource, getCacheKey, fetchData]);
 
   // Use sync external store for optimal re-render control
   const state = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
