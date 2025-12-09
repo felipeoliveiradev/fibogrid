@@ -44,7 +44,7 @@ pnpm add fibogrid
 ```tsx
 import { FiboGrid } from 'fibogrid';
 import type { ColumnDef } from 'fibogrid';
-import 'fibogrid/styles';
+import 'fibogrid/styles.css';
 
 interface Row {
   id: string;

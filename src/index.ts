@@ -1,3 +1,6 @@
+// Styles
+import './fibogrid.css';
+
 // Main exports
 export { FiboGrid } from './components/FiboGrid';
 export * from './components/FiboGrid/types';

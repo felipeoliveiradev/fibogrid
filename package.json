@@ -1,6 +1,6 @@
 {
   "name": "fibogrid",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "High-performance React data grid component inspired by mathematical elegance",
   "type": "module",
   "main": "./dist/fibogrid.umd.js",
@@ -11,7 +11,8 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/fibogrid.es.js",
       "require": "./dist/fibogrid.umd.js"
-    }
+    },
+    "./styles.css": "./dist/style.css"
   },
   "files": [
     "dist",
