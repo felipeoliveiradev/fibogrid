@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { DataGrid, GridProvider } from '@/components/DataGrid';
-import { ColumnDef, GridApi, RowNode } from '@/components/DataGrid/types';
+import { FiboGrid, GridProvider } from '@/components/FiboGrid';
+import { ColumnDef, GridApi, RowNode } from '@/components/FiboGrid/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -367,7 +367,7 @@ const Index = () => {
     if (!gridApi) return;
     
     try {
-      const { exportToExcel } = await import('@/components/DataGrid/utils/excelExport');
+      const { exportToExcel } = await import('@/components/FiboGrid/utils/excelExport');
       const displayedRows = gridApi.getDisplayedRows();
       const processedColumns = columns.map((col, idx) => ({
         ...col,
@@ -512,7 +512,7 @@ const Index = () => {
               </CardHeader>
               <CardContent className="p-0">
                 <GridProvider>
-                  <DataGrid<StockRow>
+                  <FiboGrid<StockRow>
                     gridId="stocks-grid"
                     rowData={rowData}
                     columnDefs={columns}
@@ -560,7 +560,7 @@ const Index = () => {
               </CardHeader>
               <CardContent className="p-0">
                 {selectedStock ? (
-                  <DataGrid<OrderRow>
+                  <FiboGrid<OrderRow>
                     gridId="orders-grid"
                     rowData={orderData}
                     columnDefs={orderColumns}

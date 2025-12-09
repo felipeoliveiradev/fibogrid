@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
-import { DataGrid } from '@/components/DataGrid';
-import { ColumnDef } from '@/components/DataGrid/types';
+import { FiboGrid } from '@/components/FiboGrid';
+import { ColumnDef } from '@/components/FiboGrid/types';
 
 interface SimpleRow {
   id: string;
@@ -33,7 +33,7 @@ export default function EditTest() {
         <pre>{JSON.stringify(rowData, null, 2)}</pre>
       </div>
 
-      <DataGrid
+      <FiboGrid
         rowData={rowData}
         columnDefs={columns}
         getRowId={getRowId}

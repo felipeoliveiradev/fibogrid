@@ -6,8 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { DataGrid } from '@/components/DataGrid';
-import { ColumnDef } from '@/components/DataGrid/types';
+import { FiboGrid } from '@/components/FiboGrid';
+import { ColumnDef } from '@/components/FiboGrid/types';
 import { 
   ArrowLeft, Copy, Check, BookOpen, Code, Zap, Settings, Layers, 
   Filter, ArrowUpDown, Pin, Edit3, Download, Move, Hexagon, 
@@ -371,7 +371,7 @@ const data = [
 
 function MyGrid() {
   return (
-    <DataGrid
+    <FiboGrid
       rowData={data}
       columnDefs={columns}
       getRowId={(row) => row.id}
@@ -380,7 +380,7 @@ function MyGrid() {
   );
 }`}
                       preview={
-                        <DataGrid
+                        <FiboGrid
                           rowData={sampleData.slice(0, 3)}
                           columnDefs={basicColumns}
                           getRowId={(row) => row.id}
@@ -531,7 +531,7 @@ function MyGrid() {
   },
 ];`}
                       preview={
-                        <DataGrid
+                        <FiboGrid
                           rowData={sampleData}
                           columnDefs={statusColumns}
                           getRowId={(row) => row.id}
@@ -559,7 +559,7 @@ function MyGrid() {
   { field: 'category', headerName: 'Category', sortable: true },
 ];
 
-<DataGrid
+<FiboGrid
   rowData={data}
   columnDefs={columns}
   onSortChanged={(event) => {
@@ -567,7 +567,7 @@ function MyGrid() {
   }}
 />`}
                       preview={
-                        <DataGrid
+                        <FiboGrid
                           rowData={sampleData}
                           columnDefs={sortableColumns}
                           getRowId={(row) => row.id}
@@ -605,7 +605,7 @@ function MyGrid() {
   },
 ];`}
                       preview={
-                        <DataGrid
+                        <FiboGrid
                           rowData={sampleData}
                           columnDefs={filterColumns}
                           getRowId={(row) => row.id}
@@ -623,7 +623,7 @@ function MyGrid() {
                       title="Selection Modes"
                       description="Click rows to select them. Use 'single' for one row at a time, or 'multiple' for multi-select with checkboxes."
                       code={`// Single selection
-<DataGrid
+<FiboGrid
   rowData={data}
   columnDefs={columns}
   rowSelection="single"
@@ -633,7 +633,7 @@ function MyGrid() {
 />
 
 // Multiple selection
-<DataGrid
+<FiboGrid
   rowData={data}
   columnDefs={columns}
   rowSelection="multiple"
@@ -645,7 +645,7 @@ function MyGrid() {
 // Access selected rows via API
 const selectedRows = gridApi.getSelectedRows();`}
                       preview={
-                        <DataGrid
+                        <FiboGrid
                           rowData={sampleData}
                           columnDefs={basicColumns}
                           getRowId={(row) => row.id}
@@ -687,7 +687,7 @@ const selectedRows = gridApi.getSelectedRows();`}
   },
 ];
 
-<DataGrid
+<FiboGrid
   rowData={data}
   columnDefs={columns}
   onCellValueChanged={(event) => {
@@ -695,7 +695,7 @@ const selectedRows = gridApi.getSelectedRows();`}
   }}
 />`}
                       preview={
-                        <DataGrid
+                        <FiboGrid
                           rowData={sampleData}
                           columnDefs={editableColumns}
                           getRowId={(row) => row.id}
@@ -732,7 +732,7 @@ gridApi.setColumnPinned('id', 'left');
 gridApi.setColumnPinned('actions', 'right');
 gridApi.setColumnPinned('email', null);  // Unpin`}
                       preview={
-                        <DataGrid
+                        <FiboGrid
                           rowData={sampleData}
                           columnDefs={pinnedColumns}
                           getRowId={(row) => row.id}
@@ -754,7 +754,7 @@ gridApi.setColumnPinned('email', null);  // Unpin`}
                         <p className="font-body text-muted-foreground">
                           Group rows by one or more fields with optional aggregations.
                         </p>
-                        <CodeBlock code={`<DataGrid
+                        <CodeBlock code={`<FiboGrid
   rowData={data}
   columnDefs={columns}
   groupByFields={['category', 'status']}
@@ -775,7 +775,7 @@ gridApi.setColumnPinned('email', null);  // Unpin`}
                         <p className="font-body text-muted-foreground">
                           Support for tree data with expandable parent-child relationships.
                         </p>
-                        <CodeBlock code={`<DataGrid
+                        <CodeBlock code={`<FiboGrid
   rowData={data}
   columnDefs={columns}
   treeData={true}
@@ -797,7 +797,7 @@ gridApi.setColumnPinned('email', null);  // Unpin`}
                         <CardTitle className="font-display text-xl">Row Dragging</CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <CodeBlock code={`<DataGrid
+                        <CodeBlock code={`<FiboGrid
   rowData={data}
   columnDefs={columns}
   rowDragEnabled={true}
@@ -821,7 +821,7 @@ const columns: ColumnDef[] = [
   { field: 'email', headerName: 'Email', draggable: true },
 ];
 
-<DataGrid
+<FiboGrid
   columnDefs={columns}
   onColumnMoved={(event) => {
     console.log('Column moved:', event.column.field);
@@ -912,7 +912,7 @@ exportToExcel(rows, columns, {
                         <CardTitle className="font-display text-xl">Event Usage Example</CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <CodeBlock code={`<DataGrid
+                        <CodeBlock code={`<FiboGrid
   rowData={data}
   columnDefs={columns}
   onGridReady={(event) => {
@@ -952,7 +952,7 @@ exportToExcel(rows, columns, {
                         <p className="font-body text-muted-foreground">
                           FiboGrid supports light, dark, and auto themes. The grid automatically inherits your app's design system.
                         </p>
-                        <CodeBlock code={`<DataGrid
+                        <CodeBlock code={`<FiboGrid
   rowData={data}
   columnDefs={columns}
   theme="auto"  // 'light' | 'dark' | 'auto'
@@ -999,7 +999,7 @@ exportToExcel(rows, columns, {
                         <CodeBlock code={`// Master grid (users)
 const [selectedUser, setSelectedUser] = useState(null);
 
-<DataGrid
+<FiboGrid
   gridId="users-grid"
   rowData={users}
   columnDefs={userColumns}
@@ -1010,7 +1010,7 @@ const [selectedUser, setSelectedUser] = useState(null);
 />
 
 // Detail grid (orders for selected user)
-<DataGrid
+<FiboGrid
   gridId="orders-grid"
   rowData={selectedUser ? orders.filter(o => o.userId === selectedUser.id) : []}
   columnDefs={orderColumns}
@@ -1081,7 +1081,7 @@ const getRowId = useCallback((row) => row.id, []);
 const columns = useMemo(() => [...], []);
 
 // 3. Use pagination for very large datasets
-<DataGrid
+<FiboGrid
   rowData={largeData}
   columnDefs={columns}
   pagination={true}
@@ -1107,7 +1107,7 @@ const columns = useMemo(() => [...], []);
                       <CardContent>
                         <CodeBlock code={`const [gridApi, setGridApi] = useState<GridApi | null>(null);
 
-<DataGrid
+<FiboGrid
   rowData={data}
   columnDefs={columns}
   onGridReady={(event) => {

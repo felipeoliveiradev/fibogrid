@@ -1,5 +1,5 @@
-import { DataGrid } from '@/components/DataGrid';
-import { ColumnDef, ServerSideDataSource, ServerSideDataSourceRequest, ServerSideDataSourceResponse } from '@/components/DataGrid/types';
+import { FiboGrid } from '@/components/FiboGrid';
+import { ColumnDef, ServerSideDataSource, ServerSideDataSourceRequest, ServerSideDataSourceResponse } from '@/components/FiboGrid/types';
 
 interface MyData {
   id: string;
@@ -48,7 +48,7 @@ const columns: ColumnDef<MyData>[] = [
 
 export function ServerSidePaginationExample() {
   return (
-    <DataGrid
+    <FiboGrid
       rowData={[]} // Vazio porque os dados vêm do server
       columnDefs={columns}
       pagination={true}

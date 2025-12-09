@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
-import { DataGridProps, ProcessedColumn, SortModel, FilterModel, ContextMenuItem, RowNode, EditingCell } from './types';
+import { FiboGridProps, ProcessedColumn, SortModel, FilterModel, ContextMenuItem, RowNode, EditingCell } from './types';
 import { useGridState } from './hooks/useGridState';
 import { useVirtualization } from './hooks/useVirtualization';
 import { useColumnResize } from './hooks/useColumnResize';
@@ -29,7 +29,7 @@ interface FilterState<T> {
   anchorRect: DOMRect;
 }
 
-export function DataGrid<T extends object>(props: DataGridProps<T>) {
+export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
   const {
     rowHeight = 40,
     headerHeight = 44,

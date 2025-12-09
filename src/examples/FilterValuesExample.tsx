@@ -1,5 +1,5 @@
-import { DataGrid } from '@/components/DataGrid';
-import { ColumnDef } from '@/components/DataGrid/types';
+import { FiboGrid } from '@/components/FiboGrid';
+import { ColumnDef } from '@/components/FiboGrid/types';
 
 interface Product {
   id: string;
@@ -28,7 +28,7 @@ const columns: ColumnDef<Product>[] = [
  */
 export function AutoFilterExample() {
   return (
-    <DataGrid
+    <FiboGrid
       rowData={products}
       columnDefs={columns}
       enableFilterValueVirtualization={true}
@@ -55,7 +55,7 @@ export function CustomFilterExample() {
   };
 
   return (
-    <DataGrid
+    <FiboGrid
       rowData={products}
       columnDefs={columns}
       filterValues={customFilterValues}
@@ -76,7 +76,7 @@ export function ServerSideFilterExample() {
   };
 
   return (
-    <DataGrid
+    <FiboGrid
       rowData={[]} // Vazio em server-side
       columnDefs={columns}
       pagination={true}
@@ -126,7 +126,7 @@ export function DynamicFilterExample() {
         <option value="EU">Europe</option>
       </select>
 
-      <DataGrid
+      <FiboGrid
         rowData={products}
         columnDefs={columns}
         filterValues={dynamicFilterValues}
@@ -147,7 +147,7 @@ export function LargeFilterExample() {
   };
 
   return (
-    <DataGrid
+    <FiboGrid
       rowData={products}
       columnDefs={columns}
       filterValues={largeFilterValues}

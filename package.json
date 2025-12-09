@@ -1,14 +1,57 @@
 {
-  "name": "vite_react_shadcn_ts",
-  "private": true,
-  "version": "0.0.0",
+  "name": "fibogrid",
+  "version": "1.0.0",
+  "description": "High-performance React data grid component inspired by mathematical elegance",
   "type": "module",
+  "main": "./dist/fibogrid.umd.js",
+  "module": "./dist/fibogrid.es.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/fibogrid.es.js",
+      "require": "./dist/fibogrid.umd.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "react",
+    "datagrid",
+    "grid",
+    "table",
+    "spreadsheet",
+    "fibonacci",
+    "virtual-scrolling",
+    "performance",
+    "typescript"
+  ],
+  "author": "Felipe Oliveira",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/felipeoliveiradev/fibogrid.git"
+  },
+  "bugs": {
+    "url": "https://github.com/felipeoliveiradev/fibogrid/issues"
+  },
+  "homepage": "https://felipeoliveiradev.github.io/fibogrid",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:lib": "vite build --config vite.config.lib.ts && tsc --project tsconfig.lib.json",
+    "types": "tsc --project tsconfig.lib.json",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "prepublishOnly": "npm run build:lib"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -48,9 +91,9 @@
     "input-otp": "^1.4.2",
     "lucide-react": "^0.462.0",
     "next-themes": "^0.3.0",
-    "react": "^18.3.1",
+    "react": "^18.0.0",
     "react-day-picker": "^8.10.1",
-    "react-dom": "^18.3.1",
+    "react-dom": "^18.0.0",
     "react-hook-form": "^7.61.1",
     "react-resizable-panels": "^2.1.9",
     "react-router-dom": "^6.30.1",
@@ -78,6 +121,7 @@
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.38.0",
-    "vite": "^5.4.19"
+    "vite": "^5.4.19",
+    "vite-plugin-dts": "^4.5.4"
   }
 }

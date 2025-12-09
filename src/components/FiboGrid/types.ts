@@ -319,7 +319,7 @@ export interface PaginationChangedEvent {
   totalRows: number;
 }
 
-export interface DataGridProps<T = any> extends GridEvents<T> {
+export interface FiboGridProps<T = any> extends GridEvents<T> {
   rowData: T[];
   columnDefs: ColumnDef<T>[];
   getRowId?: (data: T) => string;

@@ -1,0 +1,42 @@
+# Source files
+src/
+public/
+.git/
+.github/
+
+# Config files
+.gitignore
+.eslintrc.*
+eslint.config.js
+vite.config.ts
+vite.config.lib.ts
+tsconfig.json
+tsconfig.*.json
+tailwind.config.ts
+postcss.config.js
+components.json
+
+# Build artifacts
+node_modules/
+*.log
+*.lock
+bun.lockb
+package-lock.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Tests
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+
+# Examples and demos
+index.html
+
+# Documentation (kept in repo, not in package)
+.DS_Store

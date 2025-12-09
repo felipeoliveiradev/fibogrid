@@ -1,4 +1,4 @@
-export { DataGrid } from './DataGrid';
+export { FiboGrid } from './FiboGrid';
 export * from './types';
 export * from './utils/helpers';
 export { GridProvider, useGridContext } from './context/GridContext';

@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback, useRef, useEffect, startTransition } from 'react';
 import { Link } from 'react-router-dom';
-import { DataGrid } from '@/components/DataGrid';
-import { ColumnDef, GridApi, RowNode, ServerSideDataSource, ServerSideDataSourceRequest, ServerSideDataSourceResponse } from '@/components/DataGrid/types';
+import { FiboGrid } from '@/components/FiboGrid';
+import { ColumnDef, GridApi, RowNode, ServerSideDataSource, ServerSideDataSourceRequest, ServerSideDataSourceResponse } from '@/components/FiboGrid/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -547,7 +547,7 @@ export default function Demo() {
   const handleExport = useCallback(async () => {
     if (!gridApi) return;
     try {
-      const { exportToExcel } = await import('@/components/DataGrid/utils/excelExport');
+      const { exportToExcel } = await import('@/components/FiboGrid/utils/excelExport');
       const displayedRows = gridApi.getDisplayedRows();
       const processedColumns = columns.map((col, idx) => ({
         ...col,
@@ -776,7 +776,7 @@ export default function Demo() {
                 </div>
               </div>
             )}
-            <DataGrid
+            <FiboGrid
               rowData={useServerSide ? [] : visibleRowData}
               columnDefs={columns}
               getRowId={getRowId}

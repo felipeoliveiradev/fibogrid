@@ -9,7 +9,7 @@ import {
   PaginationState,
   EditingCell,
   GridApi,
-  DataGridProps,
+  FiboGridProps,
   ServerSideDataSourceRequest,
 } from '../types';
 import { useServerSideData } from './useServerSideData';
@@ -23,7 +23,7 @@ import {
   setValueAtPath,
 } from '../utils/helpers';
 
-export function useGridState<T>(props: DataGridProps<T>, containerWidth: number) {
+export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number) {
   const {
     rowData,
     columnDefs,

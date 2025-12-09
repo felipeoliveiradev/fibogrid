@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { DataGrid } from '@/components/DataGrid';
-import { ColumnDef, GridApi } from '@/components/DataGrid/types';
+import { FiboGrid } from '@/components/FiboGrid';
+import { ColumnDef, GridApi } from '@/components/FiboGrid/types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -235,7 +235,7 @@ export default function Home() {
           </div>
           <div className="relative rounded-xl overflow-hidden border border-primary/20 shadow-parchment glow-gold">
             <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-transparent pointer-events-none z-10" />
-            <DataGrid
+            <FiboGrid
               rowData={demoData}
               columnDefs={columns}
               getRowId={(d) => d.id}
