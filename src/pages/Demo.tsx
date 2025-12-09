@@ -779,13 +779,28 @@ export default function Demo() {
               groupByFields={groupByField ? [groupByField] : undefined}
               onGridReady={(e) => setGridApi(e.api)}
               onCellValueChanged={(e) => {
-                const editedRowId = (e.rowNode.data as StockRow).id;
-                setRowData(prev => prev.map(row => 
-                  row.id === editedRowId 
-                    ? { ...row, [e.column.field]: e.newValue }
-                    : row
-                ));
+                const editedRowData = e.rowNode.data as StockRow;
+                const field = e.column.field as keyof StockRow;
+                const newValue = e.newValue;
+                
+                // Handle detail rows - they have parentId pointing to the original row
+                // Handle child rows - they exist in rowData
+                // Handle regular rows - they exist in rowData
+                const targetId = editedRowData.isDetailRow && editedRowData.parentId 
+                  ? editedRowData.parentId  // Detail rows update their parent
+                  : editedRowData.id;       // Regular/child rows update themselves
+                
+                setRowData(prev => {
+                  return prev.map(row => {
+                    if (row.id === targetId) {
+                      return { ...row, [field]: newValue };
+                    }
+                    return row;
+                  });
+                });
               }}
+              rangeCellSelection={true}
+              rowDragEnabled={true}
             />
           </Card>
         </div>

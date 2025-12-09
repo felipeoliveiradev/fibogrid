@@ -72,15 +72,28 @@ export function GridCell<T>({
     }
   }, [registerCellRef, column.field, row.id]);
 
+  const isStoppingRef = useRef(false);
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
+      isStoppingRef.current = true;
       onStopEdit(false);
     } else if (e.key === 'Escape') {
+      isStoppingRef.current = true;
       onStopEdit(true);
     } else if (e.key === 'Tab') {
       e.preventDefault();
+      isStoppingRef.current = true;
       onStopEdit(false);
     }
+  };
+
+  const handleBlur = () => {
+    // Prevent double-calling onStopEdit when Enter/Tab/Escape was pressed
+    if (!isStoppingRef.current) {
+      onStopEdit(false);
+    }
+    isStoppingRef.current = false;
   };
 
   const handleCellClick = (e: React.MouseEvent) => {
@@ -143,7 +156,7 @@ export function GridCell<T>({
           <select
             value={editValue ?? ''}
             onChange={(e) => onEditChange(e.target.value)}
-            onBlur={() => onStopEdit(false)}
+            onBlur={handleBlur}
             onKeyDown={handleKeyDown}
             className="w-full h-full bg-background border-none outline-none px-1"
             autoFocus
@@ -178,7 +191,7 @@ export function GridCell<T>({
             type="number"
             value={editValue ?? ''}
             onChange={(e) => onEditChange(parseFloat(e.target.value) || 0)}
-            onBlur={() => onStopEdit(false)}
+            onBlur={handleBlur}
             onKeyDown={handleKeyDown}
             className="w-full h-full bg-background border-none outline-none px-1"
           />
@@ -191,7 +204,7 @@ export function GridCell<T>({
             type="date"
             value={editValue ?? ''}
             onChange={(e) => onEditChange(e.target.value)}
-            onBlur={() => onStopEdit(false)}
+            onBlur={handleBlur}
             onKeyDown={handleKeyDown}
             className="w-full h-full bg-background border-none outline-none px-1"
           />
@@ -204,7 +217,7 @@ export function GridCell<T>({
             type="text"
             value={editValue ?? ''}
             onChange={(e) => onEditChange(e.target.value)}
-            onBlur={() => onStopEdit(false)}
+            onBlur={handleBlur}
             onKeyDown={handleKeyDown}
             className="w-full h-full bg-background border-none outline-none px-1"
           />

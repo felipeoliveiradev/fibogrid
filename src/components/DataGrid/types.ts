@@ -298,6 +298,7 @@ export interface DataGridProps<T = any> extends GridEvents<T> {
   paginationPageSizeOptions?: number[];
   
   rowSelection?: 'single' | 'multiple';
+  rangeCellSelection?: boolean;
   rowDragEnabled?: boolean;
   rowDragManaged?: boolean;
   

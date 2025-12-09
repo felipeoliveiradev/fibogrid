@@ -36,6 +36,7 @@ export function DataGrid<T extends object>(props: DataGridProps<T>) {
     paginationPageSize = 100,
     paginationPageSizeOptions = [25, 50, 100, 250, 500],
     rowSelection,
+    rangeCellSelection = false,
     rowDragEnabled = false,
     rowDragManaged = true,
     loading = false,
