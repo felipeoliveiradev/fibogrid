@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.8] - 2025-12-10
+
+### Added
+- **Value Setter Validation** - Enabled `valueSetter` in `ColumnDef` to validate and transform values during edits
+- **Dynamic Row Classes** - Support for `getRowClass` to style rows based on their data
+- **Contextual Menus** - Context menu now supports dynamic items/actions using row data
+- **Documentation** - Updated docs to cover new validation and styling capabilities
+
+### Changed
+- **Grid API** - Improved edit workflow to incorporate validation via `valueSetter`
+- **Context Menu** - Enhanced to receive row context and handle dynamic actions
+- **GridRow** - Better styling flexibility to reflect dynamic row classes
+
+### Enhanced
+- **Editing UX** - More reliable validation/transformation during cell edits
+- **Row Styling UX** - Clearer visual feedback through data-driven row classes
+- **Context Menu UX** - More relevant actions based on the selected row
+
 ## [1.0.7] - 2025-12-10
 
 ### Added
