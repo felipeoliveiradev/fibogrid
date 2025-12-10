@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.10] - 2025-12-10
+
+### Added
+- **Data Access Helpers** - Grid components now use `getValueFromPath` for safer nested access
+- **Demo Editor Options** - Demo gains a cell editor with predefined values for quicker interactions
+
+### Changed
+- **Filtering/Sorting** - Logic updated to use consistent data retrieval via helpers
+- **GridCell & FiboGrid** - Refactored to rely on helper-based access instead of direct props
+
+### Enhanced
+- **Data Reliability** - More robust handling of nested fields across filtering, sorting, and rendering
+- **Demo UX** - Faster selection through predefined editor values
+
 ## [1.0.9] - 2025-12-10
 
 ### Added
