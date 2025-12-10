@@ -38,6 +38,9 @@ interface StockRow {
   volume: number;
   marketCap: number;
   sector: string;
+  carro?: {
+    cor?: string;
+  }
   pe: number;
   parentId?: string;
   isChild?: boolean;
@@ -88,6 +91,9 @@ const generateStockData = (count: number): StockRow[] => {
       headquarters: HEADQUARTERS[i % hqLen],
       ceo: i < ceoLen ? CEOS[i] : `CEO ${i + 1}`,
       website: `https://${(i < tickerLen ? TICKERS[i] : `company${i}`).toLowerCase()}.com`,
+      carro: {
+        cor: 'vermelho'
+      },
     };
   }
   return result;
@@ -289,6 +295,12 @@ export default function Demo() {
           </span>
         );
       },
+    },
+    {
+      field: 'carro.cor',
+      headerName: 'Car Color',
+      width: 120,
+      editable: true,
     },
     {
       field: 'price',
@@ -493,6 +505,9 @@ export default function Demo() {
                 changePercent: ((newChange / newPrice * 10000) | 0) / 100,
                 volume: stock.volume + ((rand * 10000) | 0),
                 marketCap: stock.marketCap,
+                carro: {
+                  cor: 'vermelho'
+                },
                 sector: stock.sector,
                 pe: stock.pe,
               };
@@ -542,6 +557,9 @@ export default function Demo() {
       volume: 1000000,
       marketCap: 50,
       sector: 'Technology',
+      carro: {
+        cor: 'vermelho'
+      },
       pe: 25,
     };
     setRowData(prev => [newStock, ...prev]);

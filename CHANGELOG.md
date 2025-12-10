@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.7] - 2025-12-10
+
+### Added
+- **Value Setter Validation** - Added `valueSetter` functionality to `ColumnDef` for validation during cell edits
+- **Dynamic Row Classes** - Implemented `getRowClass` function support for dynamic row styling based on row data
+- **Enhanced Context Menu** - Added support for dynamic context menu items and actions based on row data
+- **Row Data Context** - Context menu now receives row data for more contextual actions
+
+### Changed
+- **GridRow Component** - Enhanced to support dynamic row classes and improved styling flexibility
+- **ContextMenu Component** - Updated to handle new dynamic items and actions based on row context
+- **FiboGrid API** - Improved cell editing workflow with validation support through valueSetter
+
+### Enhanced
+- **Cell Editing** - Better validation and data transformation during cell edits
+- **Row Styling** - More flexible row styling through dynamic class assignment
+- **User Experience** - Improved context menu with row-specific actions
+
 ## [1.0.6] - 2025-12-10
 
 ### Added

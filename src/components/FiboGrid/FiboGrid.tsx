@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import { FiboGridProps, ProcessedColumn, SortModel, FilterModel, ContextMenuItem, RowNode, EditingCell } from './types';
+import { getValueFromPath, setValueAtPath } from './utils/helpers';
 import './styles/theme-mapping.css';
 import { useGridState } from './hooks/useGridState';
 import { useVirtualization } from './hooks/useVirtualization';
@@ -667,7 +668,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                                 api,
                                 cell: {
                                   column: col,
-                                  value: (row.data as any)[col.field],
+                                  value: getValueFromPath(row.data, col.field),
                                   isEditable: !!col.editable,
                                 },
                               });
@@ -676,7 +677,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                         }}
                         onCellDoubleClick={(col, e) => {
                           if (col.editable) api.startEditingCell(row.id, col.field);
-                          onCellDoubleClicked?.({ rowNode: row, column: col, value: (row.data as any)[col.field], event: e, api });
+                          onCellDoubleClicked?.({ rowNode: row, column: col, value: getValueFromPath(row.data, col.field), event: e, api });
                         }}
                         showCheckboxColumn={!!rowSelection}
                         onCheckboxChange={(checked) => {
@@ -685,7 +686,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                         }}
                         editingCell={editingCell}
                         onStartEdit={(field) => {
-                          const value = (row.data as any)[field];
+                          const value = getValueFromPath(row.data, field);
                           const edit: EditingCell = {
                             rowId: row.id,
                             field,
@@ -725,7 +726,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                               editingCellRef.current = currentEditing;
                               
                               onCellValueChanged?.({
-                                rowNode: { ...row, data: { ...row.data, [currentEditing.field]: currentValue } },
+                                rowNode: { ...row, data: setValueAtPath(row.data, currentEditing.field, currentValue) },
                                 column,
                                 oldValue: currentEditing.originalValue,
                                 newValue: currentValue,
@@ -772,7 +773,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                           // e.preventDefault(); 
                           
                           const column = columns[colIndex];
-                          const value = (row.data as any)[column.field];
+                          const value = getValueFromPath(row.data, column.field);
 
                           // Selection Logic on Right Click
                           

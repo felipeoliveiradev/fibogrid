@@ -20,6 +20,7 @@ import {
   filterRows,
   exportToCsv,
   copyToClipboard,
+  getValueFromPath,
   setValueAtPath,
 } from '../utils/helpers';
 
@@ -387,7 +388,7 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
     startEditingCell: (rowId, field) => {
       const row = displayedRowsRef.current.find((r) => r.id === rowId);
       if (row) {
-        const value = (row.data as any)[field];
+        const value = getValueFromPath(row.data, field);
         setEditingCell({ rowId, field, value, originalValue: value });
       }
     },

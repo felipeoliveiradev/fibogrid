@@ -143,6 +143,7 @@ const sections = [
   { id: 'server-side', title: 'Server-Side Integration', icon: Server },
   { id: 'events', title: 'Events', icon: Bell },
   { id: 'context-menu', title: 'Context Menu', icon: List },
+  { id: 'styling-validation', title: 'Styling & Validation', icon: Palette },
   { id: 'theming', title: 'Theming', icon: Palette },
   { id: 'linked-grids', title: 'Linked Grids', icon: Link2 },
   { id: 'performance', title: 'Performance', icon: Zap },
@@ -1814,6 +1815,13 @@ import './custom-grid-theme.css';
         action: () => console.log('View', params.data),
         icon: <Eye className="h-4 w-4" />
       },
+      {
+        name: 'Sell Stock',
+        action: () => console.log('Selling', params.data),
+        // Dynamic disabled logic
+        disabled: params.data.price < 50,
+        icon: <TrendingDown className="h-4 w-4" />
+      },
       { separator: true },
       {
         name: \`Export \${params.selectedRows.length} Items\`,
@@ -1843,6 +1851,14 @@ import './custom-grid-theme.css';
                               icon: <Eye className="h-4 w-4" />
                             },
                             {
+                                name: 'Sell Stock',
+                                // @ts-ignore
+                                disabled: params.data.price < 1500, // Example logic
+                                action: () => alert('Selling stock!'),
+                                // @ts-ignore
+                                icon: <div className="h-4 w-4 bg-red-500 rounded-full" />
+                            },
+                            {
                               separator: true,
                               name: '',
                               action: function (): void {
@@ -1859,6 +1875,102 @@ import './custom-grid-theme.css';
                         />
                       }
                     />
+                  </div>
+                )}
+
+                {activeSection === 'styling-validation' && (
+                  <div className="space-y-8 animate-fade-in">
+                    <h1 className="text-4xl md:text-5xl font-display font-bold text-gradient-gold">Styling & Validation</h1>
+                    
+                    <Card className="paper-aged border-primary/10">
+                      <CardHeader>
+                        <CardTitle className="font-display text-xl">Dynamic Row Styling</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="font-body text-muted-foreground mb-4">
+                            Use <code>getRowClass</code> to apply CSS classes to rows based on data logic.
+                        </p>
+                        <CodeBlock code={`<FiboGrid
+  rowData={data}
+  columnDefs={columns}
+  getRowClass={(params) => {
+    // Apply different background for high value items
+    if (params.data.price > 2000) {
+      return 'bg-green-500/10 dark:bg-green-900/20';
+    }
+    // Apply styling for pending status
+    if (params.data.status === 'Pending') {
+      return 'opacity-75 italic';
+    }
+    return undefined; // No class
+  }}
+/>`} />
+                      </CardContent>
+                    </Card>
+
+                    <Card className="paper-aged border-primary/10">
+                        <CardHeader>
+                          <CardTitle className="font-display text-xl">Dynamic Cell Styling</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="font-body text-muted-foreground mb-4">
+                              Use <code>cellClass</code> in column definitions to style individual cells.
+                          </p>
+                          <CodeBlock code={`const columns: ColumnDef[] = [
+  {
+    field: 'profit',
+    headerName: 'Profit',
+    // Dynamic cell class
+    cellClass: (params) => {
+      if (params.value > 0) return 'text-green-600 font-medium';
+      if (params.value < 0) return 'text-red-600 font-medium';
+      return 'text-muted-foreground';
+    }
+  }
+];`} />
+                        </CardContent>
+                      </Card>
+
+                    <Card className="paper-aged border-primary/10">
+                      <CardHeader>
+                        <CardTitle className="font-display text-xl flex items-center gap-2">
+                           <Check className="h-5 w-5 text-primary" />
+                           Cell Validation
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="font-body text-muted-foreground mb-4">
+                            Use <code>valueSetter</code> to validate edits before they are committed. Return <code>true</code> to accept the change, or <code>false</code> to reject it.
+                        </p>
+                        <CodeBlock code={`const columns: ColumnDef[] = [
+  {
+    field: 'price',
+    headerName: 'Price',
+    editable: true,
+    valueSetter: (params) => {
+      const { newValue, oldValue, data } = params;
+      
+      // Validation: Price cannot be negative
+      if (newValue < 0) {
+        toast.error('Price cannot be negative!');
+        return false; // Reject change
+      }
+      
+      // Validation: Price change cap (e.g. max 50% change)
+      if (Math.abs(newValue - oldValue) / oldValue > 0.5) {
+         if (!confirm('Large price change detected. Are you sure?')) {
+             return false;
+         }
+      }
+
+      // If valid, update data
+      data.price = newValue;
+      return true; // Commit change
+    }
+  }
+];`} />
+                      </CardContent>
+                    </Card>
                   </div>
                 )}
 
