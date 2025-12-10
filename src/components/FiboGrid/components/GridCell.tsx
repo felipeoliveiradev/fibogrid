@@ -181,6 +181,8 @@ export function GridCell<T>({
             onBlur={handleBlur}
             onKeyDown={handleKeyDown}
             className="w-full h-full bg-background border-none outline-none px-1"
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
             autoFocus
           >
             {column.cellEditorParams?.values?.map((v: string) => (

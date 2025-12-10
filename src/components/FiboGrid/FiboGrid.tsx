@@ -903,7 +903,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
         const columnField = filterState.column.field;
         const allValues = filterValues?.[columnField] 
           ? filterValues[columnField]
-          : allRows.map((r) => (r.data as any)[columnField]);
+          : allRows.map((r) => getValueFromPath(r.data, columnField));
         
         return (
           <FilterPopover

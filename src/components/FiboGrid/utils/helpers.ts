@@ -79,8 +79,8 @@ export function sortRows<T>(
     
     for (let i = 0; i < sortConfigs.length; i++) {
       const { field, direction, column } = sortConfigs[i];
-      const valueA = dataA[field];
-      const valueB = dataB[field];
+      const valueA = getValueFromPath(dataA, field);
+      const valueB = getValueFromPath(dataB, field);
 
       let comparison: number;
       if (column?.comparator) {
@@ -166,7 +166,7 @@ export function filterRows<T>(
 
     for (let j = 0; j < filterFns.length && passes; j++) {
       const { field, filter, customFn } = filterFns[j];
-      const value = data[field];
+      const value = getValueFromPath(data, field);
       
       if (customFn) {
         passes = customFn(filter.value, value);
@@ -190,7 +190,7 @@ export function filterRows<T>(
       const data = row.data as Record<string, unknown>;
       
       for (let j = 0; j < columns.length; j++) {
-        const value = data[columns[j].field];
+        const value = getValueFromPath(data, columns[j].field);
         if (value != null && String(value).toLowerCase().includes(lowerFilter)) {
           quickFiltered.push(row);
           break;

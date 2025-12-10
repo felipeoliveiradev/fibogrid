@@ -277,6 +277,10 @@ export default function Demo() {
       sortable: true,
       filterable: true,
       editable: true,
+      cellEditor: 'select',
+      cellEditorParams: {
+        values: ['Active', 'Pending', 'Inactive']
+      },
       cellRenderer: (params) => {
         const row = params.data as StockRow;
         
