@@ -35,6 +35,7 @@ export interface ColumnDef<T = any> {
   rowDrag?: boolean;
   suppressMenu?: boolean;
   aggFunc?: 'sum' | 'avg' | 'min' | 'max' | 'count' | ((values: any[]) => any);
+  useInternalFilter?: boolean;
 }
 
 export interface CellRendererParams<T = any> {
@@ -173,7 +174,7 @@ export interface GridApi<T = any> {
   forEachNode: (callback: (node: RowNode<T>) => void) => void;
   getDisplayedRowCount: () => number;
   getDisplayedRowAtIndex: (index: number) => RowNode<T> | null;
-  
+
 
   selectAll: () => void;
   deselectAll: () => void;
@@ -181,16 +182,16 @@ export interface GridApi<T = any> {
   selectRows: (ids: string[], selected?: boolean) => void;
   getSelectedRows: () => RowNode<T>[];
   getSelectedNodes: () => RowNode<T>[];
-  
+
 
   setSortModel: (model: SortModel[]) => void;
   getSortModel: () => SortModel[];
-  
+
 
   setFilterModel: (model: FilterModel[]) => void;
   getFilterModel: () => FilterModel[];
   setQuickFilter: (text: string) => void;
-  
+
 
   getColumnDefs: () => ColumnDef<T>[];
   setColumnVisible: (field: string, visible: boolean) => void;
@@ -199,26 +200,26 @@ export interface GridApi<T = any> {
   resizeColumn: (field: string, width: number) => void;
   autoSizeColumn: (field: string) => void;
   autoSizeAllColumns: () => void;
-  
+
 
   setPage: (page: number) => void;
   setPageSize: (size: number) => void;
   nextPage: () => void;
   previousPage: () => void;
-  
+
 
   startEditingCell: (rowId: string, field: string) => void;
   stopEditing: (cancel?: boolean) => void;
-  
+
 
   ensureRowVisible: (id: string) => void;
   ensureColumnVisible: (field: string) => void;
   scrollTo: (position: { top?: number; left?: number }) => void;
-  
+
 
   exportToCsv: (params?: ExportParams) => void;
   copyToClipboard: (includeHeaders?: boolean) => Promise<void>;
-  
+
 
   refreshCells: () => void;
   redrawRows: () => void;
@@ -286,7 +287,7 @@ export interface CellClickedEvent<T = any> {
   api: GridApi<T>;
 }
 
-export interface CellDoubleClickedEvent<T = any> extends CellClickedEvent<T> {}
+export interface CellDoubleClickedEvent<T = any> extends CellClickedEvent<T> { }
 
 export interface CellValueChangedEvent<T = any> {
   rowNode: RowNode<T>;
@@ -302,7 +303,7 @@ export interface RowClickedEvent<T = any> {
   api: GridApi<T>;
 }
 
-export interface RowDoubleClickedEvent<T = any> extends RowClickedEvent<T> {}
+export interface RowDoubleClickedEvent<T = any> extends RowClickedEvent<T> { }
 
 export interface RowDragEvent<T = any> {
   rowNode: RowNode<T>;
@@ -346,69 +347,106 @@ export interface PaginationChangedEvent {
   totalRows: number;
 }
 
+
+export interface FiboGridConfigs {
+  header?: {
+    show?: boolean;
+    search?: boolean;
+    filterButton?: boolean;
+    densityButton?: boolean;
+    exportButton?: boolean;
+    columnsButton?: boolean;
+    copyButton?: boolean;
+    refreshButton?: boolean;
+    filterRow?: boolean;
+    customActions?: React.ReactNode;
+  };
+  center?: {
+    rowNumbers?: boolean;
+    checkboxSelection?: boolean;
+    stripes?: boolean;
+    borders?: boolean;
+  };
+  footer?: {
+    show?: boolean;
+    pagination?: boolean;
+    information?: boolean;
+  };
+}
+
 export interface FiboGridProps<T = any> extends GridEvents<T> {
   rowData: T[];
   columnDefs: ColumnDef<T>[];
   getRowId?: (data: T) => string;
-  
+
+  /**
+   * Configuration for visual elements and logic
+   */
+  configs?: FiboGridConfigs;
 
   gridId?: string;
-  
+
 
   pagination?: boolean;
   paginationPageSize?: number;
   paginationPageSizeOptions?: number[];
   paginationMode?: PaginationMode;
   serverSideDataSource?: ServerSideDataSource<T>;
-  
+
   rowSelection?: 'single' | 'multiple';
   rangeCellSelection?: boolean;
   rowDragEnabled?: boolean;
   rowDragManaged?: boolean;
-  
+
   defaultColDef?: Partial<ColumnDef<T>>;
-  
+
   getRowClass?: (params: RowClassParams<T>) => string | string[] | undefined;
 
   rowHeight?: number;
   headerHeight?: number;
   rowBuffer?: number;
-  
+
 
   className?: string;
   theme?: 'light' | 'dark' | 'auto';
   height?: number | string;
-  
+
 
   loading?: boolean;
   loadingOverlayComponent?: React.ReactNode;
   noRowsOverlayComponent?: React.ReactNode;
-  
+
 
   quickFilterText?: string;
-  
+
 
   enableFilterValueVirtualization?: boolean;
   filterValues?: Record<string, any[]>;
-  
+
 
   showToolbar?: boolean;
   showStatusBar?: boolean;
   showRowNumbers?: boolean;
-  
+
 
   contextMenu?: boolean;
   getContextMenuItems?: (params: CellRendererParams<T>) => ContextMenuItem[];
-  
+
 
   groupByFields?: string[];
   splitByField?: string;
   groupAggregations?: Record<string, 'sum' | 'avg' | 'min' | 'max' | 'count'>;
-  
+
 
   treeData?: boolean;
   getChildRows?: (parentData: T) => T[] | Promise<T[]>;
   childRowsField?: string;
+
+  /**
+   * Locale configuration for internationalization
+   * Defaults to en-US
+   */
+  lang?: import('./locales/types').FiboGridLocale;
 }
 
 

@@ -1,0 +1,77 @@
+import { FiboGridLocale } from './types';
+
+export const ptBR: FiboGridLocale = {
+    toolbar: {
+        searchPlaceholder: 'Filtro rápido...',
+        columns: 'Colunas',
+        showAll: 'Mostrar Tudo',
+        hideAll: 'Ocultar Tudo',
+        copy: 'Copiar',
+        copied: 'Copiado!',
+        export: 'Exportar',
+        activeFilters: 'Filtros Ativos:',
+        resetAll: 'Limpar Todos',
+        toggleColumns: 'Alternar Colunas',
+        selectedCount: (selected, total) => `${selected} de ${total} selecionados`,
+        filterLabel: (column, value) => `${column}: ${value}`,
+        filterLabelCount: (column, count) => `${column}: ${count} selecionados`,
+    },
+    pagination: {
+        rowsPerPage: 'Linhas por página:',
+        pageInfo: (start, end, total) => `${start}-${end} de ${total}`,
+        zeroRows: '0 linhas',
+        pageOf: (current, total) => `Página ${current} de ${total}`,
+    },
+    statusBar: {
+        rows: 'linhas',
+        selected: (count) => `${count} selecionados`,
+        totalRows: (count) => `de ${count}`,
+        aggregations: {
+            sum: 'Σ',
+            avg: 'μ',
+            min: 'Min',
+            max: 'Max',
+            count: 'Cont',
+        }
+    },
+    columnMenu: {
+        sortAsc: 'Ordenar Crescente',
+        sortDesc: 'Ordenar Decrescente',
+        pinColumn: 'Fixar Coluna',
+        noPin: 'Não Fixar',
+        pinLeft: 'Fixar à Esquerda',
+        pinRight: 'Fixar à Direita',
+        autosizeColumn: 'Ajustar Largura',
+        autosizeAll: 'Ajustar Todas',
+        filter: 'Filtrar...',
+        hideColumn: 'Ocultar Coluna',
+    },
+    filter: {
+        values: 'Valores',
+        condition: 'Condição',
+        searchPlaceholder: 'Buscar...',
+        selectAll: '(Selecionar Tudo)',
+        clear: 'Limpar',
+        apply: 'Aplicar',
+        noValues: 'Nenhum valor encontrado',
+        operators: {
+            contains: 'Contém',
+            equals: 'Igual a',
+            startsWith: 'Começa com',
+            endsWith: 'Termina com',
+            greaterThan: 'Maior que',
+            lessThan: 'Menor que',
+            between: 'Entre',
+            after: 'Depois de',
+            before: 'Antes de',
+        },
+        boolean: {
+            true: 'Sim',
+            false: 'Não',
+        },
+    },
+    overlay: {
+        loading: 'Carregando...',
+        noRows: 'Nenhuma linha para exibir',
+    },
+};

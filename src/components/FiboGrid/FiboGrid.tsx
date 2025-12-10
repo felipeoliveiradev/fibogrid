@@ -12,7 +12,7 @@ import { useRowRangeSelection } from './hooks/useRowRangeSelection';
 import { useClickDetector } from './hooks/useClickDetector';
 import { useKeyboardNavigation } from './hooks/useKeyboardNavigation';
 import { useGrouping } from './hooks/useGrouping';
-import { useGridContext } from './context/GridContext';
+import { useGridContext, GridProvider } from './context/GridContext';
 import { GridHeader } from './components/GridHeader';
 import { GridRow } from './components/GridRow';
 import { GroupRow } from './components/GroupRow';
@@ -25,6 +25,7 @@ import { GridStatusBar } from './components/GridStatusBar';
 import { isGroupNode, GroupRowNode } from './utils/grouping';
 import { cn } from '@/lib/utils';
 import { Copy, Download, Trash2 } from 'lucide-react';
+import { enUS } from './locales/enUS';
 
 interface FilterState<T> {
   column: ProcessedColumn<T>;
@@ -49,9 +50,9 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     className,
     contextMenu = true,
     getContextMenuItems,
-    showToolbar = true,
-    showStatusBar = true,
-    showRowNumbers = false,
+    showToolbar = true, // Legacy prop default
+    showStatusBar = true, // Legacy prop default
+    showRowNumbers = false, // Legacy prop default
     enableFilterValueVirtualization = false,
     filterValues,
     height,
@@ -80,7 +81,20 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     onGridReady,
     onPaginationChanged,
     onRowClickFallback,
+    lang = enUS,
+    configs,
   } = props;
+
+  // Resolve Configuration
+  const effectiveShowToolbar = configs?.header?.show ?? showToolbar;
+  const effectiveShowStatusBar = configs?.footer?.show ?? showStatusBar;
+  const effectiveShowRowNumbers = configs?.center?.rowNumbers ?? showRowNumbers;
+  const effectiveShowPagination = configs?.footer?.pagination ?? pagination;
+  const footerInfo = configs?.footer?.information ?? true; // Default to true if not specified? Or check legacy behavior.
+
+  // Center styles
+  const showBorders = configs?.center?.borders !== false; // Default true? Or adjust based on legacy.
+  const showStripes = configs?.center?.stripes !== false; // Default true/false?
 
   const containerRef = useRef<HTMLDivElement>(null);
   const cellContentRefs = useRef<Map<string, Map<string, HTMLElement>>>(new Map());
@@ -91,7 +105,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
   const [quickFilterValue, setQuickFilterValue] = useState('');
   const [contextMenuTarget, setContextMenuTarget] = useState<any>(null); // State to hold inner clicked cell data
   const [contextMenuItems, setContextMenuItems] = useState<ContextMenuItem[]>([]);
-  
+
   const editingCellRef = useRef<{ rowId: string; field: string; value: any; originalValue: any } | null>(null);
   useEffect(() => {
     const container = containerRef.current;
@@ -165,7 +179,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
   }, [groupByFields, splitByField, groupedDisplayRows, displayedRows]);
 
   const gridContext = useGridContext<T>();
-  
+
   useEffect(() => {
     if (gridContext && gridId) {
       gridContext.registerGrid(gridId, api);
@@ -178,20 +192,20 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
   }, [api, onGridReady]);
 
   const effectiveContainerHeight = typeof height === 'number' ? height : (containerHeight || 600);
-  const toolbarHeight = showToolbar ? 48 : 0;
-  const statusBarHeight = showStatusBar ? 36 : 0;
-  const paginationHeight = pagination ? 52 : 0;
+  const toolbarHeight = effectiveShowToolbar ? 48 : 0;
+  const statusBarHeight = effectiveShowStatusBar ? 36 : 0;
+  const paginationHeight = effectiveShowPagination ? 52 : 0;
   const bodyHeight = effectiveContainerHeight - headerHeight - toolbarHeight - statusBarHeight - paginationHeight;
 
   const totalContentWidth = useMemo(() => {
     const checkboxWidth = rowSelection ? 48 : 0;
-    const rowNumberWidth = showRowNumbers ? 50 : 0;
+    const rowNumberWidth = effectiveShowRowNumbers ? 50 : 0;
     const columnsWidth = columns.reduce((sum, col) => sum + col.computedWidth, 0);
     return checkboxWidth + rowNumberWidth + columnsWidth;
-  }, [columns, rowSelection, showRowNumbers]);
+  }, [columns, rowSelection, effectiveShowRowNumbers]);
 
   const virtualizationHeight = Math.max(bodyHeight, 400);
-  
+
   const {
     virtualRows,
     totalHeight,
@@ -217,7 +231,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
   const measureColumnContent = useCallback((field: string): number => {
     const columnCells = cellContentRefs.current.get(field);
     if (!columnCells || columnCells.size === 0) return 100;
-    
+
     let maxWidth = 0;
     columnCells.forEach((cell) => {
       const span = document.createElement('span');
@@ -228,13 +242,13 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
       span.style.fontFamily = getComputedStyle(cell).fontFamily;
       span.textContent = cell.textContent || '';
       document.body.appendChild(span);
-      
+
       const width = span.offsetWidth;
       document.body.removeChild(span);
-      
+
       if (width > maxWidth) maxWidth = width;
     });
-    
+
     return Math.max(80, maxWidth);
   }, []);
 
@@ -312,8 +326,8 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     isSelecting,
   } = rangeCellSelection ? rangeSelectionHook : {
     isCellSelected: () => false,
-    handleCellMouseDown: () => {},
-    handleCellMouseEnter: () => {},
+    handleCellMouseDown: () => { },
+    handleCellMouseEnter: () => { },
     isSelecting: false,
   };
 
@@ -456,11 +470,11 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
   const handleRowClick = useCallback(
     (rowId: string, e: React.MouseEvent) => {
       if (isRowDragging || isDraggingRows) return;
-      
+
       if (rowSelection) {
         selectRow(rowId, true, e.shiftKey, e.ctrlKey || e.metaKey);
       }
-      
+
       if (onRowClickFallback) {
         const row = displayedRows.find(r => r.id === rowId);
         if (row) {
@@ -504,7 +518,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
         icon: <Download className="h-4 w-4" />,
         action: () => api.exportToCsv(),
       },
-      { name: '', action: () => {}, separator: true },
+      { name: '', action: () => { }, separator: true },
       {
         name: 'Delete Selected',
         icon: <Trash2 className="h-4 w-4" />,
@@ -563,7 +577,9 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
         className, // Theme class should come before Tailwind classes to ensure proper CSS specificity
         'relative flex flex-col rounded-lg overflow-hidden focus:outline-none focus:ring-2 focus:ring-primary/50',
         isResizing && 'cursor-col-resize select-none',
-        isSelecting && 'select-none cursor-crosshair'
+        isSelecting && 'select-none cursor-crosshair',
+        configs?.center?.borders === false && 'border-none',
+        configs?.center?.stripes && 'fibogrid-striped'
       )}
       style={{ height: height || '100%', minHeight: 400 }}
       tabIndex={0}
@@ -573,7 +589,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
         setContextMenuTarget(null);
       }}
     >
-      {showToolbar && (
+      {effectiveShowToolbar && (
         <GridToolbar
           api={api}
           columns={columns}
@@ -583,12 +599,13 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
           selectedCount={selection.selectedRows.size}
           totalCount={displayedRows.length}
           filterModel={filterModel}
-            onResetFilters={filterModel.length > 0 ? () => {
-              api.setFilterModel([]);
-              setQuickFilterValue('');
-            } : undefined}
-            className={className}
-          />
+          headerConfig={configs?.header}
+          onResetFilters={filterModel.length > 0 ? () => {
+            api.setFilterModel([]);
+            setQuickFilterValue('');
+          } : undefined}
+          className={className}
+        />
       )}
 
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -613,7 +630,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                 onDrop={handleColumnDrop}
                 draggedColumn={draggedColumn}
                 dragOverColumn={dragOverColumn}
-                showCheckboxColumn={!!rowSelection}
+                showCheckboxColumn={!!rowSelection} // TODO: Update based on configs.center.checkboxSelection if needed? logic is complex here
                 allSelected={allSelected}
                 someSelected={someSelected}
                 onSelectAll={() => (allSelected ? deselectAll() : selectAll())}
@@ -621,12 +638,12 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                 onQuickColumnFilter={handleQuickColumnFilter}
                 headerHeight={headerHeight}
                 measureColumnContent={measureColumnContent}
-                showRowNumbers={showRowNumbers}
+                showRowNumbers={effectiveShowRowNumbers}
                 onPinColumn={handlePinColumn}
                 onHideColumn={handleHideColumn}
                 onAutoSize={handleAutoSize}
                 onAutoSizeAll={handleAutoSizeAll}
-                showFilterRow={true}
+                showFilterRow={configs?.header?.filterRow ?? true}
                 className={className}
               />
             </div>
@@ -637,7 +654,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                   if (!isGroupRow(row)) {
                     const isSelected = selection.selectedRows.has(row.id);
                     const regularRow = row as any;
-                    
+
                     return (
                       <GridRow
                         key={row.id}
@@ -646,17 +663,17 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                         rowHeight={rowHeight}
                         isSelected={isSelected}
                         onRowClick={(e) => handleRowClick(row.id, e)}
-                        onRowDoubleClick={onRowDoubleClicked ? (e) => onRowDoubleClicked({ rowNode: row, event: e, api }) : () => {}}
+                        onRowDoubleClick={onRowDoubleClicked ? (e) => onRowDoubleClicked({ rowNode: row, event: e, api }) : () => { }}
                         onCellClick={(col, e) => {
                           e.stopPropagation();
-                          
+
                           if (rowSelection && !isRowDragging && !isDraggingRows) {
                             selectRow(row.id, true, e.shiftKey, e.ctrlKey || e.metaKey);
                           }
-                          
+
                           focusCell(row.id, col.field);
                           onCellClicked?.({ rowNode: row, column: col, value: (row.data as any)[col.field], event: e, api });
-                          
+
                           if (onRowClickFallback) {
                             detectCellClick((clickType) => {
                               onRowClickFallback({
@@ -705,10 +722,10 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                         }}
                         onStopEdit={(cancel, currentValue) => {
                           const currentEditing = editingCellRef.current;
-                          
+
                           if (currentEditing && !cancel && currentValue !== undefined) {
                             const column = columns.find((c) => c.field === currentEditing.field)!;
-                            
+
                             // VALIDATION: Check if valueSetter allows the change
                             let isValid = true;
                             if (column.valueSetter) {
@@ -724,7 +741,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                             if (isValid) {
                               currentEditing.value = currentValue;
                               editingCellRef.current = currentEditing;
-                              
+
                               onCellValueChanged?.({
                                 rowNode: { ...row, data: setValueAtPath(row.data, currentEditing.field, currentValue) },
                                 column,
@@ -761,7 +778,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                         isExpanded={expandedRows.has(row.id)}
                         onToggleExpand={() => toggleRowExpand(row.id)}
                         registerCellRef={registerCellRef}
-                        showRowNumbers={showRowNumbers}
+                        showRowNumbers={effectiveShowRowNumbers}
                         rowNumber={row.rowIndex + 1}
                         getRowClass={getRowClass}
                         onAddChildRow={handleAddChildRow}
@@ -769,71 +786,69 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
 
                         onRowRangeMouseEnter={handleRowRangeMouseEnter}
                         onCellContextMenu={(rowIndex, colIndex, e) => {
-                          // Do NOT prevent default here, as it blocks Radix UI ContextMenuTrigger from seeing the event
-                          // e.preventDefault(); 
-                          
+
                           const column = columns[colIndex];
                           const value = getValueFromPath(row.data, column.field);
 
                           // Selection Logic on Right Click
-                          
+
                           // 1. Always focus the clicked cell
                           focusCell(row.id, column.field);
 
-                            // 2. Handle Row Selection
-                            let currentSelectedRows = new Set(selection.selectedRows);
-                            if (rowSelection) {
-                               if (rowSelection === 'multiple') {
-                                 // Toggle logic
-                                 if (currentSelectedRows.has(row.id)) {
-                                   // Don't deselect on right click usually? 
-                                   // Actually user requested "toggle" behavior.
-                                   // But commonly right click adds to selection or selects if not selected.
-                                   // Let's assume it SELECTS.
-                                   // If already selected, do nothing.
-                                 } else {
-                                   currentSelectedRows.add(row.id);
-                                   selectRow(row.id, true);
-                                 }
-                               } else {
-                                 // Single selection
-                                 if (!currentSelectedRows.has(row.id)) {
-                                   deselectAll();
-                                   selectRow(row.id, true);
-                                   currentSelectedRows = new Set([row.id]);
-                                 }
-                               }
+                          // 2. Handle Row Selection
+                          let currentSelectedRows = new Set(selection.selectedRows);
+                          if (rowSelection) {
+                            if (rowSelection === 'multiple') {
+                              // Toggle logic
+                              if (currentSelectedRows.has(row.id)) {
+                                // Don't deselect on right click usually? 
+                                // Actually user requested "toggle" behavior.
+                                // But commonly right click adds to selection or selects if not selected.
+                                // Let's assume it SELECTS.
+                                // If already selected, do nothing.
+                              } else {
+                                currentSelectedRows.add(row.id);
+                                selectRow(row.id, true);
+                              }
+                            } else {
+                              // Single selection
+                              if (!currentSelectedRows.has(row.id)) {
+                                deselectAll();
+                                selectRow(row.id, true);
+                                currentSelectedRows = new Set([row.id]);
+                              }
                             }
-                            
-                            // Prepare data for context menu callback
-                            // We construct the "future" selection state for the callback to use
-                            const selectedData = displayedRows
-                              .filter(r => currentSelectedRows.has(r.id))
-                              .map(r => r.data);
-                              
-                            const params = {
-                              api,
-                              column,
-                              colDef: column,
-                              node: row,
-                              value,
-                              data: row.data,
-                              rowIndex: row.rowIndex,
-                              selectedRows: selectedData
-                            };
-                            
-                            // Generate items imperatively
-                            const items = getContextMenuItems 
-                              ? getContextMenuItems(params)
-                              : getDefaultContextMenuItems();
-                              
-                            setContextMenuItems(items);
-                            setContextMenuTarget(true); // Just a flag to say "open"
-                          }}
-                        />
+                          }
+
+                          // Prepare data for context menu callback
+                          // We construct the "future" selection state for the callback to use
+                          const selectedData = displayedRows
+                            .filter(r => currentSelectedRows.has(r.id))
+                            .map(r => r.data);
+
+                          const params = {
+                            api,
+                            column,
+                            colDef: column,
+                            node: row,
+                            value,
+                            data: row.data,
+                            rowIndex: row.rowIndex,
+                            selectedRows: selectedData
+                          };
+
+                          // Generate items imperatively
+                          const items = getContextMenuItems
+                            ? getContextMenuItems(params)
+                            : getDefaultContextMenuItems();
+
+                          setContextMenuItems(items);
+                          setContextMenuTarget(true); // Just a flag to say "open"
+                        }}
+                      />
                     );
                   }
-                  
+
                   const groupRow = row as unknown as GroupRowNode<T>;
                   // ... existing group row code ...
                   const isExpanded = expandedGroups.has(row.id);
@@ -861,37 +876,38 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
         </div>
       </div>
 
-      {pagination && (
-        <GridPagination
-          pagination={paginationState}
-          pageSizeOptions={paginationPageSizeOptions}
-          onPageChange={handlePageChange}
-          onPageSizeChange={handlePageSizeChange}
-          className={className}
-        />
-      )}
+      <div className="flex-none">
+        {effectiveShowPagination && paginationState.enabled && (
+          <GridPagination
+            pagination={paginationState}
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
+            pageSizeOptions={paginationPageSizeOptions}
+          />
+        )}
 
-      {showStatusBar && (
-        <GridStatusBar
-          displayedRows={displayedRows}
-          totalRows={paginationState.totalRows}
-          selectedCount={selection.selectedRows.size}
-          columns={columns}
-        />
-      )}
-
+        {effectiveShowStatusBar && footerInfo && (
+          <GridStatusBar
+            displayedRows={displayedRows}
+            totalRows={paginationState.totalRows}
+            selectedCount={selection.selectedRows.size}
+            columns={columns}
+            aggregations={groupAggregations as any}
+          />
+        )}
+      </div>
       {isLoading && (
-        <GridOverlay 
-          type="loading" 
-          customComponent={loadingOverlayComponent} 
+        <GridOverlay
+          type="loading"
+          customComponent={loadingOverlayComponent}
           headerHeight={headerHeight}
           toolbarHeight={showToolbar ? toolbarHeight : 0}
           filterRowHeight={36}
         />
       )}
       {!isLoading && displayedRows.length === 0 && (
-        <GridOverlay 
-          type="noRows" 
+        <GridOverlay
+          type="noRows"
           customComponent={noRowsOverlayComponent}
           headerHeight={headerHeight}
           toolbarHeight={showToolbar ? toolbarHeight : 0}
@@ -901,10 +917,10 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
 
       {filterState && (() => {
         const columnField = filterState.column.field;
-        const allValues = filterValues?.[columnField] 
+        const allValues = filterValues?.[columnField]
           ? filterValues[columnField]
           : allRows.map((r) => getValueFromPath(r.data, columnField));
-        
+
         return (
           <FilterPopover
             column={filterState.column}
@@ -926,16 +942,18 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     </div>
   );
 
-  if (contextMenu) {
-    return (
-      <GridContextMenu 
-        items={contextMenuItems} 
-        className={className} 
-      >
-        {gridContent}
-      </GridContextMenu>
-    );
-  }
+  const content = contextMenu ? (
+    <GridContextMenu
+      items={contextMenuItems}
+      className={className}
+    >
+      {gridContent}
+    </GridContextMenu>
+  ) : gridContent;
 
-  return gridContent;
+  return (
+    <GridProvider locale={lang}>
+      {content}
+    </GridProvider>
+  );
 }

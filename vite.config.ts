@@ -7,7 +7,7 @@ export default defineConfig(({ mode }) => {
   // Development: use '/' for local development (bun run dev)
   // Production: use '/fibogrid/' for GitHub Pages
   const base = mode === 'production' ? '/fibogrid/' : '/';
-  
+
   return {
     base,
     server: {
@@ -21,12 +21,10 @@ export default defineConfig(({ mode }) => {
         "@": path.resolve(__dirname, "./src"),
         // During development, alias 'fibogrid' to local source code
         // This allows importing 'fibogrid' without building the package first
-        ...(mode === 'development' && {
-          "fibogrid": path.resolve(__dirname, "./src/index.ts"),
-          "fibogrid/styles.css": path.resolve(__dirname, "./src/fibogrid-lib.css"),
-          "fibogrid/types": path.resolve(__dirname, "./src/components/FiboGrid/types.ts"),
-          "fibogrid/utils/excelExport": path.resolve(__dirname, "./src/components/FiboGrid/utils/excelExport.ts"),
-        }),
+        "fibogrid": path.resolve(__dirname, "./src/index.ts"),
+        "fibogrid/styles.css": path.resolve(__dirname, "./src/fibogrid-lib.css"),
+        "fibogrid/types": path.resolve(__dirname, "./src/components/FiboGrid/types.ts"),
+        "fibogrid/utils/excelExport": path.resolve(__dirname, "./src/components/FiboGrid/utils/excelExport.ts"),
       },
     },
   };

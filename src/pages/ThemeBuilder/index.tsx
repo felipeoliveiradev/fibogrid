@@ -13,7 +13,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { toast } from '@/hooks/use-toast';
 
-import { themePresets } from './ThemeBuilderPresets';
+import { themePresets } from './presets';
 
 // Sample data
 const sampleData = [
@@ -45,7 +45,7 @@ export default function ThemeBuilder() {
       styleRef.current.id = 'theme-builder-preview';
       document.head.appendChild(styleRef.current);
     }
-    
+
     // Generate CSS variables block
     // We target .fibogrid.theme-builder-preview to scope these variables
     // to the preview grid instance.
@@ -53,17 +53,17 @@ export default function ThemeBuilder() {
 /* Theme Builder Preview Scope */
 .fibogrid.theme-builder-preview {
 ${Object.entries(theme)
-  .filter(([key]) => key.startsWith('--fibogrid-'))
-  .map(([key, value]) => `  ${key}: ${value};`)
-  .join('\n')}
+        .filter(([key]) => key.startsWith('--fibogrid-'))
+        .map(([key, value]) => `  ${key}: ${value};`)
+        .join('\n')}
 }
 
 /* Also apply to body to ensure portals (like popovers, menus) inherit vars */
 body {
 ${Object.entries(theme)
-  .filter(([key]) => key.startsWith('--fibogrid-popover-') || key.startsWith('--fibogrid-column-menu-') || key.startsWith('--fibogrid-tooltip-'))
-  .map(([key, value]) => `  ${key}: ${value};`)
-  .join('\n')}
+        .filter(([key]) => key.startsWith('--fibogrid-popover-') || key.startsWith('--fibogrid-column-menu-') || key.startsWith('--fibogrid-tooltip-'))
+        .map(([key, value]) => `  ${key}: ${value};`)
+        .join('\n')}
 }
 `;
 
@@ -99,8 +99,8 @@ ${Object.entries(theme)
 
 .fibogrid.${themeName} {
 ${Object.entries(theme)
-  .map(([key, value]) => `  ${key}: ${value};`)
-  .join('\n')}
+        .map(([key, value]) => `  ${key}: ${value};`)
+        .join('\n')}
 }
 
 /* Add this class to your FiboGrid component: className="${themeName}" */
@@ -154,17 +154,17 @@ ${Object.entries(theme)
     </div>
   );
 
-  const NumberInput = ({ label, key, min, max, step, unit = 'px' }: { 
-    label: string; 
-    key: keyof ThemeValue; 
-    min?: number; 
-    max?: number; 
+  const NumberInput = ({ label, key, min, max, step, unit = 'px' }: {
+    label: string;
+    key: keyof ThemeValue;
+    min?: number;
+    max?: number;
     step?: number;
     unit?: string;
   }) => {
     const currentValue = theme[key];
     const numericValue = unit ? parseFloat(currentValue) || 0 : parseFloat(currentValue) || 0;
-    
+
     return (
       <div className="space-y-2">
         <Label htmlFor={key} className="text-sm font-medium">{label}</Label>
@@ -189,42 +189,42 @@ ${Object.entries(theme)
   };
 
   const columns: ColumnDef<typeof sampleData[0]>[] = useMemo(() => [
-    { 
-      field: 'country', 
-      headerName: 'Country', 
+    {
+      field: 'country',
+      headerName: 'Country',
       sortable: true,
       width: 140,
       pinned: 'left'
     },
-    { 
-      field: 'sport', 
-      headerName: 'Sport', 
+    {
+      field: 'sport',
+      headerName: 'Sport',
       sortable: true,
       width: 160,
     },
-    { 
-      field: 'athlete', 
-      headerName: 'Name', 
+    {
+      field: 'athlete',
+      headerName: 'Name',
       sortable: true,
       width: 160,
     },
-    { 
-      field: 'total', 
-      headerName: 'Total winnings', 
+    {
+      field: 'total',
+      headerName: 'Total winnings',
       sortable: true,
       width: 150,
       cellRenderer: ({ value }) => `$${value.toLocaleString()}`
     },
-    { 
-      field: 'year2023', 
-      headerName: '2023 winnings', 
+    {
+      field: 'year2023',
+      headerName: '2023 winnings',
       sortable: true,
       width: 150,
       cellRenderer: ({ value }) => `$${value.toLocaleString()}`
     },
-    { 
-      field: 'year2022', 
-      headerName: '2022 winnings', 
+    {
+      field: 'year2022',
+      headerName: '2022 winnings',
       sortable: true,
       width: 150,
       cellRenderer: ({ value }) => `$${value.toLocaleString()}`

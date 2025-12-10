@@ -4,10 +4,10 @@
  */
 
 /* Import theme variables first - these are scoped to .fibogrid */
-@import './fibogrid-theme.css';
+@import './theme.css';
 
 /* Import isolated styles for any custom components */
-@import './fibogrid-isolated.css';
+@import './core.css';
 
 /* Import ONLY Tailwind utilities and components, NOT base styles */
 @tailwind components;

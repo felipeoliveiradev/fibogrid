@@ -1,5 +1,5 @@
 // Styles - use lib version for build that doesn't include Tailwind base
-import './fibogrid-lib.css';
+import './components/FiboGrid/styles/lib.css';
 
 // Main exports
 export { FiboGrid } from './components/FiboGrid';
@@ -29,3 +29,8 @@ export { ColumnMenu } from './components/FiboGrid/components/ColumnMenu';
 export { GroupRow } from './components/FiboGrid/components/GroupRow';
 export { ColumnPanel } from './components/FiboGrid/components/ColumnPanel';
 export { FilterPanel } from './components/FiboGrid/components/FilterPanel';
+
+// Locales
+export type { FiboGridLocale } from './components/FiboGrid/locales/types';
+export { enUS } from './components/FiboGrid/locales/enUS';
+export { ptBR } from './components/FiboGrid/locales/ptBR';

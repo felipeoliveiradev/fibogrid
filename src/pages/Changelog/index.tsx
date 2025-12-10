@@ -4,19 +4,19 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { 
-  Github, 
-  ArrowLeft, 
-  Calendar, 
-  Tag, 
-  Sparkles, 
-  Wrench, 
-  Bug, 
+import {
+  Github,
+  ArrowLeft,
+  Calendar,
+  Tag,
+  Sparkles,
+  Wrench,
+  Bug,
   FileText,
   Hexagon
 } from 'lucide-react';
 // @ts-ignore
-import changelogMd from '../../CHANGELOG.md?raw';
+import changelogMd from '../../../CHANGELOG.md?raw';
 
 // Types for parsed changelog
 interface Release {
@@ -40,19 +40,19 @@ const FiboLogo = ({ className = "h-8 w-8" }: { className?: string }) => (
         <stop offset="100%" stopColor="hsl(38 60% 35%)" />
       </linearGradient>
     </defs>
-    <rect x="10" y="10" width="34" height="34" stroke="url(#goldGradient)" strokeWidth="2" fill="none" rx="2"/>
-    <rect x="44" y="10" width="21" height="21" stroke="url(#goldGradient)" strokeWidth="2" fill="none" rx="1"/>
-    <rect x="44" y="31" width="13" height="13" stroke="url(#goldGradient)" strokeWidth="2" fill="none" rx="1"/>
-    <rect x="57" y="31" width="8" height="8" stroke="url(#goldGradient)" strokeWidth="2" fill="none" rx="1"/>
-    <rect x="57" y="39" width="5" height="5" stroke="url(#goldGradient)" strokeWidth="2" fill="none" rx="0.5"/>
-    <rect x="10" y="50" width="55" height="40" stroke="url(#goldGradient)" strokeWidth="2" fill="none" rx="3"/>
-    <line x1="10" y1="60" x2="65" y2="60" stroke="url(#goldGradient)" strokeWidth="1.5"/>
-    <line x1="10" y1="70" x2="65" y2="70" stroke="url(#goldGradient)" strokeWidth="1"/>
-    <line x1="10" y1="80" x2="65" y2="80" stroke="url(#goldGradient)" strokeWidth="1"/>
-    <line x1="30" y1="50" x2="30" y2="90" stroke="url(#goldGradient)" strokeWidth="1"/>
-    <line x1="50" y1="50" x2="50" y2="90" stroke="url(#goldGradient)" strokeWidth="1"/>
-    <circle cx="80" cy="70" r="12" stroke="url(#goldGradient)" strokeWidth="2" fill="none"/>
-    <circle cx="80" cy="70" r="7" stroke="url(#goldGradient)" strokeWidth="1.5" fill="hsl(40 65% 45% / 0.2)"/>
+    <rect x="10" y="10" width="34" height="34" stroke="url(#goldGradient)" strokeWidth="2" fill="none" rx="2" />
+    <rect x="44" y="10" width="21" height="21" stroke="url(#goldGradient)" strokeWidth="2" fill="none" rx="1" />
+    <rect x="44" y="31" width="13" height="13" stroke="url(#goldGradient)" strokeWidth="2" fill="none" rx="1" />
+    <rect x="57" y="31" width="8" height="8" stroke="url(#goldGradient)" strokeWidth="2" fill="none" rx="1" />
+    <rect x="57" y="39" width="5" height="5" stroke="url(#goldGradient)" strokeWidth="2" fill="none" rx="0.5" />
+    <rect x="10" y="50" width="55" height="40" stroke="url(#goldGradient)" strokeWidth="2" fill="none" rx="3" />
+    <line x1="10" y1="60" x2="65" y2="60" stroke="url(#goldGradient)" strokeWidth="1.5" />
+    <line x1="10" y1="70" x2="65" y2="70" stroke="url(#goldGradient)" strokeWidth="1" />
+    <line x1="10" y1="80" x2="65" y2="80" stroke="url(#goldGradient)" strokeWidth="1" />
+    <line x1="30" y1="50" x2="30" y2="90" stroke="url(#goldGradient)" strokeWidth="1" />
+    <line x1="50" y1="50" x2="50" y2="90" stroke="url(#goldGradient)" strokeWidth="1" />
+    <circle cx="80" cy="70" r="12" stroke="url(#goldGradient)" strokeWidth="2" fill="none" />
+    <circle cx="80" cy="70" r="7" stroke="url(#goldGradient)" strokeWidth="1.5" fill="hsl(40 65% 45% / 0.2)" />
   </svg>
 );
 
@@ -167,7 +167,7 @@ export default function Changelog() {
   return (
     <div className="min-h-screen bg-background relative selection:bg-primary/20">
       <div className="fixed inset-0 texture-overlay pointer-events-none" />
-      
+
       {/* Header */}
       <header className="sticky top-0 z-50 overflow-hidden border-b border-primary/10 bg-background/80 backdrop-blur-sm">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-background to-accent/5" />
@@ -213,9 +213,9 @@ export default function Changelog() {
 
         <div className="space-y-12">
           {releases.map((release, i) => (
-            <div 
-              key={release.version} 
-              className="group animate-fade-up" 
+            <div
+              key={release.version}
+              className="group animate-fade-up"
               style={{ animationDelay: `${i * 100}ms` }}
             >
               <div className="grid md:grid-cols-[120px_1fr] gap-8 items-start">
@@ -239,7 +239,7 @@ export default function Changelog() {
                   <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
                     <FiboLogo className="h-24 w-24 transform rotate-12" />
                   </div>
-                  
+
                   <CardContent className="p-6 md:p-8 space-y-8">
                     {release.sections.map((section, idx) => (
                       <div key={idx}>

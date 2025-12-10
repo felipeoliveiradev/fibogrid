@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ProcessedColumn, GridApi, FilterModel } from '../types';
+import { ProcessedColumn, GridApi, FilterModel, FiboGridConfigs } from '../types';
 import { cn } from '@/lib/utils';
 import {
   Search,
@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useGridContext } from '../context/GridContext';
 
 interface GridToolbarProps<T> {
   api: GridApi<T>;
@@ -34,6 +35,7 @@ interface GridToolbarProps<T> {
   filterModel?: FilterModel[];
   onResetFilters?: () => void;
   className?: string;
+  headerConfig?: FiboGridConfigs['header'];
 }
 
 export function GridToolbar<T>({
@@ -47,8 +49,22 @@ export function GridToolbar<T>({
   filterModel = [],
   onResetFilters,
   className,
+  headerConfig,
 }: GridToolbarProps<T>) {
+  const { locale } = useGridContext<T>()!;
   const [copied, setCopied] = useState(false);
+  const [localSearch, setLocalSearch] = useState(quickFilterValue);
+
+  // Sync local search when external prop changes (e.g. clear filter)
+  React.useEffect(() => {
+    setLocalSearch(quickFilterValue);
+  }, [quickFilterValue]);
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      onQuickFilterChange(localSearch);
+    }
+  };
 
   const handleExport = () => {
     api.exportToCsv({ fileName: 'data-export.csv' });
@@ -64,18 +80,20 @@ export function GridToolbar<T>({
     api.refreshCells();
   };
 
-  const hasActiveFilters = filterModel.length > 0 || quickFilterValue.length > 0;
-  
+  const showSearch = headerConfig?.search !== false;
+  const showFilterTags = headerConfig?.filterButton !== false; // Reuse existing filter tags logic but maybe rename later? Plan said "filterButton", user meant tags usually.
+  const hasActiveFilters = (filterModel.length > 0 || quickFilterValue.length > 0) && showFilterTags;
+
   const getFilterLabel = (filter: FilterModel): string => {
     const column = columns.find(c => c.field === filter.field);
     const columnName = column?.headerName || filter.field;
-    
+
     if (Array.isArray(filter.value)) {
       const count = filter.value.length;
-      return `${columnName}: ${count} selected`;
+      return locale.toolbar.filterLabelCount(columnName, count);
     }
-    
-    return `${columnName}: ${filter.value}`;
+
+    return locale.toolbar.filterLabel(columnName, filter.value);
   };
 
   return (
@@ -83,8 +101,8 @@ export function GridToolbar<T>({
       {/* Active Filters Row */}
       {hasActiveFilters && (
         <div className="flex items-center gap-2 px-3 py-2 border-b border-border bg-muted/20">
-          <span className="text-xs text-muted-foreground font-medium">Active Filters:</span>
-          
+          <span className="text-xs text-muted-foreground font-medium">{locale.toolbar.activeFilters}</span>
+
           {/* Quick Filter Tag */}
           {quickFilterValue && (
             <div className="flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded-md text-xs">
@@ -98,7 +116,7 @@ export function GridToolbar<T>({
               </button>
             </div>
           )}
-          
+
           {/* Column Filters Tags */}
           {filterModel.map((filter, idx) => (
             <div
@@ -117,7 +135,7 @@ export function GridToolbar<T>({
               </button>
             </div>
           ))}
-          
+
           {/* Reset All Button */}
           {onResetFilters && (
             <Button
@@ -127,137 +145,155 @@ export function GridToolbar<T>({
               onClick={onResetFilters}
             >
               <FilterX className="h-3 w-3 mr-1" />
-              Reset All
+              {locale.toolbar.resetAll}
             </Button>
           )}
         </div>
       )}
-      
+
       {/* Search and Tools Row */}
       <div className="flex items-center gap-2 p-2 border-b border-border bg-muted/30">
-      {/* Search Input */}
-      <div className="relative flex-1 max-w-sm">
-        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Quick filter..."
-          value={quickFilterValue}
-          onChange={(e) => onQuickFilterChange(e.target.value)}
-          className="pl-9 h-8 text-sm"
-        />
-        {quickFilterValue && (
-          <button
-            onClick={() => onQuickFilterChange('')}
-            className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 hover:bg-muted rounded"
-          >
-            <X className="h-3 w-3 text-muted-foreground" />
-          </button>
+        {/* Search Input */}
+        {showSearch && (
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder={locale.toolbar.searchPlaceholder}
+              value={localSearch}
+              onChange={(e) => setLocalSearch(e.target.value)}
+              onKeyDown={handleSearchKeyDown}
+              className="pl-9 h-8 text-sm"
+            />
+            {quickFilterValue && (
+              <button
+                onClick={() => onQuickFilterChange('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 hover:bg-muted rounded"
+              >
+                <X className="h-3 w-3 text-muted-foreground" />
+              </button>
+            )}
+          </div>
         )}
-      </div>
 
-      {/* Selection Count */}
-      {selectedCount > 0 && (
-        <div className="text-sm text-muted-foreground px-2 py-1 bg-primary/10 rounded">
-          {selectedCount} of {totalCount} selected
-        </div>
-      )}
+        {/* Selection Count */}
+        {selectedCount > 0 && (
+          <div className="text-sm text-muted-foreground px-2 py-1 bg-primary/10 rounded">
+            {locale.toolbar.selectedCount(selectedCount, totalCount)}
+          </div>
+        )}
 
-      {/* Toolbar Buttons */}
-      <div className="flex items-center gap-1 ml-auto">
-        {/* Columns Toggle */}
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-8 px-2">
-              <Columns className="h-4 w-4" />
-              <span className="ml-1.5 hidden sm:inline">Columns</span>
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className={cn("fibogrid w-56 p-0 fibogrid-popover-content bg-popover border-border", className)} align="end">
-            <div className="p-2 fibogrid-popover-content-header">
-              <span className="text-sm font-medium">Toggle Columns</span>
-            </div>
-            <ScrollArea className="h-64">
-              <div className="p-2 space-y-1">
-                {columns.map((col) => (
-                  <label
-                    key={col.field}
-                    className="flex items-center gap-2 px-2 py-1.5 fibogrid-popover-content-item cursor-pointer"
+        {/* Custom Actions (Middle/Right aligned) */}
+        {headerConfig?.customActions && (
+          <div className="flex items-center gap-2 ml-auto">
+            {headerConfig.customActions}
+          </div>
+        )}
+
+        {/* Toolbar Buttons */}
+        <div className={cn("flex items-center gap-1", !headerConfig?.customActions && "ml-auto")}>
+          {/* Columns Toggle */}
+          {headerConfig?.columnsButton !== false && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 px-2">
+                  <Columns className="h-4 w-4" />
+                  <span className="ml-1.5 hidden sm:inline">{locale.toolbar.columns}</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className={cn("fibogrid w-56 p-0 fibogrid-popover-content bg-popover border-border", className)} align="end">
+                <div className="p-2 fibogrid-popover-content-header">
+                  <span className="text-sm font-medium">{locale.toolbar.toggleColumns}</span>
+                </div>
+                <ScrollArea className="h-64">
+                  <div className="p-2 space-y-1">
+                    {columns.map((col) => (
+                      <label
+                        key={col.field}
+                        className="flex items-center gap-2 px-2 py-1.5 fibogrid-popover-content-item cursor-pointer"
+                      >
+                        <Checkbox
+                          checked={!col.hide}
+                          onCheckedChange={(checked) =>
+                            onColumnVisibilityChange(col.field, !!checked)
+                          }
+                        />
+                        <span className="text-sm flex-1 truncate">{col.headerName}</span>
+                        {col.hide ? (
+                          <EyeOff className="h-3 w-3 fibogrid-column-panel-icon" />
+                        ) : (
+                          <Eye className="h-3 w-3 fibogrid-column-panel-icon" />
+                        )}
+                      </label>
+                    ))}
+                  </div>
+                </ScrollArea>
+                <div className="p-2 fibogrid-popover-content-footer flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 h-7 text-xs"
+                    onClick={() => columns.forEach((c) => onColumnVisibilityChange(c.field, true))}
                   >
-                    <Checkbox
-                      checked={!col.hide}
-                      onCheckedChange={(checked) =>
-                        onColumnVisibilityChange(col.field, !!checked)
-                      }
-                    />
-                    <span className="text-sm flex-1 truncate">{col.headerName}</span>
-                    {col.hide ? (
-                      <EyeOff className="h-3 w-3 fibogrid-column-panel-icon" />
-                    ) : (
-                      <Eye className="h-3 w-3 fibogrid-column-panel-icon" />
-                    )}
-                  </label>
-                ))}
-              </div>
-            </ScrollArea>
-            <div className="p-2 fibogrid-popover-content-footer flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex-1 h-7 text-xs"
-                onClick={() => columns.forEach((c) => onColumnVisibilityChange(c.field, true))}
-              >
-                Show All
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex-1 h-7 text-xs"
-                onClick={() =>
-                  columns.slice(2).forEach((c) => onColumnVisibilityChange(c.field, false))
-                }
-              >
-                Hide All
-              </Button>
-            </div>
-          </PopoverContent>
-        </Popover>
-
-        {/* Copy Button */}
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 px-2"
-          onClick={handleCopy}
-        >
-          {copied ? (
-            <Check className="h-4 w-4 text-green-500" />
-          ) : (
-            <Copy className="h-4 w-4" />
+                    {locale.toolbar.showAll}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 h-7 text-xs"
+                    onClick={() =>
+                      columns.slice(2).forEach((c) => onColumnVisibilityChange(c.field, false))
+                    }
+                  >
+                    {locale.toolbar.hideAll}
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
           )}
-          <span className="ml-1.5 hidden sm:inline">{copied ? 'Copied!' : 'Copy'}</span>
-        </Button>
 
-        {/* Export Button */}
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 px-2"
-          onClick={handleExport}
-        >
-          <Download className="h-4 w-4" />
-          <span className="ml-1.5 hidden sm:inline">Export</span>
-        </Button>
+          {/* Copy Button */}
+          {headerConfig?.copyButton !== false && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 px-2"
+              onClick={handleCopy}
+            >
+              {copied ? (
+                <Check className="h-4 w-4 text-green-500" />
+              ) : (
+                <Copy className="h-4 w-4" />
+              )}
+              <span className="ml-1.5 hidden sm:inline">{copied ? locale.toolbar.copied : locale.toolbar.copy}</span>
+            </Button>
+          )}
 
-        {/* Refresh Button */}
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 px-2"
-          onClick={handleRefresh}
-        >
-          <RefreshCw className="h-4 w-4" />
-        </Button>
+          {/* Export Button */}
+          {headerConfig?.exportButton !== false && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 px-2"
+              onClick={handleExport}
+            >
+              <Download className="h-4 w-4" />
+              <span className="ml-1.5 hidden sm:inline">{locale.toolbar.export}</span>
+            </Button>
+          )}
+
+          {/* Refresh Button */}
+          {headerConfig?.refreshButton !== false && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 px-2"
+              onClick={handleRefresh}
+            >
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
       </div>
-    </div>
     </div>
   );
 }

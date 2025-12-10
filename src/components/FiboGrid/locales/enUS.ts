@@ -1,0 +1,77 @@
+import { FiboGridLocale } from './types';
+
+export const enUS: FiboGridLocale = {
+    toolbar: {
+        searchPlaceholder: 'Quick filter...',
+        columns: 'Columns',
+        showAll: 'Show All',
+        hideAll: 'Hide All',
+        copy: 'Copy',
+        copied: 'Copied!',
+        export: 'Export',
+        activeFilters: 'Active Filters:',
+        resetAll: 'Reset All',
+        toggleColumns: 'Toggle Columns',
+        selectedCount: (selected, total) => `${selected} of ${total} selected`,
+        filterLabel: (column, value) => `${column}: ${value}`,
+        filterLabelCount: (column, count) => `${column}: ${count} selected`,
+    },
+    pagination: {
+        rowsPerPage: 'Rows per page:',
+        pageInfo: (start, end, total) => `${start}-${end} of ${total}`,
+        zeroRows: '0 rows',
+        pageOf: (current, total) => `Page ${current} of ${total}`,
+    },
+    statusBar: {
+        rows: 'rows',
+        selected: (count) => `${count} selected`,
+        totalRows: (count) => `of ${count}`,
+        aggregations: {
+            sum: 'Σ',
+            avg: 'μ',
+            min: 'Min',
+            max: 'Max',
+            count: 'Count',
+        }
+    },
+    columnMenu: {
+        sortAsc: 'Sort Ascending',
+        sortDesc: 'Sort Descending',
+        pinColumn: 'Pin Column',
+        noPin: 'No Pin',
+        pinLeft: 'Pin Left',
+        pinRight: 'Pin Right',
+        autosizeColumn: 'Autosize This Column',
+        autosizeAll: 'Autosize All Columns',
+        filter: 'Filter...',
+        hideColumn: 'Hide Column',
+    },
+    filter: {
+        values: 'Values',
+        condition: 'Condition',
+        searchPlaceholder: 'Search...',
+        selectAll: '(Select All)',
+        clear: 'Clear',
+        apply: 'Apply',
+        noValues: 'No values found',
+        operators: {
+            contains: 'Contains',
+            equals: 'Equals',
+            startsWith: 'Starts with',
+            endsWith: 'Ends with',
+            greaterThan: 'Greater than',
+            lessThan: 'Less than',
+            between: 'Between',
+            after: 'After',
+            before: 'Before',
+        },
+        boolean: {
+            true: 'Yes',
+            false: 'No',
+        },
+    },
+    overlay: {
+        loading: 'Loading...',
+        noRows: 'No rows to display',
+    },
+};

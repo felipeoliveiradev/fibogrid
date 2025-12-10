@@ -1,19 +1,24 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { RowNode, GridApi } from '../types';
+import { FiboGridLocale } from '../locales/types';
+import { enUS } from '../locales/enUS';
 
 interface GridContextValue<T = any> {
-
+  // ... existing properties
   selectedRow: RowNode<T> | null;
   setSelectedRow: (row: RowNode<T> | null) => void;
-  
 
+  // Grid Registry
   registerGrid: (id: string, api: GridApi<T>) => void;
   unregisterGrid: (id: string) => void;
   getGridApi: (id: string) => GridApi<T> | undefined;
-  
 
+  // Row Selection Events
   onRowSelect: (gridId: string, row: RowNode<T>) => void;
   subscribeToRowSelect: (callback: (gridId: string, row: RowNode<T>) => void) => () => void;
+
+  // Localization
+  locale: FiboGridLocale;
 }
 
 const GridContext = createContext<GridContextValue | null>(null);
@@ -21,9 +26,10 @@ const GridContext = createContext<GridContextValue | null>(null);
 interface GridProviderProps {
   children: ReactNode;
   onRowSelectChange?: (gridId: string, row: RowNode<any>) => void;
+  locale?: FiboGridLocale;
 }
 
-export function GridProvider<T = any>({ children, onRowSelectChange }: GridProviderProps) {
+export function GridProvider<T = any>({ children, onRowSelectChange, locale = enUS }: GridProviderProps) {
   const [selectedRow, setSelectedRow] = useState<RowNode<T> | null>(null);
   const [grids, setGrids] = useState<Map<string, GridApi<T>>>(new Map());
   const [subscribers, setSubscribers] = useState<Array<(gridId: string, row: RowNode<T>) => void>>([]);
@@ -70,6 +76,7 @@ export function GridProvider<T = any>({ children, onRowSelectChange }: GridProvi
       getGridApi,
       onRowSelect,
       subscribeToRowSelect,
+      locale,
     }}>
       {children}
     </GridContext.Provider>

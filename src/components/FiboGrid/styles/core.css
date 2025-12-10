@@ -1,7 +1,7 @@
 /* FiboGrid - Fully Isolated Styles
  * This file contains ALL styles needed for FiboGrid to work independently
  * No Tailwind, no global resets, no side effects on user's application
- * NOTE: Requires fibogrid-theme.css to be imported separately
+ * NOTE: Requires theme.css to be imported separately
  */
 
 /* Reset and base styles - ONLY for .fibogrid container */

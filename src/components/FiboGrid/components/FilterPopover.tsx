@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Filter, X, Search, SortAsc, SortDesc } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { VirtualFilterList } from './VirtualFilterList';
+import { useGridContext } from '../context/GridContext';
 
 interface FilterPopoverProps<T> {
   column: ProcessedColumn<T>;
@@ -35,6 +36,7 @@ export function FilterPopover<T>({
   enableVirtualization = false,
   className,
 }: FilterPopoverProps<T>) {
+  const { locale } = useGridContext<T>()!;
   const popoverRef = useRef<HTMLDivElement>(null);
   const [value, setValue] = useState(currentFilter?.value ?? '');
   const [operator, setOperator] = useState<string>(currentFilter?.operator ?? 'contains');
@@ -44,7 +46,7 @@ export function FilterPopover<T>({
   const [isInitialized, setIsInitialized] = useState(false);
 
   const filterType = column.filterType || 'text';
-  const operators = getOperatorsForType(filterType);
+  const operators = getOperatorsForType(filterType, locale);
 
 
   const uniqueValues = useMemo(() => {
@@ -60,7 +62,7 @@ export function FilterPopover<T>({
 
   const filteredValues = useMemo(() => {
     if (!searchTerm) return uniqueValues;
-    return uniqueValues.filter(v => 
+    return uniqueValues.filter(v =>
       v.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [uniqueValues, searchTerm]);
@@ -68,7 +70,7 @@ export function FilterPopover<T>({
 
   useEffect(() => {
     if (uniqueValues.length === 0) return;
-    
+
     if (!isInitialized) {
       if (currentFilter?.value && Array.isArray(currentFilter.value)) {
         setSelectedValues(new Set(currentFilter.value.map(String)));
@@ -88,11 +90,11 @@ export function FilterPopover<T>({
         onClose();
       }
     };
-    
+
     const timer = setTimeout(() => {
       document.addEventListener('mousedown', handleClickOutside);
     }, 100);
-    
+
     return () => {
       clearTimeout(timer);
       document.removeEventListener('mousedown', handleClickOutside);
@@ -113,10 +115,16 @@ export function FilterPopover<T>({
     onClose();
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleApplyCondition();
+    }
+  };
+
   const handleApplyValues = () => {
     console.log('Applying filter with selected values:', Array.from(selectedValues));
     console.log('selectAll:', selectAll, 'uniqueValues.length:', uniqueValues.length, 'selectedValues.size:', selectedValues.size);
-    
+
     if (selectAll) {
 
       console.log('All selected, clearing filter');
@@ -187,9 +195,9 @@ export function FilterPopover<T>({
 
   const style = useMemo(() => {
     if (!anchorRect) return { top: 0, left: 0 };
-    
+
     const containerRect = containerRef?.current?.getBoundingClientRect();
-    
+
     if (containerRect) {
 
       return {
@@ -198,7 +206,7 @@ export function FilterPopover<T>({
         left: Math.max(0, anchorRect.left - containerRect.left),
       };
     }
-    
+
 
     return {
       position: 'fixed' as const,
@@ -215,7 +223,7 @@ export function FilterPopover<T>({
       onClick={(e) => e.stopPropagation()}
     >
       <div className="flex flex-col">
-        {}
+        { }
         <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-muted/50 rounded-t-lg">
           <div className="flex items-center gap-2">
             <Filter className="h-4 w-4 text-muted-foreground" />
@@ -226,12 +234,12 @@ export function FilterPopover<T>({
           </Button>
         </div>
 
-        {}
+        { }
         {onSort && (
           <div className="flex gap-1 px-3 py-2 border-b border-border">
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               className="flex-1 justify-start gap-2"
               onClick={() => {
                 onSort('asc');
@@ -239,11 +247,11 @@ export function FilterPopover<T>({
               }}
             >
               <SortAsc className="h-4 w-4" />
-              Sort A to Z
+              {locale.columnMenu.sortAsc}
             </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               className="flex-1 justify-start gap-2"
               onClick={() => {
                 onSort('desc');
@@ -251,7 +259,7 @@ export function FilterPopover<T>({
               }}
             >
               <SortDesc className="h-4 w-4" />
-              Sort Z to A
+              {locale.columnMenu.sortDesc}
             </Button>
           </div>
         )}
@@ -259,39 +267,39 @@ export function FilterPopover<T>({
         <Tabs defaultValue="values" className="w-full">
           <TabsList className="w-full rounded-none border-b border-border bg-transparent h-9">
             <TabsTrigger value="values" className="flex-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent">
-              Values
+              {locale.filter.values}
             </TabsTrigger>
             <TabsTrigger value="condition" className="flex-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent">
-              Condition
+              {locale.filter.condition}
             </TabsTrigger>
           </TabsList>
 
-          {}
+          { }
           <TabsContent value="values" className="mt-0">
             <div className="p-3 space-y-2">
-              {}
+              { }
               <div className="relative">
                 <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search..."
+                  placeholder={locale.filter.searchPlaceholder}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-8 h-8"
                 />
               </div>
 
-              {}
-              <label 
+              { }
+              <label
                 className="flex items-center gap-2 py-1.5 px-2 hover:bg-muted rounded cursor-pointer"
               >
-                <Checkbox 
-                  checked={selectAll} 
+                <Checkbox
+                  checked={selectAll}
                   onCheckedChange={() => toggleAll()}
                 />
-                <span className="text-sm font-medium">(Select All)</span>
+                <span className="text-sm font-medium">{locale.filter.selectAll}</span>
               </label>
 
-              {}
+              { }
               {enableVirtualization ? (
                 <VirtualFilterList
                   values={filteredValues}
@@ -309,7 +317,7 @@ export function FilterPopover<T>({
                         key={val}
                         className="flex items-center gap-2 py-1.5 px-2 hover:bg-muted rounded cursor-pointer"
                       >
-                        <Checkbox 
+                        <Checkbox
                           checked={selectedValues.has(val)}
                           onCheckedChange={() => toggleValue(val)}
                         />
@@ -318,26 +326,26 @@ export function FilterPopover<T>({
                     ))}
                     {filteredValues.length === 0 && (
                       <div className="text-sm text-muted-foreground text-center py-4">
-                        No values found
+                        {locale.filter.noValues}
                       </div>
                     )}
                   </div>
                 </ScrollArea>
               )}
 
-              {}
+              { }
               <div className="flex gap-2 pt-2">
                 <Button variant="outline" className="flex-1" onClick={handleClear}>
-                  Clear
+                  {locale.filter.clear}
                 </Button>
                 <Button className="flex-1" onClick={handleApplyValues}>
-                  Apply
+                  {locale.filter.apply}
                 </Button>
               </div>
             </div>
           </TabsContent>
 
-          {}
+          { }
           <TabsContent value="condition" className="mt-0">
             <div className="p-3 space-y-3">
               <Select value={operator} onValueChange={setOperator}>
@@ -353,14 +361,14 @@ export function FilterPopover<T>({
                 </SelectContent>
               </Select>
 
-              {renderInput(filterType, value, setValue, className)}
+              {renderInput(filterType, value, setValue, handleKeyDown, className)}
 
               <div className="flex gap-2 pt-2">
                 <Button variant="outline" className="flex-1" onClick={handleClear}>
-                  Clear
+                  {locale.filter.clear}
                 </Button>
                 <Button className="flex-1" onClick={handleApplyCondition}>
-                  Apply
+                  {locale.filter.apply}
                 </Button>
               </div>
             </div>
@@ -371,28 +379,28 @@ export function FilterPopover<T>({
   );
 }
 
-function getOperatorsForType(type: string) {
+function getOperatorsForType(type: string, locale: import('../locales/types').FiboGridLocale) {
   switch (type) {
     case 'number':
       return [
-        { value: 'equals', label: 'Equals' },
-        { value: 'greaterThan', label: 'Greater than' },
-        { value: 'lessThan', label: 'Less than' },
-        { value: 'between', label: 'Between' },
+        { value: 'equals', label: locale.filter.operators.equals },
+        { value: 'greaterThan', label: locale.filter.operators.greaterThan },
+        { value: 'lessThan', label: locale.filter.operators.lessThan },
+        { value: 'between', label: locale.filter.operators.between },
       ];
     case 'date':
       return [
-        { value: 'equals', label: 'Equals' },
-        { value: 'greaterThan', label: 'After' },
-        { value: 'lessThan', label: 'Before' },
-        { value: 'between', label: 'Between' },
+        { value: 'equals', label: locale.filter.operators.equals },
+        { value: 'greaterThan', label: locale.filter.operators.after },
+        { value: 'lessThan', label: locale.filter.operators.before },
+        { value: 'between', label: locale.filter.operators.between },
       ];
     default:
       return [
-        { value: 'contains', label: 'Contains' },
-        { value: 'equals', label: 'Equals' },
-        { value: 'startsWith', label: 'Starts with' },
-        { value: 'endsWith', label: 'Ends with' },
+        { value: 'contains', label: locale.filter.operators.contains },
+        { value: 'equals', label: locale.filter.operators.equals },
+        { value: 'startsWith', label: locale.filter.operators.startsWith },
+        { value: 'endsWith', label: locale.filter.operators.endsWith },
       ];
   }
 }
@@ -401,6 +409,7 @@ function renderInput(
   type: string,
   value: any,
   onChange: (value: any) => void,
+  onKeyDown: (e: React.KeyboardEvent) => void,
   className?: string
 ) {
   switch (type) {
@@ -411,6 +420,7 @@ function renderInput(
           placeholder="Enter value..."
           value={value}
           onChange={(e) => onChange(e.target.value)}
+          onKeyDown={onKeyDown}
           className="h-8"
         />
       );
@@ -420,13 +430,14 @@ function renderInput(
           type="date"
           value={value}
           onChange={(e) => onChange(e.target.value)}
+          onKeyDown={onKeyDown}
           className="h-8"
         />
       );
     case 'boolean':
       return (
         <Select value={String(value)} onValueChange={(v) => onChange(v === 'true')}>
-          <SelectTrigger className="h-8">
+          <SelectTrigger className="h-8" onKeyDown={onKeyDown}>
             <SelectValue placeholder="Select..." />
           </SelectTrigger>
           <SelectContent className={cn("fibogrid bg-popover border border-border z-[110]", className)}>
@@ -441,6 +452,7 @@ function renderInput(
           placeholder="Enter value..."
           value={value}
           onChange={(e) => onChange(e.target.value)}
+          onKeyDown={onKeyDown}
           className="h-8"
         />
       );

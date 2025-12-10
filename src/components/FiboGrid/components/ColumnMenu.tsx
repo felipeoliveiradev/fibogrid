@@ -23,6 +23,7 @@ import {
   Filter,
   Check,
 } from 'lucide-react';
+import { useGridContext } from '../context/GridContext';
 
 interface ColumnMenuProps<T> {
   column: ProcessedColumn<T>;
@@ -47,6 +48,7 @@ export function ColumnMenu<T>({
   children,
   className,
 }: ColumnMenuProps<T>) {
+  const { locale } = useGridContext<T>()!;
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const handleFilterClick = () => {
@@ -60,44 +62,44 @@ export function ColumnMenu<T>({
     <DropdownMenu>
       <DropdownMenuTrigger asChild ref={triggerRef}>{children}</DropdownMenuTrigger>
       <DropdownMenuContent align="start" className={cn("fibogrid w-52 bg-popover border border-border z-[100]", className)}>
-        {}
+        { }
         {column.sortable !== false && onSort && (
           <>
             <DropdownMenuItem onClick={() => onSort(column.field, 'asc')}>
               <ArrowUp className="h-4 w-4 mr-2" />
-              Sort Ascending
+              {locale.columnMenu.sortAsc}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onSort(column.field, 'desc')}>
               <ArrowDown className="h-4 w-4 mr-2" />
-              Sort Descending
+              {locale.columnMenu.sortDesc}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
           </>
         )}
 
-        {}
+        { }
         {onPin && (
           <>
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>
                 <Pin className="h-4 w-4 mr-2" />
-                Pin Column
+                {locale.columnMenu.pinColumn}
               </DropdownMenuSubTrigger>
               <DropdownMenuSubContent className="bg-popover border border-border z-[110]">
                 <DropdownMenuItem onClick={() => onPin(column.field, null)}>
                   {!column.pinned && <Check className="h-4 w-4 mr-2" />}
                   {column.pinned && <span className="w-4 mr-2" />}
-                  No Pin
+                  {locale.columnMenu.noPin}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => onPin(column.field, 'left')}>
                   {column.pinned === 'left' && <Check className="h-4 w-4 mr-2" />}
                   {column.pinned !== 'left' && <ArrowLeftToLine className="h-4 w-4 mr-2" />}
-                  Pin Left
+                  {locale.columnMenu.pinLeft}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => onPin(column.field, 'right')}>
                   {column.pinned === 'right' && <Check className="h-4 w-4 mr-2" />}
                   {column.pinned !== 'right' && <ArrowRightToLine className="h-4 w-4 mr-2" />}
-                  Pin Right
+                  {locale.columnMenu.pinRight}
                 </DropdownMenuItem>
               </DropdownMenuSubContent>
             </DropdownMenuSub>
@@ -105,39 +107,39 @@ export function ColumnMenu<T>({
           </>
         )}
 
-        {}
+        { }
         {onAutoSize && (
           <DropdownMenuItem onClick={() => onAutoSize(column.field)}>
             <Maximize2 className="h-4 w-4 mr-2" />
-            Autosize This Column
+            {locale.columnMenu.autosizeColumn}
           </DropdownMenuItem>
         )}
-        
+
         {onAutoSizeAll && (
           <DropdownMenuItem onClick={onAutoSizeAll}>
             <Columns className="h-4 w-4 mr-2" />
-            Autosize All Columns
+            {locale.columnMenu.autosizeAll}
           </DropdownMenuItem>
         )}
 
         {(onAutoSize || onAutoSizeAll) && <DropdownMenuSeparator />}
 
-        {}
+        { }
         {column.filterable !== false && onFilterClick && (
           <>
             <DropdownMenuItem onClick={handleFilterClick}>
               <Filter className="h-4 w-4 mr-2" />
-              Filter...
+              {locale.columnMenu.filter}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
           </>
         )}
 
-        {}
+        { }
         {onHide && (
           <DropdownMenuItem onClick={() => onHide(column.field)}>
             <EyeOff className="h-4 w-4 mr-2" />
-            Hide Column
+            {locale.columnMenu.hideColumn}
           </DropdownMenuItem>
         )}
       </DropdownMenuContent>

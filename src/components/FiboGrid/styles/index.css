@@ -2,5 +2,5 @@
  * This is the single CSS file users should import
  * All styles are isolated and won't affect the user's application
  */
-@import './fibogrid-theme.css';
-@import './fibogrid-isolated.css';
+@import './theme.css';
+@import './core.css';

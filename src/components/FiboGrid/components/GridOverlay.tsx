@@ -1,5 +1,6 @@
 import React from 'react';
 import { Loader2 } from 'lucide-react';
+import { useGridContext } from '../context/GridContext';
 
 interface GridOverlayProps {
   type: 'loading' | 'noRows';
@@ -11,8 +12,10 @@ interface GridOverlayProps {
 
 export function GridOverlay({ type, customComponent, headerHeight = 44, toolbarHeight = 0, filterRowHeight = 0 }: GridOverlayProps) {
 
+
+  const { locale } = useGridContext()!;
   const topOffset = toolbarHeight + headerHeight + filterRowHeight;
-  
+
   const overlayStyle: React.CSSProperties = {
     top: `${topOffset}px`,
     left: 'var(--fibogrid-overlay-left)',
@@ -22,8 +25,8 @@ export function GridOverlay({ type, customComponent, headerHeight = 44, toolbarH
 
   if (customComponent) {
     return (
-      <div 
-        className="absolute flex items-center justify-center z-10 fibogrid-overlay" 
+      <div
+        className="absolute flex items-center justify-center z-10 fibogrid-overlay"
         style={overlayStyle}
       >
         {customComponent}
@@ -33,25 +36,25 @@ export function GridOverlay({ type, customComponent, headerHeight = 44, toolbarH
 
   if (type === 'loading') {
     return (
-      <div 
-        className="absolute flex items-center justify-center z-10 fibogrid-overlay" 
+      <div
+        className="absolute flex items-center justify-center z-10 fibogrid-overlay"
         style={overlayStyle}
       >
         <div className="flex flex-col items-center gap-2">
           <Loader2 className="h-8 w-8 animate-spin text-[hsl(var(--fibogrid-primary))]" />
-          <span className="text-sm text-[color:var(--fibogrid-text-muted)]">Loading...</span>
+          <span className="text-sm text-[color:var(--fibogrid-text-muted)]">{locale.overlay.loading}</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div 
-      className="absolute flex items-center justify-center z-10 fibogrid-overlay" 
+    <div
+      className="absolute flex items-center justify-center z-10 fibogrid-overlay"
       style={overlayStyle}
     >
       <div className="flex flex-col items-center gap-2">
-        <span className="text-sm text-[color:var(--fibogrid-text-muted)]">No rows to display</span>
+        <span className="text-sm text-[color:var(--fibogrid-text-muted)]">{locale.overlay.noRows}</span>
       </div>
     </div>
   );

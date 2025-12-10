@@ -103,13 +103,30 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
     setOverrides({});
   }, [rowData]);
 
+
+  const { clientFilterModel, serverFilterModel } = useMemo(() => {
+    const client: FilterModel[] = [];
+    const server: FilterModel[] = [];
+
+    filterModel.forEach((filter) => {
+      const col = columnDefs.find((c) => c.field === filter.field);
+      if (col?.useInternalFilter) {
+        client.push(filter);
+      } else {
+        server.push(filter);
+      }
+    });
+
+    return { clientFilterModel: client, serverFilterModel: server };
+  }, [filterModel, columnDefs]);
+
   const serverSideRequest: ServerSideDataSourceRequest = useMemo(() => ({
     page: paginationState.currentPage,
     pageSize: paginationState.pageSize,
     sortModel,
-    filterModel,
+    filterModel: serverFilterModel,
     quickFilterText: quickFilterText || internalQuickFilter,
-  }), [paginationState.currentPage, paginationState.pageSize, sortModel, filterModel, quickFilterText, internalQuickFilter]);
+  }), [paginationState.currentPage, paginationState.pageSize, sortModel, serverFilterModel, quickFilterText, internalQuickFilter]);
 
   const serverSideState = useServerSideData(
     paginationMode === 'server',
@@ -124,7 +141,7 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
     for (let i = 0; i < len; i++) {
       const raw = sourceData[i];
       const rowId = getRowId ? getRowId(raw) : `row-${i}`;
-      
+
       let data = raw;
       if (overrides[rowId]) {
         // Apply overrides, handling nested paths correctly
@@ -150,6 +167,10 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
   const filteredRows = useMemo(() => {
 
     if (paginationMode === 'server') {
+      // Even in server mode, apply client-side filters if they exist (useInternalFilter: true)
+      if (clientFilterModel.length > 0) {
+        return filterRows(rows, clientFilterModel, columns, '');
+      }
       return rows;
     }
 
@@ -311,8 +332,8 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
 
   const api = useMemo((): GridApi<T> => ({
     getRowData: () => rowData,
-    setRowData: () => {},
-    updateRowData: () => {},
+    setRowData: () => { },
+    updateRowData: () => { },
     getRowNode: (id) => rowsRef.current.find((r) => r.id === id) || null,
     forEachNode: (callback) => rowsRef.current.forEach(callback),
     getDisplayedRowCount: () => displayedRowsRef.current.length,
@@ -358,8 +379,8 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
     resizeColumn: (field, width) => {
       setColumnWidths((prev) => ({ ...prev, [field]: width }));
     },
-    autoSizeColumn: () => {},
-    autoSizeAllColumns: () => {},
+    autoSizeColumn: () => { },
+    autoSizeAllColumns: () => { },
 
     setPage: (page) => {
       setPaginationState((prev) => ({
@@ -413,9 +434,9 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
       });
     },
 
-    ensureRowVisible: () => {},
-    ensureColumnVisible: () => {},
-    scrollTo: () => {},
+    ensureRowVisible: () => { },
+    ensureColumnVisible: () => { },
+    scrollTo: () => { },
 
     exportToCsv: (params) => {
       const rowsToExport = params?.onlySelected
@@ -434,8 +455,8 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
       await copyToClipboard(rowsToCopy, columns, includeHeaders);
     },
 
-    refreshCells: () => {},
-    redrawRows: () => {},
+    refreshCells: () => { },
+    redrawRows: () => { },
   }), [rowData, columnDefs, columns, sortModel, filterModel, selection, selectAll, deselectAll, selectRow]);
 
   const setColumnPinned = useCallback((field: string, pinned: 'left' | 'right' | null) => {

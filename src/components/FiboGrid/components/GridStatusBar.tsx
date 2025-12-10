@@ -1,5 +1,6 @@
 import React from 'react';
 import { RowNode, ProcessedColumn } from '../types';
+import { useGridContext } from '../context/GridContext';
 
 interface GridStatusBarProps<T> {
   displayedRows: RowNode<T>[];
@@ -16,6 +17,7 @@ export function GridStatusBar<T>({
   columns,
   aggregations,
 }: GridStatusBarProps<T>) {
+  const { locale } = useGridContext<T>()!;
 
   const numericColumns = columns.filter(
     (col) => col.filterType === 'number' || col.aggFunc
@@ -53,14 +55,14 @@ export function GridStatusBar<T>({
         <span>
           <strong className="text-foreground">{displayedRows.length.toLocaleString()}</strong>{' '}
           {displayedRows.length !== totalRows && (
-            <>of {totalRows.toLocaleString()}</>
+            <>{locale.statusBar.totalRows(totalRows)}</>
           )}{' '}
-          rows
+          {locale.statusBar.rows}
         </span>
 
         {selectedCount > 0 && (
           <span className="px-2 py-0.5 bg-primary/10 rounded text-primary">
-            {selectedCount} selected
+            {locale.statusBar.selected(selectedCount)}
           </span>
         )}
       </div>
@@ -75,10 +77,10 @@ export function GridStatusBar<T>({
                 <div key={field} className="flex items-center gap-2">
                   <span className="font-medium text-foreground">{col?.headerName}:</span>
                   <span>
-                    Σ {values.sum.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                    {locale.statusBar.aggregations.sum} {values.sum.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                   </span>
                   <span>
-                    μ {values.avg.toLocaleString(undefined, { maximumFractionDigits: 1 })}
+                    {locale.statusBar.aggregations.avg} {values.avg.toLocaleString(undefined, { maximumFractionDigits: 1 })}
                   </span>
                 </div>
               );
