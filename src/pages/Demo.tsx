@@ -816,6 +816,16 @@ export default function Demo() {
               columnDefs={columns}
               getRowId={getRowId}
               rowSelection="multiple"
+              onCellValueChanged={(event) => {
+                const updatedRow = event.rowNode.data as StockRow;
+                setRowData((prev) => {
+                   return prev.map((row) => row.id === updatedRow.id ? updatedRow : row);
+                });
+                toast({ 
+                  title: "Value Updated", 
+                  description: `Updated ${event.column.headerName} to ${event.newValue}` 
+                });
+              }}
               height={700}
               showToolbar={true}
               showStatusBar={true}
@@ -867,21 +877,7 @@ export default function Demo() {
               groupByFields={groupByField ? [groupByField] : undefined}
               loading={isLoadingServer}
               onGridReady={(e) => setGridApi(e.api)}
-              onCellValueChanged={(e) => {
-                console.log('[Demo] onCellValueChanged received:', e.newValue, 'for field:', e.column.field);
-                const editedRowData = e.rowNode.data as StockRow;
-                const field = e.column.field as keyof StockRow;
-                const newValue = e.newValue;
-                
-                const targetId = editedRowData.isDetailRow && editedRowData.parentId 
-                  ? editedRowData.parentId
-                  : editedRowData.id;
-                
-                console.log('[Demo] Updating row', targetId, 'field:', field, 'to:', newValue);
-                setRowData(prev => prev.map(row => 
-                  row.id === targetId ? { ...row, [field]: newValue } : row
-                ));
-              }}
+
               rangeCellSelection={true}
               rowDragEnabled={false}
               onRowClickFallback={(event) => {

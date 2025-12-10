@@ -124,7 +124,15 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
     for (let i = 0; i < len; i++) {
       const raw = sourceData[i];
       const rowId = getRowId ? getRowId(raw) : `row-${i}`;
-      const data = overrides[rowId] ? ({ ...raw, ...overrides[rowId] } as T) : raw;
+      
+      let data = raw;
+      if (overrides[rowId]) {
+        // Apply overrides, handling nested paths correctly
+        Object.entries(overrides[rowId]).forEach(([field, value]) => {
+          data = setValueAtPath(data, field, value);
+        });
+      }
+
       result[i] = {
         id: rowId,
         data,
