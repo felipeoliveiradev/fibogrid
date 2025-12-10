@@ -1,5 +1,5 @@
 import React, { memo, useMemo } from 'react';
-import { ProcessedColumn, RowNode, EditingCell, GridApi } from '../types';
+import { ProcessedColumn, RowNode, EditingCell, GridApi, RowClassParams } from '../types';
 import { GridCell } from './GridCell';
 import { cn } from '@/lib/utils';
 import { GripVertical, Plus } from 'lucide-react';
@@ -46,6 +46,7 @@ interface GridRowProps<T> {
   onAddChildRow?: (parentId: string) => void;
   onRowRangeMouseDown?: (rowId: string, isSelected: boolean, onToggle: () => void) => void;
   onRowRangeMouseEnter?: (rowId: string, isSelected: boolean, onToggle: () => void) => void;
+  getRowClass?: (params: RowClassParams<T>) => string | string[] | undefined;
 }
 
 function GridRowInner<T>({
@@ -88,10 +89,24 @@ function GridRowInner<T>({
   onAddChildRow,
   onRowRangeMouseDown,
   onRowRangeMouseEnter,
+  getRowClass,
 }: GridRowProps<T>) {
   const visibleColumns = useMemo(() => columns.filter((col) => !col.hide), [columns]);
   const indentWidth = level * 20;
   const isChildRow = (row as any).isChildRow;
+
+  // Dynamic Row Class
+  const dynamicRowClass = useMemo(() => {
+    if (!getRowClass) return '';
+    const result = getRowClass({
+      data: row.data,
+      rowIndex: row.rowIndex,
+      rowNode: row,
+      api
+    });
+    if (!result) return '';
+    return Array.isArray(result) ? result.join(' ') : result;
+  }, [getRowClass, row, api]);
 
   const { leftPinnedColumns, centerColumns, rightPinnedColumns } = useMemo(() => {
     const left = visibleColumns.filter(c => c.pinned === 'left');
@@ -127,6 +142,11 @@ function GridRowInner<T>({
 
   const getPinnedBgClass = useMemo(() => {
     if (isSelected) return 'fibogrid-row-selected';
+    // If dynamic class is present, we might want it to override stripe? 
+    // Usually selection > dynamic > stripe
+    
+    // For pinned columns, we need to ensure the background is solid so content doesn't show through
+    // We reuse the row's stripe class or selection class
     if (isEven) return 'fibogrid-row-even';
     return 'fibogrid-row-odd';
   }, [isSelected, isEven]);
@@ -152,7 +172,8 @@ function GridRowInner<T>({
           isPinned && 'sticky z-[2]',
           column.isLastPinned && column.pinned === 'left' && 'fibogrid-pinned-left-shadow',
           column.isFirstPinned && column.pinned === 'right' && 'fibogrid-pinned-right-shadow',
-          isPinned && getPinnedBgClass
+          // Apply pinned background - selection takes precedence, then dynamic row class, then stripe
+          isPinned && (isSelected ? 'fibogrid-row-selected' : (dynamicRowClass || (isEven ? 'fibogrid-row-even' : 'fibogrid-row-odd')))
         )}
         style={{
           width: column.computedWidth,
@@ -200,8 +221,9 @@ function GridRowInner<T>({
         'transition-[background-color] duration-150',
         'fibogrid-row-hover',
         isSelected && 'fibogrid-row-selected',
-        !isSelected && isEven && 'fibogrid-row-even',
-        !isSelected && !isEven && 'fibogrid-row-odd',
+        !isSelected && dynamicRowClass, // Apply dynamic class here if not selected
+        !isSelected && !dynamicRowClass && isEven && 'fibogrid-row-even',
+        !isSelected && !dynamicRowClass && !isEven && 'fibogrid-row-odd',
         isDragging && 'fibogrid-row-dragging',
         isDropTarget && dropPosition === 'before' && 'fibogrid-drop-target-top',
         isDropTarget && dropPosition === 'after' && 'fibogrid-drop-target-bottom',

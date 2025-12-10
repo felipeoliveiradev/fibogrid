@@ -16,9 +16,10 @@ interface GridContextMenuProps {
   items: ContextMenuItemType[];
   children: React.ReactNode;
   className?: string;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function GridContextMenu({ items, children, className }: GridContextMenuProps) {
+export function GridContextMenu({ items, children, className, onOpenChange }: GridContextMenuProps) {
   const renderMenuItem = (item: ContextMenuItemType, index: number) => {
     if (item.separator) {
       return <ContextMenuSeparator key={index} />;
@@ -51,7 +52,7 @@ export function GridContextMenu({ items, children, className }: GridContextMenuP
   };
 
   return (
-    <RadixContextMenu>
+    <RadixContextMenu onOpenChange={onOpenChange}>
       <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
       <ContextMenuContent className={cn("fibogrid w-48", className)}>
         {items.map((item, index) => renderMenuItem(item, index))}

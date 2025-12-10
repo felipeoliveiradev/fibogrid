@@ -308,6 +308,22 @@ export default function Demo() {
         }
         return <span className="font-mono font-semibold">${(params.value as number).toFixed(2)}</span>;
       },
+      editable: true,
+      cellEditor: 'number',
+      cellClass: (params) => params.value < 2 ? 'bg-red-500/10 hover:bg-red-500/20 text-red-500' : 'bg-green-500/10 hover:bg-green-500/20 text-green-500',
+      valueSetter: (params) => {
+        console.log(params);
+        const newVal = parseFloat(params.newValue);
+        if (isNaN(newVal) || newVal < 0) {
+          toast({
+            title: "Validation Error",
+            description: "Price cannot be negative.",
+            variant: "destructive",
+          });
+          return false;
+        }
+        return true;
+      },
     },
     {
       field: 'volume',
@@ -790,10 +806,45 @@ export default function Demo() {
               paginationMode={useServerSide ? 'server' : 'client'}
               serverSideDataSource={useServerSide ? serverSideDataSource : undefined}
               paginationPageSize={25}   
-              getContextMenuItems={(info) => [
-                { name: "Copiar valor", action: () => console.log(123, info) },
-                { name: "Editar", action: () => console.log("editar", info) },
-              ]}
+              getRowClass={(params) => {
+                if ((params.data as StockRow).price > 200) {
+                  return 'bg-blue-800 hover:bg-blue-800';
+                }
+                return undefined;
+              }}
+              getContextMenuItems={(info) => {
+                console.log(info);
+                const row = info.data as StockRow;
+                if (!row) return []; // Guard against null data
+                
+                return [
+                  { 
+                    name: "Copy Value", 
+                    action: () => {
+                      navigator.clipboard.writeText(String(info.value));
+                      toast({ title: "Copied to clipboard" });
+                    } 
+                  },
+                  { separator: true },
+                  { 
+                    name: "Buy Stock", 
+                    action: () => toast({ title: `Bought ${row.ticker}` }) 
+                  },
+                  { 
+                    name: "Sell Stock", 
+                    disabled: row.price < 50, // Example logic: Cannot sell if price < 50
+                    action: () => toast({ title: `Sold ${row.ticker}` }) 
+                  },
+                  { separator: true },
+                  {
+                    name: "Advanced",
+                    subMenu: [
+                      { name: "View Charts", action: () => {} },
+                      { name: "Export History", disabled: true }, // Always disabled example
+                    ]
+                  }
+                ];
+              }}
               paginationPageSizeOptions={[25, 50, 100, 250, 500]}
               groupByFields={groupByField ? [groupByField] : undefined}
               loading={isLoadingServer}

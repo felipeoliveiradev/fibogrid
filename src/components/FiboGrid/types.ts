@@ -25,6 +25,7 @@ export interface ColumnDef<T = any> {
   headerRenderer?: (params: HeaderRendererParams<T>) => React.ReactNode;
   valueFormatter?: (value: any, row: T) => string;
   valueParser?: (value: string) => any;
+  valueSetter?: (params: ValueSetterParams<T>) => boolean;
   comparator?: (a: any, b: any) => number;
   filterComparator?: (filterValue: any, cellValue: any) => boolean;
   cellClass?: string | ((params: CellRendererParams<T>) => string);
@@ -48,6 +49,21 @@ export interface CellRendererParams<T = any> {
 
 export interface HeaderRendererParams<T = any> {
   colDef: ColumnDef<T>;
+  column: ProcessedColumn<T>;
+  api: GridApi<T>;
+}
+
+export interface RowClassParams<T = any> {
+  data: T;
+  rowIndex: number;
+  rowNode: RowNode<T>;
+  api: GridApi<T>;
+}
+
+export interface ValueSetterParams<T = any> {
+  oldValue: any;
+  newValue: any;
+  data: T;
   column: ProcessedColumn<T>;
   api: GridApi<T>;
 }
@@ -352,6 +368,7 @@ export interface FiboGridProps<T = any> extends GridEvents<T> {
   
   defaultColDef?: Partial<ColumnDef<T>>;
   
+  getRowClass?: (params: RowClassParams<T>) => string | string[] | undefined;
 
   rowHeight?: number;
   headerHeight?: number;
