@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.9] - 2025-12-10
+
+### Added
+- **Cell Value Updates** - `onCellValueChanged` now updates row data dynamically and triggers user feedback via toasts in Demo
+
+### Changed
+- **Demo Flow** - Refactored cell update handling for clarity and reliability
+- **Grid State** - Improved grid state hook to support the new update flow
+- **Package** - Minor package metadata/formatting adjustment
+
+### Enhanced
+- **Editing UX** - Clearer feedback and more robust data updates after edits
+
 ## [1.0.8] - 2025-12-10
 
 ### Added
