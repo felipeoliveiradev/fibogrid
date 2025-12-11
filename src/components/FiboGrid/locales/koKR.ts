@@ -1,0 +1,83 @@
+import { FiboGridLocale } from './types';
+
+export const koKR: FiboGridLocale = {
+    toolbar: {
+        searchPlaceholder: '빠른 필터...',
+        columns: '열',
+        showAll: '모두 표시',
+        hideAll: '모두 숨기기',
+        copy: '복사',
+        copied: '복사됨!',
+        export: '내보내기',
+        activeFilters: '활성 필터:',
+        resetAll: '모두 재설정',
+        toggleColumns: '열 전환',
+        selectedCount: (selected, total) => `${total}개 중 ${selected}개 선택됨`,
+        filterLabel: (column, value) => `${column}: ${value}`,
+        filterLabelCount: (column, count) => `${column}: ${count}개 선택됨`,
+    },
+    pagination: {
+        rowsPerPage: '페이지당 행 수:',
+        pageInfo: (start, end, total) => `${total}개 중 ${start}-${end}개`,
+        zeroRows: '0행',
+        pageOf: (current, total) => `${total}페이지 중 ${current}페이지`,
+    },
+    statusBar: {
+        rows: '행',
+        selected: (count) => `${count}개 선택됨`,
+        totalRows: (count) => `${count}개 중`,
+        aggregations: {
+            sum: 'Σ',
+            avg: 'μ',
+            min: '최소',
+            max: '최대',
+            count: '개수',
+        }
+    },
+    columnMenu: {
+        sortAsc: '오름차순 정렬',
+        sortDesc: '내림차순 정렬',
+        pinColumn: '열 고정',
+        noPin: '고정 안 함',
+        pinLeft: '왼쪽에 고정',
+        pinRight: '오른쪽에 고정',
+        autosizeColumn: '너비 자동 조정',
+        autosizeAll: '모두 자동 조정',
+        filter: '필터...',
+        hideColumn: '열 숨기기',
+    },
+    filter: {
+        values: '값',
+        condition: '조건',
+        searchPlaceholder: '검색...',
+        selectAll: '(모두 선택)',
+        clear: '지우기',
+        apply: '적용',
+        noValues: '값을 찾을 수 없습니다',
+        operators: {
+            contains: '포함',
+            equals: '같음',
+            startsWith: '시작',
+            endsWith: '끝',
+            greaterThan: '보다 큼',
+            lessThan: '보다 작음',
+            between: '사이',
+            after: '이후',
+            before: '이전',
+        },
+        boolean: {
+            true: '예',
+            false: '아니오',
+        },
+        placeholder: {
+            value: '값 입력...',
+            select: '선택...',
+        },
+        blank: '(비어 있음)',
+        advancedFilter: '고급 필터',
+    },
+    overlay: {
+        loading: '로딩 중...',
+        noRows: '표시할 행이 없습니다',
+    },
+};

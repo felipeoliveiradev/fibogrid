@@ -1,0 +1,77 @@
+import { FiboGridLocale } from './types';
+
+export const frFR: FiboGridLocale = {
+    toolbar: {
+        searchPlaceholder: 'Filtre rapide...',
+        columns: 'Colonnes',
+        showAll: 'Tout afficher',
+        hideAll: 'Tout masquer',
+        copy: 'Copier',
+        copied: 'Copié !',
+        export: 'Exporter',
+        activeFilters: 'Filtres actifs :',
+        resetAll: 'Tout réinitialiser',
+        toggleColumns: 'Basculer les colonnes',
+        selectedCount: (selected, total) => `${selected} sur ${total} sélectionnés`,
+        filterLabel: (column, value) => `${column} : ${value}`,
+        filterLabelCount: (column, count) => `${column} : ${count} sélectionnés`,
+    },
+    pagination: {
+        rowsPerPage: 'Lignes par page :',
+        pageInfo: (start, end, total) => `${start}-${end} sur ${total}`,
+        zeroRows: '0 lignes',
+        pageOf: (current, total) => `Page ${current} sur ${total}`,
+    },
+    statusBar: {
+        rows: 'lignes',
+        selected: (count) => `${count} sélectionnés`,
+        totalRows: (count) => `sur ${count}`,
+        aggregations: {
+            sum: 'Σ',
+            avg: 'μ',
+            min: 'Min',
+            max: 'Max',
+            count: 'Nb',
+        }
+    },
+    columnMenu: {
+        sortAsc: 'Trier par ordre croissant',
+        sortDesc: 'Trier par ordre décroissant',
+        pinColumn: 'Épingler la colonne',
+        noPin: 'Ne pas épingler',
+        pinLeft: 'Épingler à gauche',
+        pinRight: 'Épingler à droite',
+        autosizeColumn: 'Ajuster la largeur',
+        autosizeAll: 'Ajuster toutes',
+        filter: 'Filtrer...',
+        hideColumn: 'Masquer la colonne',
+    },
+    filter: {
+        values: 'Valeurs',
+        condition: 'Condition',
+        searchPlaceholder: 'Rechercher...',
+        selectAll: '(Tout sélectionner)',
+        clear: 'Effacer',
+        apply: 'Appliquer',
+        noValues: 'Aucune valeur trouvée',
+        operators: {
+            contains: 'Contient',
+            equals: 'Égal à',
+            startsWith: 'Commence par',
+            endsWith: 'Se termine par',
+            greaterThan: 'Supérieur à',
+            lessThan: 'Inférieur à',
+            between: 'Entre',
+            after: 'Après',
+            before: 'Avant',
+        },
+        boolean: {
+            true: 'Oui',
+            false: 'Non',
+        },
+    },
+    overlay: {
+        loading: 'Chargement...',
+        noRows: 'Aucune ligne à afficher',
+    },
+};

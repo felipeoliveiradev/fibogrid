@@ -67,6 +67,12 @@ export interface FiboGridLocale {
             true: string;
             false: string;
         };
+        placeholder: {
+            value: string;
+            select: string;
+        };
+        blank: string;
+        advancedFilter: string;
     };
     overlay: {
         loading: string;

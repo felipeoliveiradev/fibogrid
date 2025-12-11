@@ -69,6 +69,12 @@ export const enUS: FiboGridLocale = {
             true: 'Yes',
             false: 'No',
         },
+        placeholder: {
+            value: 'Enter value...',
+            select: 'Select...',
+        },
+        blank: '(Blank)',
+        advancedFilter: 'Advanced filter',
     },
     overlay: {
         loading: 'Loading...',

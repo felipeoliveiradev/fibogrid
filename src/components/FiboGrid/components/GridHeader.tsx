@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useRef } from 'react';
 import { ProcessedColumn, SortModel, SortDirection, FilterModel, GridApi } from '../types';
+import { FiboGridLocale } from '../locales/types';
 import { cn } from '@/lib/utils';
 import { ArrowUp, ArrowDown, MoreVertical, Filter } from 'lucide-react';
 import { ColumnMenu } from './ColumnMenu';
@@ -35,6 +36,7 @@ interface GridHeaderProps<T> {
   onAutoSizeAll?: () => void;
   showFilterRow?: boolean;
   className?: string;
+  locale: FiboGridLocale;
 }
 
 export function GridHeader<T>({
@@ -67,6 +69,7 @@ export function GridHeader<T>({
   onAutoSizeAll,
   showFilterRow = true,
   className,
+  locale,
 }: GridHeaderProps<T>) {
   const getSortDirection = (field: string): SortDirection => {
     const sort = sortModel.find((s) => s.field === field);
@@ -305,7 +308,7 @@ export function GridHeader<T>({
                 "p-1 rounded hover:bg-[color:var(--fibogrid-surface-hover)] flex-shrink-0",
                 hasActiveFilter && "text-[color:var(--fibogrid-primary)]"
               )}
-              title="Advanced filter"
+              title={locale.filter.advancedFilter}
             >
               <Filter className="h-3 w-3" />
             </button>

@@ -659,6 +659,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                 onAutoSizeAll={handleAutoSizeAll}
                 showFilterRow={configs?.header?.filterRow ?? true}
                 className={className}
+                locale={lang}
               />
             </div>
 

@@ -143,7 +143,7 @@ export function GridFooter<T>({
             case 'status-info':
                 return (
                     <span key={`si-${index}`} className="text-xs text-muted-foreground mr-4">
-                        <strong className="text-foreground">{displayedRows.length.toLocaleString()}</strong> rows
+                        <strong className="text-foreground">{displayedRows.length.toLocaleString()}</strong> {locale.statusBar.rows}
                     </span>
                 );
 
@@ -162,7 +162,7 @@ export function GridFooter<T>({
                             return (
                                 <div key={field} className="flex items-center gap-2">
                                     <span className="font-medium text-foreground">{col?.headerName}:</span>
-                                    <span>Sum {values.sum?.toLocaleString()}</span>
+                                    <span>{locale.statusBar.aggregations.sum} {values.sum?.toLocaleString()}</span>
                                 </div>
                             );
                         })}

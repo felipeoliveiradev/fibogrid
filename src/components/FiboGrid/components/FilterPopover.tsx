@@ -321,7 +321,7 @@ export function FilterPopover<T>({
                           checked={selectedValues.has(val)}
                           onCheckedChange={() => toggleValue(val)}
                         />
-                        <span className="text-sm truncate">{val || '(Blank)'}</span>
+                        <span className="text-sm truncate">{val || locale.filter.blank}</span>
                       </label>
                     ))}
                     {filteredValues.length === 0 && (
@@ -361,7 +361,7 @@ export function FilterPopover<T>({
                 </SelectContent>
               </Select>
 
-              {renderInput(filterType, value, setValue, handleKeyDown, className)}
+              {renderInput(filterType, value, setValue, handleKeyDown, locale, className)}
 
               <div className="flex gap-2 pt-2">
                 <Button variant="outline" className="flex-1" onClick={handleClear}>
@@ -410,6 +410,7 @@ function renderInput(
   value: any,
   onChange: (value: any) => void,
   onKeyDown: (e: React.KeyboardEvent) => void,
+  locale: import('../locales/types').FiboGridLocale,
   className?: string
 ) {
   switch (type) {
@@ -438,11 +439,11 @@ function renderInput(
       return (
         <Select value={String(value)} onValueChange={(v) => onChange(v === 'true')}>
           <SelectTrigger className="h-8" onKeyDown={onKeyDown}>
-            <SelectValue placeholder="Select..." />
+            <SelectValue placeholder={locale.filter.placeholder.select} />
           </SelectTrigger>
           <SelectContent className={cn("fibogrid bg-popover border border-border fibogrid-z-popover-nested", className)}>
-            <SelectItem value="true">Yes</SelectItem>
-            <SelectItem value="false">No</SelectItem>
+            <SelectItem value="true">{locale.filter.boolean.true}</SelectItem>
+            <SelectItem value="false">{locale.filter.boolean.false}</SelectItem>
           </SelectContent>
         </Select>
       );

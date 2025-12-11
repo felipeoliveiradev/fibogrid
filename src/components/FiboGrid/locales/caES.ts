@@ -1,0 +1,77 @@
+import { FiboGridLocale } from './types';
+
+export const caES: FiboGridLocale = {
+    toolbar: {
+        searchPlaceholder: 'Filtre ràpid...',
+        columns: 'Columnes',
+        showAll: 'Mostrar tot',
+        hideAll: 'Ocultar tot',
+        copy: 'Copiar',
+        copied: 'Copiat!',
+        export: 'Exportar',
+        activeFilters: 'Filtres actius:',
+        resetAll: 'Restablir tot',
+        toggleColumns: 'Alternar columnes',
+        selectedCount: (selected, total) => `${selected} de ${total} seleccionats`,
+        filterLabel: (column, value) => `${column}: ${value}`,
+        filterLabelCount: (column, count) => `${column}: ${count} seleccionats`,
+    },
+    pagination: {
+        rowsPerPage: 'Files per pàgina:',
+        pageInfo: (start, end, total) => `${start}-${end} de ${total}`,
+        zeroRows: '0 files',
+        pageOf: (current, total) => `Pàgina ${current} de ${total}`,
+    },
+    statusBar: {
+        rows: 'files',
+        selected: (count) => `${count} seleccionats`,
+        totalRows: (count) => `de ${count}`,
+        aggregations: {
+            sum: 'Σ',
+            avg: 'μ',
+            min: 'Mín',
+            max: 'Màx',
+            count: 'Quant',
+        }
+    },
+    columnMenu: {
+        sortAsc: 'Ordenar ascendent',
+        sortDesc: 'Ordenar descendent',
+        pinColumn: 'Fixar columna',
+        noPin: 'No fixar',
+        pinLeft: 'Fixar a l\'esquerra',
+        pinRight: 'Fixar a la dreta',
+        autosizeColumn: 'Ajustar amplada',
+        autosizeAll: 'Ajustar totes',
+        filter: 'Filtrar...',
+        hideColumn: 'Ocultar columna',
+    },
+    filter: {
+        values: 'Valors',
+        condition: 'Condició',
+        searchPlaceholder: 'Cercar...',
+        selectAll: '(Seleccionar tot)',
+        clear: 'Netejar',
+        apply: 'Aplicar',
+        noValues: 'No s\'han trobat valors',
+        operators: {
+            contains: 'Conté',
+            equals: 'Igual a',
+            startsWith: 'Comença amb',
+            endsWith: 'Acaba amb',
+            greaterThan: 'Major que',
+            lessThan: 'Menor que',
+            between: 'Entre',
+            after: 'Després de',
+            before: 'Abans de',
+        },
+        boolean: {
+            true: 'Sí',
+            false: 'No',
+        },
+    },
+    overlay: {
+        loading: 'Carregant...',
+        noRows: 'No hi ha files per mostrar',
+    },
+};

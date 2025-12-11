@@ -1,0 +1,83 @@
+import { FiboGridLocale } from './types';
+
+export const esES: FiboGridLocale = {
+    toolbar: {
+        searchPlaceholder: 'Filtro rápido...',
+        columns: 'Columnas',
+        showAll: 'Mostrar todo',
+        hideAll: 'Ocultar todo',
+        copy: 'Copiar',
+        copied: '¡Copiado!',
+        export: 'Exportar',
+        activeFilters: 'Filtros activos:',
+        resetAll: 'Restablecer todo',
+        toggleColumns: 'Alternar columnas',
+        selectedCount: (selected, total) => `${selected} de ${total} seleccionados`,
+        filterLabel: (column, value) => `${column}: ${value}`,
+        filterLabelCount: (column, count) => `${column}: ${count} seleccionados`,
+    },
+    pagination: {
+        rowsPerPage: 'Filas por página:',
+        pageInfo: (start, end, total) => `${start}-${end} de ${total}`,
+        zeroRows: '0 filas',
+        pageOf: (current, total) => `Página ${current} de ${total}`,
+    },
+    statusBar: {
+        rows: 'filas',
+        selected: (count) => `${count} seleccionados`,
+        totalRows: (count) => `de ${count}`,
+        aggregations: {
+            sum: 'Σ',
+            avg: 'μ',
+            min: 'Mín',
+            max: 'Máx',
+            count: 'Cant',
+        }
+    },
+    columnMenu: {
+        sortAsc: 'Ordenar ascendente',
+        sortDesc: 'Ordenar descendente',
+        pinColumn: 'Fijar columna',
+        noPin: 'No fijar',
+        pinLeft: 'Fijar a la izquierda',
+        pinRight: 'Fijar a la derecha',
+        autosizeColumn: 'Ajustar ancho',
+        autosizeAll: 'Ajustar todas',
+        filter: 'Filtrar...',
+        hideColumn: 'Ocultar columna',
+    },
+    filter: {
+        values: 'Valores',
+        condition: 'Condición',
+        searchPlaceholder: 'Buscar...',
+        selectAll: '(Seleccionar todo)',
+        clear: 'Limpiar',
+        apply: 'Aplicar',
+        noValues: 'No se encontraron valores',
+        operators: {
+            contains: 'Contiene',
+            equals: 'Igual a',
+            startsWith: 'Comienza con',
+            endsWith: 'Termina con',
+            greaterThan: 'Mayor que',
+            lessThan: 'Menor que',
+            between: 'Entre',
+            after: 'Después de',
+            before: 'Antes de',
+        },
+        boolean: {
+            true: 'Sí',
+            false: 'No',
+        },
+        placeholder: {
+            value: 'Ingresar valor...',
+            select: 'Seleccionar...',
+        },
+        blank: '(Vacío)',
+        advancedFilter: 'Filtro avanzado',
+    },
+    overlay: {
+        loading: 'Cargando...',
+        noRows: 'No hay filas para mostrar',
+    },
+};

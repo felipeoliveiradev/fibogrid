@@ -1,0 +1,77 @@
+import { FiboGridLocale } from './types';
+
+export const ruRU: FiboGridLocale = {
+    toolbar: {
+        searchPlaceholder: 'Быстрый фильтр...',
+        columns: 'Столбцы',
+        showAll: 'Показать все',
+        hideAll: 'Скрыть все',
+        copy: 'Копировать',
+        copied: 'Скопировано!',
+        export: 'Экспорт',
+        activeFilters: 'Активные фильтры:',
+        resetAll: 'Сбросить все',
+        toggleColumns: 'Переключить столбцы',
+        selectedCount: (selected, total) => `Выбрано ${selected} из ${total}`,
+        filterLabel: (column, value) => `${column}: ${value}`,
+        filterLabelCount: (column, count) => `${column}: выбрано ${count}`,
+    },
+    pagination: {
+        rowsPerPage: 'Строк на странице:',
+        pageInfo: (start, end, total) => `${start}-${end} из ${total}`,
+        zeroRows: '0 строк',
+        pageOf: (current, total) => `Страница ${current} из ${total}`,
+    },
+    statusBar: {
+        rows: 'строк',
+        selected: (count) => `выбрано ${count}`,
+        totalRows: (count) => `из ${count}`,
+        aggregations: {
+            sum: 'Σ',
+            avg: 'μ',
+            min: 'Мин',
+            max: 'Макс',
+            count: 'Кол-во',
+        }
+    },
+    columnMenu: {
+        sortAsc: 'Сортировать по возрастанию',
+        sortDesc: 'Сортировать по убыванию',
+        pinColumn: 'Закрепить столбец',
+        noPin: 'Не закреплять',
+        pinLeft: 'Закрепить слева',
+        pinRight: 'Закрепить справа',
+        autosizeColumn: 'Автоматически подогнать ширину',
+        autosizeAll: 'Автоматически подогнать все',
+        filter: 'Фильтр...',
+        hideColumn: 'Скрыть столбец',
+    },
+    filter: {
+        values: 'Значения',
+        condition: 'Условие',
+        searchPlaceholder: 'Поиск...',
+        selectAll: '(Выбрать все)',
+        clear: 'Очистить',
+        apply: 'Применить',
+        noValues: 'Значения не найдены',
+        operators: {
+            contains: 'Содержит',
+            equals: 'Равно',
+            startsWith: 'Начинается с',
+            endsWith: 'Заканчивается на',
+            greaterThan: 'Больше чем',
+            lessThan: 'Меньше чем',
+            between: 'Между',
+            after: 'После',
+            before: 'До',
+        },
+        boolean: {
+            true: 'Да',
+            false: 'Нет',
+        },
+    },
+    overlay: {
+        loading: 'Загрузка...',
+        noRows: 'Нет строк для отображения',
+    },
+};

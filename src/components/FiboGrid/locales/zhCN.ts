@@ -1,0 +1,77 @@
+import { FiboGridLocale } from './types';
+
+export const zhCN: FiboGridLocale = {
+    toolbar: {
+        searchPlaceholder: '快速筛选...',
+        columns: '列',
+        showAll: '显示全部',
+        hideAll: '隐藏全部',
+        copy: '复制',
+        copied: '已复制！',
+        export: '导出',
+        activeFilters: '活动筛选器：',
+        resetAll: '重置全部',
+        toggleColumns: '切换列',
+        selectedCount: (selected, total) => `已选择 ${selected}/${total}`,
+        filterLabel: (column, value) => `${column}：${value}`,
+        filterLabelCount: (column, count) => `${column}：已选择 ${count} 项`,
+    },
+    pagination: {
+        rowsPerPage: '每页行数：',
+        pageInfo: (start, end, total) => `第 ${start}-${end} 条，共 ${total} 条`,
+        zeroRows: '0 行',
+        pageOf: (current, total) => `第 ${current}/${total} 页`,
+    },
+    statusBar: {
+        rows: '行',
+        selected: (count) => `已选择 ${count} 项`,
+        totalRows: (count) => `共 ${count} 项`,
+        aggregations: {
+            sum: 'Σ',
+            avg: 'μ',
+            min: '最小值',
+            max: '最大值',
+            count: '计数',
+        }
+    },
+    columnMenu: {
+        sortAsc: '升序排序',
+        sortDesc: '降序排序',
+        pinColumn: '固定列',
+        noPin: '不固定',
+        pinLeft: '固定在左侧',
+        pinRight: '固定在右侧',
+        autosizeColumn: '自动调整宽度',
+        autosizeAll: '自动调整全部',
+        filter: '筛选...',
+        hideColumn: '隐藏列',
+    },
+    filter: {
+        values: '值',
+        condition: '条件',
+        searchPlaceholder: '搜索...',
+        selectAll: '（全选）',
+        clear: '清除',
+        apply: '应用',
+        noValues: '未找到值',
+        operators: {
+            contains: '包含',
+            equals: '等于',
+            startsWith: '开头为',
+            endsWith: '结尾为',
+            greaterThan: '大于',
+            lessThan: '小于',
+            between: '介于',
+            after: '之后',
+            before: '之前',
+        },
+        boolean: {
+            true: '是',
+            false: '否',
+        },
+    },
+    overlay: {
+        loading: '加载中...',
+        noRows: '没有可显示的行',
+    },
+};

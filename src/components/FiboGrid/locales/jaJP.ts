@@ -1,0 +1,77 @@
+import { FiboGridLocale } from './types';
+
+export const jaJP: FiboGridLocale = {
+    toolbar: {
+        searchPlaceholder: 'クイックフィルター...',
+        columns: '列',
+        showAll: 'すべて表示',
+        hideAll: 'すべて非表示',
+        copy: 'コピー',
+        copied: 'コピーしました！',
+        export: 'エクスポート',
+        activeFilters: 'アクティブなフィルター：',
+        resetAll: 'すべてリセット',
+        toggleColumns: '列の切り替え',
+        selectedCount: (selected, total) => `${total}件中${selected}件を選択`,
+        filterLabel: (column, value) => `${column}：${value}`,
+        filterLabelCount: (column, count) => `${column}：${count}件を選択`,
+    },
+    pagination: {
+        rowsPerPage: 'ページあたりの行数：',
+        pageInfo: (start, end, total) => `${total}件中${start}-${end}件`,
+        zeroRows: '0行',
+        pageOf: (current, total) => `${total}ページ中${current}ページ`,
+    },
+    statusBar: {
+        rows: '行',
+        selected: (count) => `${count}件を選択`,
+        totalRows: (count) => `${count}件中`,
+        aggregations: {
+            sum: 'Σ',
+            avg: 'μ',
+            min: '最小',
+            max: '最大',
+            count: '件数',
+        }
+    },
+    columnMenu: {
+        sortAsc: '昇順で並べ替え',
+        sortDesc: '降順で並べ替え',
+        pinColumn: '列を固定',
+        noPin: '固定しない',
+        pinLeft: '左に固定',
+        pinRight: '右に固定',
+        autosizeColumn: '幅を自動調整',
+        autosizeAll: 'すべて自動調整',
+        filter: 'フィルター...',
+        hideColumn: '列を非表示',
+    },
+    filter: {
+        values: '値',
+        condition: '条件',
+        searchPlaceholder: '検索...',
+        selectAll: '（すべて選択）',
+        clear: 'クリア',
+        apply: '適用',
+        noValues: '値が見つかりません',
+        operators: {
+            contains: '含む',
+            equals: '等しい',
+            startsWith: 'で始まる',
+            endsWith: 'で終わる',
+            greaterThan: 'より大きい',
+            lessThan: 'より小さい',
+            between: 'の間',
+            after: 'より後',
+            before: 'より前',
+        },
+        boolean: {
+            true: 'はい',
+            false: 'いいえ',
+        },
+    },
+    overlay: {
+        loading: '読み込み中...',
+        noRows: '表示する行がありません',
+    },
+};

@@ -69,6 +69,12 @@ export const ptBR: FiboGridLocale = {
             true: 'Sim',
             false: 'Não',
         },
+        placeholder: {
+            value: 'Digite o valor...',
+            select: 'Selecione...',
+        },
+        blank: '(Vazio)',
+        advancedFilter: 'Filtro avançado',
     },
     overlay: {
         loading: 'Carregando...',
