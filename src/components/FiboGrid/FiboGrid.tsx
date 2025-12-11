@@ -13,6 +13,7 @@ import { useClickDetector } from './hooks/useClickDetector';
 import { useKeyboardNavigation } from './hooks/useKeyboardNavigation';
 import { useGrouping } from './hooks/useGrouping';
 import { useGridContext, GridProvider } from './context/GridContext';
+import { useGridRegistry } from './context/GridRegistryContext';
 import { GridHeader } from './components/GridHeader';
 import { GridRow } from './components/GridRow';
 import { GroupRow } from './components/GroupRow';
@@ -181,6 +182,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
   }, [groupByFields, splitByField, groupedDisplayRows, displayedRows]);
 
   const gridContext = useGridContext<T>();
+  const { registerGrid: registerGlobal, unregisterGrid: unregisterGlobal } = useGridRegistry();
 
   useEffect(() => {
     if (gridContext && gridId) {
@@ -188,6 +190,13 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
       return () => gridContext.unregisterGrid(gridId);
     }
   }, [gridContext, gridId, api]);
+
+  useEffect(() => {
+    if (gridId && registerGlobal && unregisterGlobal) {
+      registerGlobal(gridId, api);
+      return () => unregisterGlobal(gridId);
+    }
+  }, [gridId, api, registerGlobal, unregisterGlobal]);
 
   useEffect(() => {
     onGridReady?.({ api });
@@ -679,7 +688,8 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                             e.stopPropagation();
 
                             if (rowSelection && !isRowDragging && !isDraggingRows) {
-                              selectRow(row.id, true, e.shiftKey, e.ctrlKey || e.metaKey);
+                              const shouldSelect = rowSelection === 'single' ? !isSelected : true;
+                              selectRow(row.id, shouldSelect, e.shiftKey, e.ctrlKey || e.metaKey);
                             }
 
                             focusCell(row.id, col.field);

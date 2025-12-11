@@ -9,6 +9,8 @@ import { DemoSettings } from './components/DemoSettings';
 import { generateStockData } from './data/mock';
 import { StockRow } from './data/types';
 import { useDemoColumns } from './hooks/useDemoColumns';
+import { GridRegistryProvider } from 'fibogrid';
+import { LinkedGrids } from './components/LinkedGrids';
 
 export default function Demo() {
     const [rowCount, setRowCount] = useState(1000);
@@ -197,53 +199,56 @@ export default function Demo() {
     }, []);
 
     return (
-        <div className="min-h-screen bg-background">
-            <DemoHeader
-                isRealTimeEnabled={isRealTimeEnabled}
-                renderTime={renderTime}
-                onToggleRealTime={setIsRealTimeEnabled}
-                onAddRow={handleAddRow}
-                onDeleteSelected={handleDeleteSelected}
-                onExport={handleExport}
-                onRefresh={handleRefresh}
-            />
-            <main className="max-w-[1900px] mx-auto p-6">
-                <div className="grid lg:grid-cols-[280px_1fr] gap-6">
-                    <DemoSettings
-                        configs={configs}
-                        onConfigChange={handleConfigChange}
-                        rowCount={rowCount}
-                        updateInterval={updateInterval}
-                        groupByField={groupByField}
-                        showRowNumbers={showRowNumbers}
-                        useServerSide={useServerSide}
-                        onRowCountChange={handleRowCountChange}
-                        onUpdateIntervalChange={setUpdateInterval}
-                        onGroupByChange={setGroupByField}
-                        onShowRowNumbersChange={setShowRowNumbers}
-                        onUseServerSideChange={setUseServerSide}
-                        totalRows={rowData.length}
-                        visibleRows={visibleRowData.length}
-                        columnsCount={columns.length}
-                        isRealTimeEnabled={isRealTimeEnabled}
-                        localeKey={localeKey}
-                        onLocaleChange={setLocaleKey}
-                    />
-                    <DemoGrid
-                        useServerSide={useServerSide}
-                        visibleRowData={visibleRowData}
-                        columns={columns}
-                        getRowId={getRowId}
-                        showRowNumbers={showRowNumbers}
-                        groupByField={groupByField}
-                        setGridApi={setGridApi}
-                        onValueChangeStock={onValueChangeStock}
-                        onRowClickStock={onRowClickStock}
-                        lang={currentLocale}
-                        configs={configs}
-                    />
-                </div>
-            </main>
-        </div>
+        <GridRegistryProvider>
+            <div className="min-h-screen bg-background">
+                <DemoHeader
+                    isRealTimeEnabled={isRealTimeEnabled}
+                    renderTime={renderTime}
+                    onToggleRealTime={setIsRealTimeEnabled}
+                    onAddRow={handleAddRow}
+                    onDeleteSelected={handleDeleteSelected}
+                    onExport={handleExport}
+                    onRefresh={handleRefresh}
+                />
+                <main className="max-w-[1900px] mx-auto p-6">
+                    <div className="grid lg:grid-cols-[280px_1fr] gap-6">
+                        <DemoSettings
+                            configs={configs}
+                            onConfigChange={handleConfigChange}
+                            rowCount={rowCount}
+                            updateInterval={updateInterval}
+                            groupByField={groupByField}
+                            showRowNumbers={showRowNumbers}
+                            useServerSide={useServerSide}
+                            onRowCountChange={handleRowCountChange}
+                            onUpdateIntervalChange={setUpdateInterval}
+                            onGroupByChange={setGroupByField}
+                            onShowRowNumbersChange={setShowRowNumbers}
+                            onUseServerSideChange={setUseServerSide}
+                            totalRows={rowData.length}
+                            visibleRows={visibleRowData.length}
+                            columnsCount={columns.length}
+                            isRealTimeEnabled={isRealTimeEnabled}
+                            localeKey={localeKey}
+                            onLocaleChange={setLocaleKey}
+                        />
+                        <DemoGrid
+                            useServerSide={useServerSide}
+                            visibleRowData={visibleRowData}
+                            columns={columns}
+                            getRowId={getRowId}
+                            showRowNumbers={showRowNumbers}
+                            groupByField={groupByField}
+                            setGridApi={setGridApi}
+                            onValueChangeStock={onValueChangeStock}
+                            onRowClickStock={onRowClickStock}
+                            lang={currentLocale}
+                            configs={configs}
+                        />
+                    </div>
+                    <LinkedGrids />
+                </main>
+            </div>
+        </GridRegistryProvider>
     );
 }
