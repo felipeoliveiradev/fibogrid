@@ -69,6 +69,12 @@ export const ruRU: FiboGridLocale = {
             true: 'Да',
             false: 'Нет',
         },
+        placeholder: {
+            value: 'Введите значение...',
+            select: 'Выбрать...',
+        },
+        blank: '(Пусто)',
+        advancedFilter: 'Расширенный фильтр',
     },
     overlay: {
         loading: 'Загрузка...',

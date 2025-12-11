@@ -69,6 +69,12 @@ export const zhCN: FiboGridLocale = {
             true: '是',
             false: '否',
         },
+        placeholder: {
+            value: '输入值...',
+            select: '选择...',
+        },
+        blank: '(空白)',
+        advancedFilter: '高级筛选',
     },
     overlay: {
         loading: '加载中...',

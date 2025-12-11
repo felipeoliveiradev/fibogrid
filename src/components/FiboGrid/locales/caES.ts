@@ -69,6 +69,12 @@ export const caES: FiboGridLocale = {
             true: 'Sí',
             false: 'No',
         },
+        placeholder: {
+            value: 'Introduir valor...',
+            select: 'Seleccionar...',
+        },
+        blank: '(Buit)',
+        advancedFilter: 'Filtre avançat',
     },
     overlay: {
         loading: 'Carregant...',

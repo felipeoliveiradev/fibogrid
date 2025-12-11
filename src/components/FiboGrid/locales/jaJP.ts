@@ -69,6 +69,12 @@ export const jaJP: FiboGridLocale = {
             true: 'はい',
             false: 'いいえ',
         },
+        placeholder: {
+            value: '値を入力...',
+            select: '選択...',
+        },
+        blank: '(空白)',
+        advancedFilter: '詳細フィルター',
     },
     overlay: {
         loading: '読み込み中...',
