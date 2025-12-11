@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.11] - 2025-12-11
+
+### Added
+- **Localization Support** - `lang` prop now accepts typed locales with built-in `enUS`, `es` and `ptBR` dictionaries, exported via `FiboGridLocale`
+- **Demo Refresh** - New stock market demo composed of modular header/settings/grid components for clearer usage examples
+- **Custom View Props** - New properties to show or customize elements in the data table via the `FiboGridLocale` interface
+- **Hybrid Filtering** - Added a new prop to columns called `useInternalFilter`.
+### Changed
+- **Styles Consolidation** - Removed unused CSS bundles and now ship a single `lib.css` import from `components/FiboGrid/styles`
+- **Project Structure** - Updated routes/imports to use folder-based pages and cleaned Vite config for clearer dev/prod separation
+
+### Removed
+- **Legacy Assets** - Deprecated CSS outputs (`fibogrid.css`, `fibogrid-isolated.css`, `fibogrid-lib.css`, `fibogrid-theme.css`) and the legacy monolithic demo page
+
 ## [1.0.10] - 2025-12-10
 
 ### Added

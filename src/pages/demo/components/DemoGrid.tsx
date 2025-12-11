@@ -1,4 +1,8 @@
+import { FiboGrid } from '@/components/FiboGrid';
+import { FiboGridLocale } from '@/components/FiboGrid/locales/types';
 import { FiboGridConfigs, ColumnDef, GridApi, CellValueChangedEvent, RowClickedEvent, ServerSideDataSourceRequest, ServerSideDataSourceResponse } from '@/components/FiboGrid/types';
+import { Badge } from 'lucide-react';
+import { StockRow } from '../data/types';
 
 interface DemoGridProps {
     useServerSide: boolean;

@@ -1,15 +1,14 @@
-import { useState, useMemo, useCallback, useRef, useEffect, startTransition } from 'react';
-import { GridApi, CellValueChangedEvent, RowClickedEvent, RowNode } from 'fibogrid';
+import { enUS } from '@/components/FiboGrid/locales/enUS';
+import { FiboGridConfigs } from '@/components/FiboGrid/types';
 import { toast } from '@/hooks/use-toast';
-import { StockRow } from './data/types';
-import { generateStockData } from './data/mock';
-import { useDemoColumns } from './hooks/useDemoColumns';
+import { CellValueChangedEvent, GridApi, RowClickedEvent, RowNode } from 'fibogrid';
+import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { DemoGrid } from './components/DemoGrid';
 import { DemoHeader } from './components/DemoHeader';
 import { DemoSettings } from './components/DemoSettings';
-import { DemoGrid } from './components/DemoGrid';
-import { enUS } from '@/components/FiboGrid/locales/enUS';
-import { ptBR } from '@/components/FiboGrid/locales/ptBR';
-import { FiboGridConfigs } from '@/components/FiboGrid/types';
+import { generateStockData } from './data/mock';
+import { StockRow } from './data/types';
+import { useDemoColumns } from './hooks/useDemoColumns';
 
 export default function Demo() {
     const [rowCount, setRowCount] = useState(1000);
