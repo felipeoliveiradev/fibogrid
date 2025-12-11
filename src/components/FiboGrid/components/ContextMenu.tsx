@@ -17,9 +17,14 @@ interface GridContextMenuProps {
   children: React.ReactNode;
   className?: string;
   onOpenChange?: (open: boolean) => void;
+  enabled?: boolean;
 }
 
-export function GridContextMenu({ items, children, className, onOpenChange }: GridContextMenuProps) {
+export function GridContextMenu({ items, children, className, onOpenChange, enabled = true }: GridContextMenuProps) {
+  if (!enabled) {
+    return <>{children}</>;
+  }
+
   const renderMenuItem = (item: ContextMenuItemType, index: number) => {
     if (item.separator) {
       return <ContextMenuSeparator key={index} />;

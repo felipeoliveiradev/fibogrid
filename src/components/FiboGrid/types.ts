@@ -17,8 +17,10 @@ export interface ColumnDef<T = any> {
   editable?: boolean;
   draggable?: boolean;
   pinned?: 'left' | 'right' | null;
+  pinnedPriority?: number;
   hide?: boolean;
   filterType?: FilterType;
+  type?: 'data' | 'action' | 'checkbox' | 'rowNumber';
   cellEditor?: CellEditorType;
   cellEditorParams?: Record<string, any>;
   cellRenderer?: (params: CellRendererParams<T>) => React.ReactNode;
@@ -45,6 +47,7 @@ export interface CellRendererParams<T = any> {
   colDef: ColumnDef<T>;
   column: ProcessedColumn<T>;
   api: GridApi<T>;
+  rowNode: RowNode<T>;
   selectedRows?: T[];
 }
 

@@ -23,6 +23,11 @@ import {
   getValueFromPath,
   setValueAtPath,
 } from '../utils/helpers';
+import {
+  RowNumberRenderer,
+  CheckboxCellRenderer,
+  CheckboxHeaderRenderer
+} from '../components/SpecialRenderers';
 
 export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number) {
   const {
@@ -65,7 +70,10 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
   const rowsRef = useRef<RowNode<T>[]>([]);
   const displayedRowsRef = useRef<RowNode<T>[]>([]);
 
-  const columns = useMemo(() => {
+  const { processedColumns, hasCustomRowNumber, hasCustomCheckbox } = useMemo(() => {
+    let hasRowNumber = false;
+    let hasCheckbox = false;
+
     const orderedDefs = columnOrder
       .map((field) => columnDefs.find((c) => c.field === field))
       .filter(Boolean) as ColumnDef<T>[];
@@ -80,24 +88,46 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
       orderedDefs.map((col) => {
         const pinnedState = pinnedColumns[col.field];
         const pinned = pinnedState !== undefined ? pinnedState : col.pinned;
+        const isRowNumber = col.type === 'rowNumber' || col.field === 'number';
+        const isCheckbox = col.type === 'checkbox' || col.field === 'checkbox';
+
+        if (isRowNumber) hasRowNumber = true;
+        if (isCheckbox) hasCheckbox = true;
 
         return {
           ...col,
           width: columnWidths[col.field] ?? col.width,
           hide: hiddenColumns.has(col.field) || col.hide,
           pinned: pinned || undefined,
+          cellRenderer: isRowNumber ? RowNumberRenderer : (isCheckbox ? CheckboxCellRenderer : col.cellRenderer),
+          headerRenderer: isCheckbox ? CheckboxHeaderRenderer : col.headerRenderer,
+          suppressMenu: isRowNumber || isCheckbox ? true : col.suppressMenu,
+          sortable: isRowNumber || isCheckbox ? false : col.sortable,
+          filterType: isRowNumber || isCheckbox ? undefined : col.filterType,
+          resizable: isRowNumber || isCheckbox ? false : col.resizable,
         };
       }),
       containerWidth,
       defaultColDef
     );
 
-    const leftPinned = processed.filter((c) => c.pinned === 'left');
-    const center = processed.filter((c) => !c.pinned);
-    const rightPinned = processed.filter((c) => c.pinned === 'right');
+    return { processedColumns: processed, hasCustomRowNumber: hasRowNumber, hasCustomCheckbox: hasCheckbox };
+  }, [columnDefs, columnOrder, columnWidths, hiddenColumns, pinnedColumns, containerWidth, defaultColDef]);
+
+  const columns = useMemo(() => {
+    const sortByPriority = (a: ProcessedColumn<T>, b: ProcessedColumn<T>) => {
+      const pA = a.pinnedPriority ?? Number.MAX_SAFE_INTEGER;
+      const pB = b.pinnedPriority ?? Number.MAX_SAFE_INTEGER;
+      if (pA === pB) return 0;
+      return pA - pB;
+    };
+
+    const leftPinned = processedColumns.filter((c) => c.pinned === 'left').sort(sortByPriority);
+    const center = processedColumns.filter((c) => !c.pinned);
+    const rightPinned = processedColumns.filter((c) => c.pinned === 'right').sort(sortByPriority);
 
     return [...leftPinned, ...center, ...rightPinned];
-  }, [columnDefs, columnOrder, columnWidths, hiddenColumns, pinnedColumns, containerWidth, defaultColDef]);
+  }, [processedColumns]);
 
   useEffect(() => {
     setOverrides({});
@@ -485,5 +515,7 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
     setColumnWidths,
     setColumnPinned,
     serverSideLoading: serverSideState.loading,
+    hasCustomRowNumber,
+    hasCustomCheckbox,
   };
 }

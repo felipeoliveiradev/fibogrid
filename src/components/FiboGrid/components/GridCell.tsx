@@ -59,7 +59,7 @@ export function GridCell<T>({
   const selectRef = useRef<HTMLSelectElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const value = getValueFromPath(row.data, column.field);
-  
+
   useEffect(() => {
     if (isEditing && inputRef.current) {
       inputRef.current.focus();
@@ -132,7 +132,7 @@ export function GridCell<T>({
     if (isEditing) {
       return;
     }
-    
+
     if (onMouseDown) {
       onMouseDown(e);
     }
@@ -144,7 +144,7 @@ export function GridCell<T>({
 
   const cellClass =
     typeof column.cellClass === 'function'
-      ? column.cellClass({ value, data: row.data, rowIndex: row.rowIndex, colDef: column, column, api })
+      ? column.cellClass({ value, data: row.data, rowIndex: row.rowIndex, colDef: column, column, api, rowNode: row })
       : column.cellClass;
 
   const renderContent = () => {
@@ -160,6 +160,7 @@ export function GridCell<T>({
         colDef: column,
         column,
         api,
+        rowNode: row,
       });
     }
 
@@ -262,7 +263,7 @@ export function GridCell<T>({
         isFocused && !isEditing && 'fibogrid-cell-focused',
         cellClass
       )}
-      style={{ 
+      style={{
         height: rowHeight ? `${rowHeight}px` : '100%',
         paddingLeft: indent > 0 ? `calc(var(--fibogrid-cell-indent-level) * ${indent} + var(--fibogrid-cell-indent-base))` : undefined,
       }}

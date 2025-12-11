@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.12] - 2025-12-11
+
+### Added
+- **Pinned Column Priority** - Added `pinnedPriority` property to `ColumnDef` to control the sort order of pinned columns (e.g., `pinnedPriority: 1` ensures the column is the most "inner" or "important" one in the pinned stack).
+- **Custom Column Types** - Added explicit `type: 'checkbox' | 'rowNumber'` to `ColumnDef` and `field: 'checkbox' | 'number'` magic strings. This allows defining Row Number and Checkbox columns as regular columns in `columnDefs`, automatically disabling the built-in fixed columns for better customization flexibility.
+
+### Fixed
+- **Header Layout** - Fixed an issue where header cell content could break or misalign due to improper container elements (`div` vs `span`) and CSS formatting.
+- **Context Menu Scope** - Restrict `GridContextMenu` to trigger ONLY on the rows area. Right-clicking headers or footers now correctly shows the minimal/default browser menu instead of the grid actions.
+- **Grid Header Height** - Fixed invalid CSS unit generation for header height.
+
 ## [1.0.11] - 2025-12-11
 
 ### Added

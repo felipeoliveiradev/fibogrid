@@ -184,7 +184,6 @@ export default function Demo() {
 
     const handleConfigChange = useCallback((section: string, key: string, value: boolean) => {
         setConfigs((prev: FiboGridConfigs) => {
-            // @ts-expect-error - Dynamic access to configs
             const sectionKey = section as keyof FiboGridConfigs;
             const sectionData = prev[sectionKey] || {};
             return {

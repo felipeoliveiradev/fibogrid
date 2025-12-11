@@ -15,6 +15,7 @@ interface StockColumnParams {
 
 export function useStockColumns({ expandedRows, toggleRowExpand, handleSplitRow }: StockColumnParams) {
     return useMemo<ColumnDef<StockRow>[]>(() => [
+
         {
             field: 'ticker',
             headerName: 'Ticker',

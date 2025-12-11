@@ -62,7 +62,9 @@ export const GridConfig = ({ activeSection }: { activeSection: string }) => {
   resizable?: boolean;              // Enable resize
   editable?: boolean;               // Enable inline editing
   pinned?: 'left' | 'right';        // Pin column
+  pinnedPriority?: number;          // Sort order for pinned columns
   hide?: boolean;                   // Hide column
+  type?: 'data' | 'action' | 'checkbox' | 'rowNumber'; // Special types
   
   // Custom renderers
   cellRenderer?: (params) => React.ReactNode;
@@ -138,12 +140,61 @@ export const GridConfig = ({ activeSection }: { activeSection: string }) => {
 // Or pin programmatically via API
 gridApi.setColumnPinned('id', 'left');
 gridApi.setColumnPinned('actions', 'right');
-gridApi.setColumnPinned('email', null);  // Unpin`}
+gridApi.setColumnPinned('id', 'left');
+gridApi.setColumnPinned('actions', 'right');
+gridApi.setColumnPinned('email', null);  // Unpin
+
+// Use pinnedPriority to control order (lower number = higher priority/closer to edge)
+// columns = [
+//   { field: 'a', pinned: 'left', pinnedPriority: 1 }, // Leftmost
+//   { field: 'b', pinned: 'left', pinnedPriority: 2 }  // After 'a'
+// ];`}
                         preview={
                             <FiboGrid
                                 rowData={sampleData}
                                 columnDefs={pinnedColumns}
                                 getRowId={(row) => row.id}
+                            />
+                        }
+                    />
+
+                    <ExampleBlock
+                        title="Custom Layout Columns"
+                        description="You can define Row Numbers and Checkboxes as regular columns to control their position and styling using 'field: number' or 'field: checkbox' (or type). You can also use 'pinnedPriority' to ensure specific pinned columns are always closest to the content."
+                        code={`const columns: ColumnDef[] = [
+  // 1. Custom Row Number Column (Pinned Left, Priority 1 = Leftmost)
+  { 
+    field: 'number', 
+    headerName: '#', 
+    pinned: 'left',
+    pinnedPriority: 1, 
+    width: 60 
+  },
+  // 2. Custom Checkbox Column (Pinned Left, Priority 2 = After Row Number)
+  { 
+    field: 'checkbox', 
+    headerName: '', 
+    pinned: 'left',
+    pinnedPriority: 2,
+    width: 50 
+  },
+  // 3. Regular Data Columns
+  { field: 'name', headerName: 'Name', width: 200 },
+  { field: 'email', headerName: 'Email', width: 250 },
+];
+// Note: When using custom columns, the built-in side bars (configs.center.rowNumbers) are automatically disabled.`}
+                        preview={
+                            <FiboGrid
+                                rowData={sampleData}
+                                columnDefs={[
+                                    { field: 'number', headerName: '#', pinned: 'left', pinnedPriority: 1, width: 60 },
+                                    { field: 'checkbox', headerName: '', pinned: 'left', pinnedPriority: 2, width: 50 },
+                                    { field: 'name', headerName: 'Name', width: 140 },
+                                    { field: 'email', headerName: 'Email' },
+                                    { field: 'status', headerName: 'Status', width: 100 },
+                                ]}
+                                getRowId={(row) => row.id}
+                                rowSelection="multiple"
                             />
                         }
                     />

@@ -318,11 +318,18 @@
   border-bottom-color: var(--fibogrid-row-border-bottom-group);
 }
 
-.fibogrid-row-even {
+/* Default to transparent/bg color for rows if not striped */
+.fibogrid-row-even,
+.fibogrid-row-odd {
+  background-color: var(--fibogrid-bg);
+}
+
+/* Only apply striped colors if .fibogrid-striped class is present on container */
+.fibogrid-striped .fibogrid-row-even {
   background-color: var(--fibogrid-row-bg-even);
 }
 
-.fibogrid-row-odd {
+.fibogrid-striped .fibogrid-row-odd {
   background-color: var(--fibogrid-row-bg-odd);
 }
 
@@ -624,3 +631,28 @@
   white-space: nowrap;
   border-width: 0;
 }
+
+/* Borderless mode */
+.fibogrid-no-borders {
+  border: none;
+}
+
+.fibogrid-no-borders .fibogrid-header-cell,
+.fibogrid-no-borders .fibogrid-cell,
+.fibogrid-no-borders .fibogrid-filter-row-container>div {
+  border-right: none;
+}
+
+.fibogrid-no-borders .fibogrid-row,
+.fibogrid-no-borders .fibogrid-header,
+.fibogrid-no-borders .fibogrid-toolbar,
+.fibogrid-no-borders .fibogrid-statusbar,
+.fibogrid-no-borders .fibogrid-pagination,
+.fibogrid-no-borders .fibogrid-filter-row-container {
+  border-bottom: none;
+  border-top: none;
+}
+
+/* Ensure pinned shadows still work if needed, or maybe remove them too? 
+   Usually users want valid table look even without borders, but borders often imply internal lines.
+   Let's keep shadows but remove lines. */

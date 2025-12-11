@@ -144,6 +144,8 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     setColumnWidths,
     setColumnPinned,
     serverSideLoading,
+    hasCustomRowNumber,
+    hasCustomCheckbox,
   } = useGridState({ ...props, quickFilterText: quickFilterValue }, containerWidth);
 
   const isLoading = loading || serverSideLoading;
@@ -578,8 +580,8 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
         'relative flex flex-col rounded-lg overflow-hidden focus:outline-none focus:ring-2 focus:ring-primary/50',
         isResizing && 'cursor-col-resize select-none',
         isSelecting && 'select-none cursor-crosshair',
-        configs?.center?.borders === false && 'border-none',
-        configs?.center?.stripes && 'fibogrid-striped'
+        !showBorders && 'fibogrid-no-borders',
+        showStripes && 'fibogrid-striped'
       )}
       style={{ height: height || '100%', minHeight: 400 }}
       tabIndex={0}
@@ -617,6 +619,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
           <div style={{ minWidth: totalContentWidth }}>
             <div className="sticky top-0 z-10">
               <GridHeader
+                api={api}
                 columns={columns}
                 sortModel={sortModel}
                 filterModel={filterModel}
@@ -630,7 +633,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                 onDrop={handleColumnDrop}
                 draggedColumn={draggedColumn}
                 dragOverColumn={dragOverColumn}
-                showCheckboxColumn={!!rowSelection} // TODO: Update based on configs.center.checkboxSelection if needed? logic is complex here
+                showCheckboxColumn={!hasCustomCheckbox && configs?.center?.checkboxSelection !== false && !!rowSelection}
                 allSelected={allSelected}
                 someSelected={someSelected}
                 onSelectAll={() => (allSelected ? deselectAll() : selectAll())}
@@ -638,7 +641,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                 onQuickColumnFilter={handleQuickColumnFilter}
                 headerHeight={headerHeight}
                 measureColumnContent={measureColumnContent}
-                showRowNumbers={effectiveShowRowNumbers}
+                showRowNumbers={!hasCustomRowNumber && effectiveShowRowNumbers}
                 onPinColumn={handlePinColumn}
                 onHideColumn={handleHideColumn}
                 onAutoSize={handleAutoSize}
@@ -648,230 +651,240 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
               />
             </div>
 
-            <div style={{ height: totalHeight, position: 'relative' }}>
-              <div style={{ transform: `translateY(${offsetTop}px)` }}>
-                {virtualRows.map((row, index) => {
-                  if (!isGroupRow(row)) {
-                    const isSelected = selection.selectedRows.has(row.id);
-                    const regularRow = row as any;
+            <GridContextMenu
+              enabled={contextMenu}
+              items={contextMenuItems}
+              className={className}
+              onOpenChange={(open) => {
+                if (!open) setContextMenuTarget(null);
+              }}
+            >
+              <div style={{ height: totalHeight, position: 'relative' }}>
+                <div style={{ transform: `translateY(${offsetTop}px)` }}>
+                  {virtualRows.map((row, index) => {
+                    if (!isGroupRow(row)) {
+                      const isSelected = selection.selectedRows.has(row.id);
+                      const regularRow = row as any;
 
+                      return (
+                        <GridRow
+                          key={row.id}
+                          row={row}
+                          columns={columns}
+                          rowHeight={rowHeight}
+                          isSelected={isSelected}
+                          onRowClick={(e) => handleRowClick(row.id, e)}
+                          onRowDoubleClick={onRowDoubleClicked ? (e) => onRowDoubleClicked({ rowNode: row, event: e, api }) : () => { }}
+                          onCellClick={(col, e) => {
+                            e.stopPropagation();
+
+                            if (rowSelection && !isRowDragging && !isDraggingRows) {
+                              selectRow(row.id, true, e.shiftKey, e.ctrlKey || e.metaKey);
+                            }
+
+                            focusCell(row.id, col.field);
+                            onCellClicked?.({ rowNode: row, column: col, value: (row.data as any)[col.field], event: e, api });
+
+                            if (onRowClickFallback) {
+                              detectCellClick((clickType) => {
+                                onRowClickFallback({
+                                  clickType,
+                                  rowData: row.data,
+                                  allRowsData: displayedRows.map(r => r.data),
+                                  rowNode: row,
+                                  event: e,
+                                  api,
+                                  cell: {
+                                    column: col,
+                                    value: getValueFromPath(row.data, col.field),
+                                    isEditable: !!col.editable,
+                                  },
+                                });
+                              });
+                            }
+                          }}
+                          onCellDoubleClick={(col, e) => {
+                            if (col.editable) api.startEditingCell(row.id, col.field);
+                            onCellDoubleClicked?.({ rowNode: row, column: col, value: getValueFromPath(row.data, col.field), event: e, api });
+                          }}
+                          showCheckboxColumn={!hasCustomCheckbox && configs?.center?.checkboxSelection !== false && !!rowSelection}
+                          onCheckboxChange={(checked) => {
+                            selectRow(row.id, checked);
+                            onRowSelected?.({ rowNode: row, selected: checked, api });
+                          }}
+                          editingCell={editingCell}
+                          onStartEdit={(field) => {
+                            const value = getValueFromPath(row.data, field);
+                            const edit: EditingCell = {
+                              rowId: row.id,
+                              field,
+                              value,
+                              originalValue: value,
+                            };
+                            editingCellRef.current = edit;
+                            api.startEditingCell(row.id, field);
+                          }}
+                          onEditChange={(value) => {
+                            setEditingCell((prev) => {
+                              const next = prev ? { ...prev, value } : null;
+                              editingCellRef.current = next;
+                              return next;
+                            });
+                          }}
+                          onStopEdit={(cancel, currentValue) => {
+                            const currentEditing = editingCellRef.current;
+
+                            if (currentEditing && !cancel && currentValue !== undefined) {
+                              const column = columns.find((c) => c.field === currentEditing.field)!;
+
+                              // VALIDATION: Check if valueSetter allows the change
+                              let isValid = true;
+                              if (column.valueSetter) {
+                                isValid = column.valueSetter({
+                                  oldValue: currentEditing.originalValue,
+                                  newValue: currentValue,
+                                  data: row.data,
+                                  column,
+                                  api,
+                                });
+                              }
+
+                              if (isValid) {
+                                currentEditing.value = currentValue;
+                                editingCellRef.current = currentEditing;
+
+                                onCellValueChanged?.({
+                                  rowNode: { ...row, data: setValueAtPath(row.data, currentEditing.field, currentValue) },
+                                  column,
+                                  oldValue: currentEditing.originalValue,
+                                  newValue: currentValue,
+                                  api,
+                                });
+                              } else {
+                                // Validation failed: Revert to original value
+                                // Ideally we should show a toast or keep the editor open, but for now we revert
+                                console.warn(`Validation failed for ${column.field}`);
+                                // We implicitly revert by NOT firing onCellValueChanged and letting the editor close
+                              }
+                            }
+                            editingCellRef.current = null;
+                            api.stopEditing(cancel);
+                          }}
+                          rowDragEnabled={rowDragEnabled && !rangeCellSelection}
+                          onRowDragStart={(e) => handleRowDragStart(e, row)}
+                          onRowDragOver={(e) => handleRowDragOver(e, row)}
+                          onRowDragEnd={handleRowDragEnd}
+                          onRowDrop={(e) => handleRowDrop(e, row)}
+                          isDragging={draggedRow === row.id}
+                          isDropTarget={dropTargetRow === row.id}
+                          dropPosition={dropTargetRow === row.id ? dropPosition : null}
+                          isCellSelected={isCellSelected}
+                          isCellFocused={isCellFocused}
+                          onCellMouseDown={handleCellMouseDown}
+                          onCellMouseEnter={handleCellMouseEnter}
+                          api={api}
+                          isEven={index % 2 === 0}
+                          level={regularRow.level || 0}
+                          hasChildren={regularRow.childRows?.length > 0}
+                          isExpanded={expandedRows.has(row.id)}
+                          onToggleExpand={() => toggleRowExpand(row.id)}
+                          registerCellRef={registerCellRef}
+                          showRowNumbers={!hasCustomRowNumber && effectiveShowRowNumbers}
+                          rowNumber={row.rowIndex + 1}
+                          getRowClass={getRowClass}
+                          onAddChildRow={handleAddChildRow}
+                          onRowRangeMouseDown={handleRowRangeMouseDown}
+
+                          onRowRangeMouseEnter={handleRowRangeMouseEnter}
+                          onCellContextMenu={(rowIndex, colIndex, e) => {
+
+                            const column = columns[colIndex];
+                            const value = getValueFromPath(row.data, column.field);
+
+                            // Selection Logic on Right Click
+
+                            // 1. Always focus the clicked cell
+                            focusCell(row.id, column.field);
+
+                            // 2. Handle Row Selection
+                            let currentSelectedRows = new Set(selection.selectedRows);
+                            if (rowSelection) {
+                              if (rowSelection === 'multiple') {
+                                // Toggle logic
+                                if (currentSelectedRows.has(row.id)) {
+                                  // Don't deselect on right click usually? 
+                                  // Actually user requested "toggle" behavior.
+                                  // But commonly right click adds to selection or selects if not selected.
+                                  // Let's assume it SELECTS.
+                                  // If already selected, do nothing.
+                                } else {
+                                  currentSelectedRows.add(row.id);
+                                  selectRow(row.id, true);
+                                }
+                              } else {
+                                // Single selection
+                                if (!currentSelectedRows.has(row.id)) {
+                                  deselectAll();
+                                  selectRow(row.id, true);
+                                  currentSelectedRows = new Set([row.id]);
+                                }
+                              }
+                            }
+
+                            // Prepare data for context menu callback
+                            // We construct the "future" selection state for the callback to use
+                            const selectedData = displayedRows
+                              .filter(r => currentSelectedRows.has(r.id))
+                              .map(r => r.data);
+
+                            const params = {
+                              api,
+                              column,
+                              colDef: column,
+                              node: row,
+                              rowNode: row,
+                              value,
+                              data: row.data,
+                              rowIndex: row.rowIndex,
+                              selectedRows: selectedData
+                            };
+
+                            // Generate items imperatively
+                            const items = getContextMenuItems
+                              ? getContextMenuItems(params)
+                              : getDefaultContextMenuItems();
+
+                            setContextMenuItems(items);
+                            setContextMenuTarget(true); // Just a flag to say "open"
+                          }}
+                        />
+                      );
+                    }
+
+                    const groupRow = row as unknown as GroupRowNode<T>;
+                    // ... existing group row code ...
+                    const isExpanded = expandedGroups.has(row.id);
                     return (
-                      <GridRow
+                      <GroupRow
                         key={row.id}
-                        row={row}
+                        row={groupRow}
+                        // ... props
                         columns={columns}
                         rowHeight={rowHeight}
-                        isSelected={isSelected}
-                        onRowClick={(e) => handleRowClick(row.id, e)}
-                        onRowDoubleClick={onRowDoubleClicked ? (e) => onRowDoubleClicked({ rowNode: row, event: e, api }) : () => { }}
-                        onCellClick={(col, e) => {
-                          e.stopPropagation();
-
-                          if (rowSelection && !isRowDragging && !isDraggingRows) {
-                            selectRow(row.id, true, e.shiftKey, e.ctrlKey || e.metaKey);
-                          }
-
-                          focusCell(row.id, col.field);
-                          onCellClicked?.({ rowNode: row, column: col, value: (row.data as any)[col.field], event: e, api });
-
-                          if (onRowClickFallback) {
-                            detectCellClick((clickType) => {
-                              onRowClickFallback({
-                                clickType,
-                                rowData: row.data,
-                                allRowsData: displayedRows.map(r => r.data),
-                                rowNode: row,
-                                event: e,
-                                api,
-                                cell: {
-                                  column: col,
-                                  value: getValueFromPath(row.data, col.field),
-                                  isEditable: !!col.editable,
-                                },
-                              });
-                            });
-                          }
-                        }}
-                        onCellDoubleClick={(col, e) => {
-                          if (col.editable) api.startEditingCell(row.id, col.field);
-                          onCellDoubleClicked?.({ rowNode: row, column: col, value: getValueFromPath(row.data, col.field), event: e, api });
-                        }}
+                        isExpanded={isExpanded}
+                        onToggleExpand={() => toggleGroupExpand(row.id)}
                         showCheckboxColumn={!!rowSelection}
-                        onCheckboxChange={(checked) => {
-                          selectRow(row.id, checked);
-                          onRowSelected?.({ rowNode: row, selected: checked, api });
-                        }}
-                        editingCell={editingCell}
-                        onStartEdit={(field) => {
-                          const value = getValueFromPath(row.data, field);
-                          const edit: EditingCell = {
-                            rowId: row.id,
-                            field,
-                            value,
-                            originalValue: value,
-                          };
-                          editingCellRef.current = edit;
-                          api.startEditingCell(row.id, field);
-                        }}
-                        onEditChange={(value) => {
-                          setEditingCell((prev) => {
-                            const next = prev ? { ...prev, value } : null;
-                            editingCellRef.current = next;
-                            return next;
-                          });
-                        }}
-                        onStopEdit={(cancel, currentValue) => {
-                          const currentEditing = editingCellRef.current;
-
-                          if (currentEditing && !cancel && currentValue !== undefined) {
-                            const column = columns.find((c) => c.field === currentEditing.field)!;
-
-                            // VALIDATION: Check if valueSetter allows the change
-                            let isValid = true;
-                            if (column.valueSetter) {
-                              isValid = column.valueSetter({
-                                oldValue: currentEditing.originalValue,
-                                newValue: currentValue,
-                                data: row.data,
-                                column,
-                                api,
-                              });
-                            }
-
-                            if (isValid) {
-                              currentEditing.value = currentValue;
-                              editingCellRef.current = currentEditing;
-
-                              onCellValueChanged?.({
-                                rowNode: { ...row, data: setValueAtPath(row.data, currentEditing.field, currentValue) },
-                                column,
-                                oldValue: currentEditing.originalValue,
-                                newValue: currentValue,
-                                api,
-                              });
-                            } else {
-                              // Validation failed: Revert to original value
-                              // Ideally we should show a toast or keep the editor open, but for now we revert
-                              console.warn(`Validation failed for ${column.field}`);
-                              // We implicitly revert by NOT firing onCellValueChanged and letting the editor close
-                            }
-                          }
-                          editingCellRef.current = null;
-                          api.stopEditing(cancel);
-                        }}
-                        rowDragEnabled={rowDragEnabled && !rangeCellSelection}
-                        onRowDragStart={(e) => handleRowDragStart(e, row)}
-                        onRowDragOver={(e) => handleRowDragOver(e, row)}
-                        onRowDragEnd={handleRowDragEnd}
-                        onRowDrop={(e) => handleRowDrop(e, row)}
-                        isDragging={draggedRow === row.id}
-                        isDropTarget={dropTargetRow === row.id}
-                        dropPosition={dropTargetRow === row.id ? dropPosition : null}
-                        isCellSelected={isCellSelected}
-                        isCellFocused={isCellFocused}
-                        onCellMouseDown={handleCellMouseDown}
-                        onCellMouseEnter={handleCellMouseEnter}
-                        api={api}
-                        isEven={index % 2 === 0}
-                        level={regularRow.level || 0}
-                        hasChildren={regularRow.childRows?.length > 0}
-                        isExpanded={expandedRows.has(row.id)}
-                        onToggleExpand={() => toggleRowExpand(row.id)}
-                        registerCellRef={registerCellRef}
-                        showRowNumbers={effectiveShowRowNumbers}
-                        rowNumber={row.rowIndex + 1}
-                        getRowClass={getRowClass}
-                        onAddChildRow={handleAddChildRow}
-                        onRowRangeMouseDown={handleRowRangeMouseDown}
-
-                        onRowRangeMouseEnter={handleRowRangeMouseEnter}
-                        onCellContextMenu={(rowIndex, colIndex, e) => {
-
-                          const column = columns[colIndex];
-                          const value = getValueFromPath(row.data, column.field);
-
-                          // Selection Logic on Right Click
-
-                          // 1. Always focus the clicked cell
-                          focusCell(row.id, column.field);
-
-                          // 2. Handle Row Selection
-                          let currentSelectedRows = new Set(selection.selectedRows);
-                          if (rowSelection) {
-                            if (rowSelection === 'multiple') {
-                              // Toggle logic
-                              if (currentSelectedRows.has(row.id)) {
-                                // Don't deselect on right click usually? 
-                                // Actually user requested "toggle" behavior.
-                                // But commonly right click adds to selection or selects if not selected.
-                                // Let's assume it SELECTS.
-                                // If already selected, do nothing.
-                              } else {
-                                currentSelectedRows.add(row.id);
-                                selectRow(row.id, true);
-                              }
-                            } else {
-                              // Single selection
-                              if (!currentSelectedRows.has(row.id)) {
-                                deselectAll();
-                                selectRow(row.id, true);
-                                currentSelectedRows = new Set([row.id]);
-                              }
-                            }
-                          }
-
-                          // Prepare data for context menu callback
-                          // We construct the "future" selection state for the callback to use
-                          const selectedData = displayedRows
-                            .filter(r => currentSelectedRows.has(r.id))
-                            .map(r => r.data);
-
-                          const params = {
-                            api,
-                            column,
-                            colDef: column,
-                            node: row,
-                            value,
-                            data: row.data,
-                            rowIndex: row.rowIndex,
-                            selectedRows: selectedData
-                          };
-
-                          // Generate items imperatively
-                          const items = getContextMenuItems
-                            ? getContextMenuItems(params)
-                            : getDefaultContextMenuItems();
-
-                          setContextMenuItems(items);
-                          setContextMenuTarget(true); // Just a flag to say "open"
+                        allChildrenSelected={groupRow.groupChildren.every((child) => selection.selectedRows.has(child.id))}
+                        someChildrenSelected={groupRow.groupChildren.some((child) => selection.selectedRows.has(child.id))}
+                        onSelectAll={(selected) => {
+                          groupRow.groupChildren.forEach((child) => selectRow(child.id, selected));
                         }}
                       />
                     );
-                  }
-
-                  const groupRow = row as unknown as GroupRowNode<T>;
-                  // ... existing group row code ...
-                  const isExpanded = expandedGroups.has(row.id);
-                  return (
-                    <GroupRow
-                      key={row.id}
-                      row={groupRow}
-                      // ... props
-                      columns={columns}
-                      rowHeight={rowHeight}
-                      isExpanded={isExpanded}
-                      onToggleExpand={() => toggleGroupExpand(row.id)}
-                      showCheckboxColumn={!!rowSelection}
-                      allChildrenSelected={groupRow.groupChildren.every((child) => selection.selectedRows.has(child.id))}
-                      someChildrenSelected={groupRow.groupChildren.some((child) => selection.selectedRows.has(child.id))}
-                      onSelectAll={(selected) => {
-                        groupRow.groupChildren.forEach((child) => selectRow(child.id, selected));
-                      }}
-                    />
-                  );
-                })}
+                  })}
+                </div>
               </div>
-            </div>
+            </GridContextMenu>
           </div>
         </div>
       </div>
@@ -942,14 +955,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     </div>
   );
 
-  const content = contextMenu ? (
-    <GridContextMenu
-      items={contextMenuItems}
-      className={className}
-    >
-      {gridContent}
-    </GridContextMenu>
-  ) : gridContent;
+  const content = gridContent;
 
   return (
     <GridProvider locale={lang}>

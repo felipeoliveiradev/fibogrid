@@ -1,11 +1,12 @@
 import React, { useCallback, useMemo, useRef } from 'react';
-import { ProcessedColumn, SortModel, SortDirection, FilterModel } from '../types';
+import { ProcessedColumn, SortModel, SortDirection, FilterModel, GridApi } from '../types';
 import { cn } from '@/lib/utils';
 import { ArrowUp, ArrowDown, MoreVertical, Filter } from 'lucide-react';
 import { ColumnMenu } from './ColumnMenu';
 import { Input } from '@/components/ui/input';
 
 interface GridHeaderProps<T> {
+  api: GridApi<T>;
   columns: ProcessedColumn<T>[];
   sortModel: SortModel[];
   filterModel: FilterModel[];
@@ -37,6 +38,7 @@ interface GridHeaderProps<T> {
 }
 
 export function GridHeader<T>({
+  api,
   columns,
   sortModel,
   filterModel,
@@ -86,27 +88,27 @@ export function GridHeader<T>({
     const left = visibleColumns.filter(c => c.pinned === 'left');
     const center = visibleColumns.filter(c => !c.pinned);
     const right = visibleColumns.filter(c => c.pinned === 'right');
-    
+
     let leftOffset = 0;
     const leftWithPositions = left.map((col, idx) => {
       const pos = leftOffset;
       leftOffset += col.computedWidth;
       return { ...col, stickyLeft: pos, isLastPinned: idx === left.length - 1 };
     });
-    
+
     let rightOffset = 0;
     const rightWithPositions = [...right].reverse().map((col, idx) => {
       const pos = rightOffset;
       rightOffset += col.computedWidth;
       return { ...col, stickyRight: pos, isFirstPinned: idx === right.length - 1 };
     }).reverse();
-    
+
     // Mark last center column if there are right pinned columns
     const centerWithFlags = center.map((col, idx) => ({
       ...col,
       isLastCenterBeforeRight: right.length > 0 && idx === center.length - 1
     }));
-    
+
     return {
       leftPinnedColumns: leftWithPositions,
       centerColumns: centerWithFlags,
@@ -123,14 +125,14 @@ export function GridHeader<T>({
   const handleResizeDoubleClick = (e: React.MouseEvent, column: ProcessedColumn<T>) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     if (onResizeDoubleClick && measureColumnContent) {
       onResizeDoubleClick(column, () => measureColumnContent(column.field));
     }
   };
 
   const filterRowHeight = showFilterRow ? 36 : 0;
-  
+
   const wasResizingRef = useRef(false);
 
   const handleHeaderClick = useCallback((column: ProcessedColumn<T>) => {
@@ -148,7 +150,7 @@ export function GridHeader<T>({
     e.stopPropagation();
     wasResizingRef.current = true;
     onResizeStart(e, column);
-    
+
     const handleMouseUp = () => {
       setTimeout(() => {
         wasResizingRef.current = false;
@@ -166,7 +168,7 @@ export function GridHeader<T>({
     const hasFilter = !!getActiveFilter(column.field);
     const isDragging = draggedColumn === column.field;
     const isDragOver = dragOverColumn === column.field;
-    
+
     return (
       <div
         key={column.field}
@@ -180,8 +182,8 @@ export function GridHeader<T>({
           column.isLastPinned && column.pinned === 'left' && 'fibogrid-pinned-left-shadow',
           column.isFirstPinned && column.pinned === 'right' && 'fibogrid-pinned-right-shadow border-l border-border'
         )}
-        style={{ 
-          width: column.computedWidth, 
+        style={{
+          width: column.computedWidth,
           minWidth: column.computedWidth,
           maxWidth: column.computedWidth,
           flexShrink: 0,
@@ -196,12 +198,12 @@ export function GridHeader<T>({
         onDragEnd={onDragEnd}
         onDrop={(e) => onDrop(e, column)}
       >
-        <span className="flex-1 truncate font-medium text-sm">
+        <div className="flex-1 min-w-0 flex items-center">
           {column.headerRenderer
-            ? column.headerRenderer({ colDef: column, column, api: {} as any })
-            : column.headerName}
-        </span>
-        
+            ? column.headerRenderer({ colDef: column, column, api })
+            : <span className="truncate w-full block">{column.headerName}</span>}
+        </div>
+
         {sortDirection && (
           <div className="flex items-center ml-1 flex-shrink-0">
             {sortDirection === 'asc' ? (
@@ -220,7 +222,7 @@ export function GridHeader<T>({
         {hasFilter && (
           <Filter className="h-3 w-3 ml-1 text-primary flex-shrink-0" />
         )}
-        
+
         <ColumnMenu
           column={column}
           onSort={onSort}
@@ -238,7 +240,7 @@ export function GridHeader<T>({
             <MoreVertical className="h-4 w-4" />
           </button>
         </ColumnMenu>
-        
+
         {column.resizable !== false && (
           <div
             className={cn(
@@ -264,10 +266,10 @@ export function GridHeader<T>({
         : Array.isArray(activeFilter.value)
           ? activeFilter.value.join(', ')
           : String(activeFilter.value);
-    
+
     return (
       <div
-        key={`filter-${column.field}`}
+        key={`filter - ${column.field} `}
         className={cn(
           'flex items-center px-1 fibogrid-filter-row-container',
           !column.isLastCenterBeforeRight && 'border-r border-border',
@@ -275,8 +277,8 @@ export function GridHeader<T>({
           column.isLastPinned && column.pinned === 'left' && 'fibogrid-pinned-left-shadow',
           column.isFirstPinned && column.pinned === 'right' && 'fibogrid-pinned-right-shadow border-l border-border'
         )}
-        style={{ 
-          width: column.computedWidth, 
+        style={{
+          width: column.computedWidth,
           minWidth: column.computedWidth,
           maxWidth: column.computedWidth,
           flexShrink: 0,
@@ -330,7 +332,7 @@ export function GridHeader<T>({
             <span className="text-xs text-muted-foreground font-medium">#</span>
           </div>
         )}
-        
+
         {showCheckboxColumn && (
           <div
             className="flex items-center justify-center px-2 flex-shrink-0 fibogrid-checkbox-column fibogrid-header-container"
@@ -345,9 +347,9 @@ export function GridHeader<T>({
             />
           </div>
         )}
-        
+
         {centerColumns.map((column) => renderColumnHeader(column, false))}
-        
+
         {rightPinnedColumns.map((column) => renderColumnHeader(column, true))}
       </div>
 
@@ -363,15 +365,15 @@ export function GridHeader<T>({
               className="border-r border-border flex-shrink-0 fibogrid-row-number-column fibogrid-filter-row-container"
             />
           )}
-          
+
           {showCheckboxColumn && (
             <div
               className="border-r border-border flex-shrink-0 fibogrid-checkbox-column fibogrid-filter-row-container"
             />
           )}
-          
+
           {centerColumns.map((column) => renderFilterCell(column, false))}
-          
+
           {rightPinnedColumns.map((column) => renderFilterCell(column, true))}
         </div>
       )}

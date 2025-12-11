@@ -112,27 +112,27 @@ function GridRowInner<T>({
     const left = visibleColumns.filter(c => c.pinned === 'left');
     const center = visibleColumns.filter(c => !c.pinned);
     const right = visibleColumns.filter(c => c.pinned === 'right');
-    
+
     let leftOffset = 0;
     const leftWithPositions = left.map((col, idx) => {
       const pos = leftOffset;
       leftOffset += col.computedWidth;
       return { ...col, stickyLeft: pos, isLastPinned: idx === left.length - 1 };
     });
-    
+
     let rightOffset = 0;
     const rightWithPositions = [...right].reverse().map((col, idx) => {
       const pos = rightOffset;
       rightOffset += col.computedWidth;
       return { ...col, stickyRight: pos, isFirstPinned: idx === right.length - 1 };
     }).reverse();
-    
+
     // Mark last center column if there are right pinned columns
     const centerWithFlags = center.map((col, idx) => ({
       ...col,
       isLastCenterBeforeRight: right.length > 0 && idx === center.length - 1
     }));
-    
+
     return {
       leftPinnedColumns: leftWithPositions,
       centerColumns: centerWithFlags,
@@ -144,7 +144,7 @@ function GridRowInner<T>({
     if (isSelected) return 'fibogrid-row-selected';
     // If dynamic class is present, we might want it to override stripe? 
     // Usually selection > dynamic > stripe
-    
+
     // For pinned columns, we need to ensure the background is solid so content doesn't show through
     // We reuse the row's stripe class or selection class
     if (isEven) return 'fibogrid-row-even';
@@ -152,8 +152,8 @@ function GridRowInner<T>({
   }, [isSelected, isEven]);
 
   const renderCell = (
-    column: ProcessedColumn<T> & { stickyLeft?: number; stickyRight?: number; isLastPinned?: boolean; isFirstPinned?: boolean; isLastCenterBeforeRight?: boolean }, 
-    isPinned: boolean, 
+    column: ProcessedColumn<T> & { stickyLeft?: number; stickyRight?: number; isLastPinned?: boolean; isFirstPinned?: boolean; isLastCenterBeforeRight?: boolean },
+    isPinned: boolean,
     stickyLeft?: number,
     stickyRight?: number
   ) => {
@@ -163,7 +163,7 @@ function GridRowInner<T>({
     const cellFocused = isCellFocused?.(row.id, column.field);
     const colIndex = visibleColumns.findIndex(c => c.field === column.field);
     const isFirstColumn = colIndex === 0;
-    
+
     return (
       <div
         key={column.field}
@@ -262,7 +262,7 @@ function GridRowInner<T>({
           {rowNumber}
         </div>
       )}
-      
+
       {showCheckboxColumn && (
         <div
           className={cn(
@@ -279,7 +279,7 @@ function GridRowInner<T>({
             onCheckedChange={(checked) => {
               onCheckboxChange?.(!!checked);
             }}
-            className="translate-y-[1px]" 
+            className="translate-y-[1px]"
             aria-label="Select row"
             onClick={(e) => e.stopPropagation()}
           />
@@ -308,26 +308,21 @@ function GridRowInner<T>({
 }
 
 export const GridRow = memo(GridRowInner, (prevProps, nextProps) => {
-  if (prevProps.row === nextProps.row && 
-      prevProps.isSelected === nextProps.isSelected &&
-      prevProps.editingCell === nextProps.editingCell &&
-      prevProps.columns === nextProps.columns &&
-      prevProps.isCellSelected === nextProps.isCellSelected) {
-      return true;
-    }
-    
-    if (prevProps.isSelected !== nextProps.isSelected) return false;
+  if (prevProps.showRowNumbers !== nextProps.showRowNumbers) return false;
+  if (prevProps.showCheckboxColumn !== nextProps.showCheckboxColumn) return false;
+
+  if (prevProps.isSelected !== nextProps.isSelected) return false;
   if (prevProps.row.id !== nextProps.row.id) return false;
   if (prevProps.isDragging !== nextProps.isDragging) return false;
   if (prevProps.isDropTarget !== nextProps.isDropTarget) return false;
   if (prevProps.isExpanded !== nextProps.isExpanded) return false;
-    if (prevProps.isCellSelected !== nextProps.isCellSelected) return false;
-    
-    const prevEdit = prevProps.editingCell;
+  if (prevProps.isCellSelected !== nextProps.isCellSelected) return false;
+
+  const prevEdit = prevProps.editingCell;
   const nextEdit = nextProps.editingCell;
-    if (prevEdit?.rowId !== nextEdit?.rowId || prevEdit?.field !== nextEdit?.field || prevEdit?.value !== nextEdit?.value) return false;
-    
-    if (prevProps.columns !== nextProps.columns) {
+  if (prevEdit?.rowId !== nextEdit?.rowId || prevEdit?.field !== nextEdit?.field || prevEdit?.value !== nextEdit?.value) return false;
+
+  if (prevProps.columns !== nextProps.columns) {
     if (prevProps.columns.length !== nextProps.columns.length) return false;
     for (let i = 0; i < prevProps.columns.length; i++) {
       const prevCol = prevProps.columns[i];
@@ -342,18 +337,20 @@ export const GridRow = memo(GridRowInner, (prevProps, nextProps) => {
       }
     }
   }
-  
+
   if (prevProps.row.data === nextProps.row.data) return true;
 
   const prevData = prevProps.row.data as Record<string, unknown>;
   const nextData = nextProps.row.data as Record<string, unknown>;
   const cols = nextProps.columns;
   const len = cols.length;
-  
+
   for (let i = 0; i < len; i++) {
     const field = cols[i].field;
     if (prevData[field] !== nextData[field]) return false;
   }
-  
+
+
+
   return true;
 }) as typeof GridRowInner;

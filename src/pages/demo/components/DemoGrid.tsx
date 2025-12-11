@@ -34,7 +34,7 @@ export function DemoGrid(props: DemoGridProps) {
                 <div className="bg-muted/30 border-b border-primary/10 px-4 py-2">
                     <div className="flex flex-col gap-2">
                         <div className="flex items-center gap-2 text-sm text-muted-foreground font-body">
-                            <Badge variant="outline" className="border-primary/30">
+                            <Badge className="border-primary/30">
                                 Server-side Mode
                             </Badge>
                             <span>
