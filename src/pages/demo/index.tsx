@@ -246,7 +246,7 @@ export default function Demo() {
                             configs={configs}
                         />
                     </div>
-                    <LinkedGrids />
+                    <LinkedGrids useServerSide={useServerSide} />
                 </main>
             </div>
         </GridRegistryProvider>

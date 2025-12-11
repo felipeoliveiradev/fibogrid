@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.13] - 2025-12-11
+
+### Added
+- **Grid Registry System** - Introduced `GridRegistryContext`, `GridRegistryProvider`, and `useGridRegistry` hooks to enable seamless cross-grid communication.
+- **Selection Toggle** - Improved `rowSelection="single"` behavior to allow toggling off selection by clicking the selected row again.
+
+### Changed
+- **Performance Optimization** - Optimized `GridRegistryContext` to use stable references (`useRef`), preventing unnecessary re-renders when grids register or unregister.
+
 ## [1.0.12] - 2025-12-11
 
 ### Added

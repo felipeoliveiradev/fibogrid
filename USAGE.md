@@ -267,6 +267,73 @@ function GridWithAPI() {
 }
 ```
 
+## Cross-Grid Communication (Grid Registry)
+
+FiboGrid provides a built-in registry system to allow grids to communicate with each other. This is useful for Master-Detail views or synchronized grids.
+
+### Setup
+
+Wrap your application or grid container with `GridRegistryProvider`:
+
+```tsx
+import { GridRegistryProvider, FiboGrid, useGridRegistry } from 'fibogrid';
+
+function App() {
+  return (
+    <GridRegistryProvider>
+      <LinkedGrids />
+    </GridRegistryProvider>
+  );
+}
+```
+
+### Accessing Other Grids (Master-Detail Example)
+
+Use `useGridRegistry` to get access to any registered grid's API by its `gridId`:
+
+```tsx
+function LinkedGrids() {
+  const { getGridApi } = useGridRegistry();
+
+  const handleMasterSelect = (event) => {
+    // Get the Detail Grid API by ID
+    const detailApi = getGridApi('detail-grid');
+    
+    if (detailApi && event.selected) {
+       // Filter detail grid based on master selection
+       detailApi.setFilterModel([
+         { 
+           field: 'categoryId', 
+           filterType: 'text', 
+           operator: 'equals', 
+           value: event.rowNode.data.id 
+         }
+       ]);
+    }
+  };
+
+  return (
+    <div className="grid grid-cols-2 gap-4">
+      {/* Master Grid */}
+      <FiboGrid
+        gridId="master-grid"
+        rowData={categories}
+        columnDefs={categoryCols}
+        rowSelection="single"
+        onRowSelected={handleMasterSelect}
+      />
+      
+      {/* Detail Grid */}
+      <FiboGrid
+        gridId="detail-grid"
+        rowData={items}
+        columnDefs={itemCols}
+      />
+    </div>
+  );
+}
+```
+
 ## Type Definitions
 
 All types are fully exported and available:

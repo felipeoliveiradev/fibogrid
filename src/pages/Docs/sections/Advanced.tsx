@@ -93,48 +93,77 @@ export const Advanced = ({ activeSection }: { activeSection: string }) => {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <p className="font-body text-muted-foreground">
-                                Create linked grids where selecting a row in one grid filters or populates another grid.
+                                Use the <strong>Grid Registry</strong> to link multiple grids together. This allows for powerful interaction patterns like Master-Detail views, where selecting a row in one grid automatically controls another.
                             </p>
-                            <CodeBlock code={`// Master grid (users)
-const [selectedUser, setSelectedUser] = useState(null);
 
-<FiboGrid
-  gridId="users-grid"
-  rowData={users}
-  columnDefs={userColumns}
-  rowSelection="single"
-  onRowSelected={(event) => {
-    setSelectedUser(event.rowNode.data);
-  }}
-/>
+                            <div className="bg-primary/5 p-4 rounded-lg border border-primary/10">
+                                <h4 className="font-semibold text-primary mb-2">Setup Required</h4>
+                                <p className="text-sm">
+                                    Wrap your grid components or the entire application in <code>GridRegistryProvider</code>.
+                                </p>
+                            </div>
 
-// Detail grid (orders for selected user)
-<FiboGrid
-  gridId="orders-grid"
-  rowData={selectedUser ? orders.filter(o => o.userId === selectedUser.id) : []}
-  columnDefs={orderColumns}
-/>`} />
+                            <CodeBlock code={`import { GridRegistryProvider, FiboGrid, useGridRegistry } from 'fibogrid';
+
+function App() {
+  return (
+    <GridRegistryProvider>
+      <LinkedGrids />
+    </GridRegistryProvider>
+  );
+}`} />
                         </CardContent>
                     </Card>
 
                     <Card className="paper-aged border-primary/10">
                         <CardHeader>
-                            <CardTitle className="font-display text-xl">Grid Registry</CardTitle>
+                            <CardTitle className="font-display text-xl">Event-Driven Architecture</CardTitle>
                         </CardHeader>
-                        <CardContent>
-                            <CodeBlock code={`// Use gridId for cross-grid communication
-import { useGridRegistry } from 'fibogrid';
-
-function Dashboard() {
+                        <CardContent className="space-y-4">
+                            <p className="font-body text-sm text-muted-foreground">
+                                We recommend an <strong>imperative, event-driven approach</strong> for linking grids. Instead of syncing state with effects, use events to directly command other grids.
+                            </p>
+                            <CodeBlock code={`function LinkedGrids() {
+  // 1. Get registry hook
   const { getGridApi } = useGridRegistry();
-  
-  const syncGrids = () => {
-    const usersApi = getGridApi('users-grid');
-    const ordersApi = getGridApi('orders-grid');
-    
-    const selected = usersApi.getSelectedRows();
-    // Update orders grid based on selection
+
+  // 2. Define event handler
+  const handleMasterSelect = (event) => {
+    // 3. Get API of the other grid by ID
+    const detailApi = getGridApi('detail-grid');
+
+    if (detailApi && event.selected) {
+       // 4. Command the detail grid directly
+       detailApi.setFilterModel([
+         { 
+           field: 'categoryId', 
+           filterType: 'text', 
+           operator: 'equals', 
+           value: event.rowNode.data.id 
+         }
+       ]);
+    }
   };
+
+  return (
+    <div className="grid grid-cols-2 gap-4">
+      {/* MASTER GRID */}
+      <FiboGrid
+        gridId="master-grid"
+        rowData={categories}
+        columnDefs={categoryColumns}
+        rowSelection="single"
+        onRowSelected={handleMasterSelect}
+      />
+      
+      {/* DETAIL GRID */}
+      <FiboGrid
+        gridId="detail-grid"
+        rowData={items}
+        columnDefs={itemColumns}
+      />
+    </div>
+  );
 }`} />
                         </CardContent>
                     </Card>

@@ -1,5 +1,5 @@
 import { FiboGrid, useGridRegistry } from 'fibogrid';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
@@ -31,8 +31,43 @@ const ITEM_COL_DEFS: any[] = [
     { field: 'categoryId', headerName: 'Cat ID', hide: true }
 ];
 
-export function LinkedGrids() {
+export function LinkedGrids({ useServerSide = false }: { useServerSide?: boolean }) {
     const { getGridApi } = useGridRegistry();
+
+    const categoryDataSource = useMemo(() => ({
+        getRows: async (params: any) => {
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            const data = CATEGORIES.map(c => ({ ...c, name: `${c.name} (Server)` }));
+
+            return {
+                data,
+                totalRows: data.length,
+                page: params.page,
+                pageSize: params.pageSize
+            };
+        }
+    }), []);
+
+    const itemDataSource = useMemo(() => ({
+        getRows: async (params: any) => {
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            let data = ITEMS.map(i => ({ ...i, name: `${i.name} (Server)` }));
+
+            const catFilter = params.filterModel?.find((f: any) => f.field === 'categoryId');
+            if (catFilter) {
+                data = data.filter(i => i.categoryId === catFilter.value);
+            }
+
+            return {
+                data,
+                totalRows: data.length,
+                page: params.page,
+                pageSize: params.pageSize
+            };
+        }
+    }), []);
 
     const handleReset = useCallback(() => {
         const catApi = getGridApi('grid-categories');
@@ -55,12 +90,14 @@ export function LinkedGrids() {
             const isSelected = selectedRows.some((row: any) => row.data.id === categoryId);
 
             if (isSelected && itemApi) {
+                const valueToFilter = categoryId;
+
                 itemApi.setFilterModel([
                     {
                         field: 'categoryId',
                         filterType: 'text',
                         operator: 'equals',
-                        value: categoryId
+                        value: valueToFilter
                     }
                 ]);
             } else if (itemApi) {
@@ -110,10 +147,14 @@ export function LinkedGrids() {
     return (
         <Card className="mt-8 border-primary/20 shadow-parchment">
             <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-2xl font-display text-gradient-gold">Linked Grids Registry Demo</CardTitle>
-                <Button onClick={handleReset} variant="outline" size="sm" className="gap-2">
-                    <RefreshCw className="h-4 w-4" /> Reset Interaction
-                </Button>
+                <CardTitle className="text-2xl font-display text-gradient-gold">
+                    Linked Grids Registry Demo {useServerSide ? '(Server Mode)' : '(Client Mode)'}
+                </CardTitle>
+                <div className="flex gap-2">
+                    <Button onClick={handleReset} variant="outline" size="sm" className="gap-2">
+                        <RefreshCw className="h-4 w-4" /> Reset Interaction
+                    </Button>
+                </div>
             </CardHeader>
             <CardContent className="grid md:grid-cols-2 gap-6">
                 <div className="space-y-2">
@@ -121,7 +162,11 @@ export function LinkedGrids() {
                     <div className="h-[300px] border rounded-md overflow-hidden">
                         <FiboGrid
                             gridId="grid-categories"
-                            rowData={CATEGORIES}
+                            rowData={useServerSide ? [] : CATEGORIES}
+                            serverSideDataSource={useServerSide ? categoryDataSource : undefined}
+                            paginationMode={useServerSide ? 'server' : 'client'}
+                            pagination={true}
+                            paginationPageSize={10}
                             columnDefs={CATEGORY_COL_DEFS}
                             rowSelection="single"
                             onRowClickFallback={handleCategoryClick}
@@ -134,7 +179,11 @@ export function LinkedGrids() {
                     <div className="h-[300px] border rounded-md overflow-hidden">
                         <FiboGrid
                             gridId="grid-items"
-                            rowData={ITEMS}
+                            rowData={useServerSide ? [] : ITEMS}
+                            serverSideDataSource={useServerSide ? itemDataSource : undefined}
+                            paginationMode={useServerSide ? 'server' : 'client'}
+                            pagination={true}
+                            paginationPageSize={10}
                             columnDefs={ITEM_COL_DEFS}
                             rowSelection="single"
                             onRowClickFallback={handleItemClick}

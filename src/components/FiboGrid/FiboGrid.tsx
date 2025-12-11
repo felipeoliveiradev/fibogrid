@@ -51,9 +51,9 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     className,
     contextMenu = true,
     getContextMenuItems,
-    showToolbar = true, // Legacy prop default
-    showStatusBar = true, // Legacy prop default
-    showRowNumbers = false, // Legacy prop default
+    showToolbar = true,
+    showStatusBar = true,
+    showRowNumbers = false,
     enableFilterValueVirtualization = false,
     filterValues,
     height,
@@ -86,16 +86,14 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     configs,
   } = props;
 
-  // Resolve Configuration
   const effectiveShowToolbar = configs?.header?.show ?? showToolbar;
   const effectiveShowStatusBar = configs?.footer?.show ?? showStatusBar;
   const effectiveShowRowNumbers = configs?.center?.rowNumbers ?? showRowNumbers;
   const effectiveShowPagination = configs?.footer?.pagination ?? pagination;
-  const footerInfo = configs?.footer?.information ?? true; // Default to true if not specified? Or check legacy behavior.
+  const footerInfo = configs?.footer?.information ?? true;
 
-  // Center styles
-  const showBorders = configs?.center?.borders !== false; // Default true? Or adjust based on legacy.
-  const showStripes = configs?.center?.stripes !== false; // Default true/false?
+  const showBorders = configs?.center?.borders !== false;
+  const showStripes = configs?.center?.stripes !== false;
 
   const containerRef = useRef<HTMLDivElement>(null);
   const cellContentRefs = useRef<Map<string, Map<string, HTMLElement>>>(new Map());
@@ -104,7 +102,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
   const [filterState, setFilterState] = useState<FilterState<T> | null>(null);
 
   const [quickFilterValue, setQuickFilterValue] = useState('');
-  const [contextMenuTarget, setContextMenuTarget] = useState<any>(null); // State to hold inner clicked cell data
+  const [contextMenuTarget, setContextMenuTarget] = useState<any>(null);
   const [contextMenuItems, setContextMenuItems] = useState<ContextMenuItem[]>([]);
 
   const editingCellRef = useRef<{ rowId: string; field: string; value: any; originalValue: any } | null>(null);
@@ -585,7 +583,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
       ref={containerRef}
       className={cn(
         'fibogrid',
-        className, // Theme class should come before Tailwind classes to ensure proper CSS specificity
+        className,
         'relative flex flex-col rounded-lg overflow-hidden focus:outline-none focus:ring-2 focus:ring-primary/50',
         isResizing && 'cursor-col-resize select-none',
         isSelecting && 'select-none cursor-crosshair',
@@ -595,8 +593,6 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
       style={{ height: height || '100%', minHeight: 400 }}
       tabIndex={0}
       onMouseDown={() => {
-        // Clear context menu target on any click to prevent stale data
-        // If the click is on a row, onCellContextMenu will immediately set it back
         setContextMenuTarget(null);
       }}
     >
@@ -747,7 +743,6 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                             if (currentEditing && !cancel && currentValue !== undefined) {
                               const column = columns.find((c) => c.field === currentEditing.field)!;
 
-                              // VALIDATION: Check if valueSetter allows the change
                               let isValid = true;
                               if (column.valueSetter) {
                                 isValid = column.valueSetter({
@@ -771,10 +766,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                                   api,
                                 });
                               } else {
-                                // Validation failed: Revert to original value
-                                // Ideally we should show a toast or keep the editor open, but for now we revert
                                 console.warn(`Validation failed for ${column.field}`);
-                                // We implicitly revert by NOT firing onCellValueChanged and letting the editor close
                               }
                             }
                             editingCellRef.current = null;
@@ -811,28 +803,17 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                             const column = columns[colIndex];
                             const value = getValueFromPath(row.data, column.field);
 
-                            // Selection Logic on Right Click
-
-                            // 1. Always focus the clicked cell
                             focusCell(row.id, column.field);
 
-                            // 2. Handle Row Selection
                             let currentSelectedRows = new Set(selection.selectedRows);
                             if (rowSelection) {
                               if (rowSelection === 'multiple') {
-                                // Toggle logic
                                 if (currentSelectedRows.has(row.id)) {
-                                  // Don't deselect on right click usually? 
-                                  // Actually user requested "toggle" behavior.
-                                  // But commonly right click adds to selection or selects if not selected.
-                                  // Let's assume it SELECTS.
-                                  // If already selected, do nothing.
                                 } else {
                                   currentSelectedRows.add(row.id);
                                   selectRow(row.id, true);
                                 }
                               } else {
-                                // Single selection
                                 if (!currentSelectedRows.has(row.id)) {
                                   deselectAll();
                                   selectRow(row.id, true);
@@ -841,8 +822,6 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                               }
                             }
 
-                            // Prepare data for context menu callback
-                            // We construct the "future" selection state for the callback to use
                             const selectedData = displayedRows
                               .filter(r => currentSelectedRows.has(r.id))
                               .map(r => r.data);
@@ -859,26 +838,23 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                               selectedRows: selectedData
                             };
 
-                            // Generate items imperatively
                             const items = getContextMenuItems
                               ? getContextMenuItems(params)
                               : getDefaultContextMenuItems();
 
                             setContextMenuItems(items);
-                            setContextMenuTarget(true); // Just a flag to say "open"
+                            setContextMenuTarget(true);
                           }}
                         />
                       );
                     }
 
                     const groupRow = row as unknown as GroupRowNode<T>;
-                    // ... existing group row code ...
                     const isExpanded = expandedGroups.has(row.id);
                     return (
                       <GroupRow
                         key={row.id}
                         row={groupRow}
-                        // ... props
                         columns={columns}
                         rowHeight={rowHeight}
                         isExpanded={isExpanded}
