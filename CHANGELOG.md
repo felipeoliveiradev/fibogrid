@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.15] - 2025-12-11
+
+### Added
+- **Grid Refresh API** - Added `api.refresh()` method to trigger data reload (server-side) or state reset (client-side).
+- **Toolbar Refresh** - Connected the Grid Toolbar's refresh button to the new `api.refresh()` method.
+
+### Fixed
+- **Quick Filter Sync** - Fixed an issue where `api.removeQuickFilter()` would clear the filter but not update the search input in the toolbar.
+- **Refresh Infinite Loop** - Fixed a potential infinite loop in server-side data fetching when triggering refreshes.
+
+### Changed
+- **State Synchronization** - Optimized internal state synchronization in `useGridState` and `GridToolbar` to use `useRef` instead of `useEffect` for better performance and to prevent unwanted side effects.
+
 ## [1.0.14] - 2025-12-11
 
 ### Added
