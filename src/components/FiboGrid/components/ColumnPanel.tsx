@@ -55,8 +55,8 @@ export function ColumnPanel<T>({
   };
 
   return (
-    <div className="fixed right-0 top-0 bottom-0 w-72 fibogrid-column-panel z-50 flex flex-col">
-      {}
+    <div className="fixed right-0 top-0 bottom-0 w-72 fibogrid-column-panel fibogrid-z-column-panel flex flex-col">
+      { }
       <div className="flex items-center justify-between px-4 py-3 fibogrid-column-panel-header">
         <h3 className="font-semibold">Columns</h3>
         <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={onClose}>
@@ -64,7 +64,7 @@ export function ColumnPanel<T>({
         </Button>
       </div>
 
-      {}
+      { }
       <div className="p-3 fibogrid-column-panel-search">
         <div className="relative">
           <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 fibogrid-column-panel-icon" />
@@ -77,7 +77,7 @@ export function ColumnPanel<T>({
         </div>
       </div>
 
-      {}
+      { }
       <ScrollArea className="flex-1">
         <div className="p-2 space-y-1">
           {filteredColumns.map((column, index) => (
@@ -95,18 +95,18 @@ export function ColumnPanel<T>({
               onDragEnd={handleDragEnd}
             >
               <GripVertical className="h-4 w-4 fibogrid-column-panel-icon opacity-0 group-hover:opacity-100 cursor-grab" />
-              
+
               <Checkbox
                 checked={!column.hide}
-                onCheckedChange={(checked) => 
+                onCheckedChange={(checked) =>
                   onColumnVisibilityChange(column.field, checked as boolean)
                 }
               />
-              
+
               <span className="flex-1 text-sm truncate">
                 {column.headerName}
               </span>
-              
+
               <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100">
                 <button
                   onClick={() => onColumnPinChange(column.field, column.pinned === 'left' ? null : 'left')}
@@ -124,7 +124,7 @@ export function ColumnPanel<T>({
         </div>
       </ScrollArea>
 
-      {}
+      { }
       <div className="p-3 fibogrid-column-panel-footer flex gap-2">
         <Button
           variant="outline"

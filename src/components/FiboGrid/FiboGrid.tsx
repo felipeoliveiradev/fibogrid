@@ -481,7 +481,12 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     (rowId: string, e: React.MouseEvent) => {
       if (isRowDragging || isDraggingRows) return;
 
-      if (rowSelection) {
+      const target = e.target as HTMLElement;
+      const isCheckboxClick = target.closest('.fibogrid-checkbox-column') ||
+        (target.tagName === 'INPUT' && (target as HTMLInputElement).type === 'checkbox') ||
+        target.getAttribute('role') === 'checkbox';
+
+      if (rowSelection && !isCheckboxClick) {
         selectRow(rowId, true, e.shiftKey, e.ctrlKey || e.metaKey);
       }
 

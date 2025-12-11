@@ -217,6 +217,52 @@ function ServerSideGrid() {
 }
 ```
 
+## Column Sizing & Flex Layout
+
+FiboGrid provides powerful tools for controlling column widths, including fixed widths, auto-sizing, and flex layouts to fill available space.
+
+### Basic Widths
+
+You can define fixed widths for columns or let them use a default width (150px).
+
+```typescript
+const columns: ColumnDef<Row>[] = [
+  { field: 'id', width: 80 },        // Fixed 80px
+  { field: 'name', width: 200 },     // Fixed 200px
+  { field: 'description' }           // Default 150px
+];
+```
+
+### Flex Layout (Auto-Fill)
+
+To make columns automatically fill the remaining empty space in the grid, use the `flex` property. The grid distributes available space proportionally among all flex columns.
+
+```typescript
+const columns: ColumnDef<Row>[] = [
+  { field: 'id', width: 80 },        // Fixed width
+  { field: 'title', flex: 1 },       // Takes 1 part of remaining space
+  { field: 'status', flex: 1 },      // Takes 1 part (equal to title)
+  { field: 'description', flex: 2 }  // Takes 2 parts (twice as wide as title)
+];
+```
+
+### Global Defaults
+
+You can use `defaultColDef` to apply settings to **all** columns to avoid repetition. For example, to make ALL columns flexible and fill the grid:
+
+```typescript
+<FiboGrid
+  rowData={data}
+  columnDefs={columns}
+  defaultColDef={{
+    flex: 1,           // All columns will share space equally
+    minWidth: 100,     // Prevents columns from becoming too narrow
+    sortable: true,    // Enable sorting for everything
+    filterable: true   // Enable filtering for everything
+  }}
+/>
+```
+
 ## Using Grid API
 
 ```typescript

@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.18] - 2025-12-11
+
+### Added
+- **Flex Column Layout** - Added support for `flex` property in `ColumnDef`. Columns with `flex` defined will now automatically fill the remaining available space in the grid container.
+- **Global Column Defaults** - Clarified support for `defaultColDef` prop to apply common settings (like `flex: 1`) to all columns efficiently.
+
+### Fixed
+- **Z-Index Specificity** - Added `!important` to z-index theme utilities to ensure they strictly override third-party library defaults (like Radix UI) that use inline styles.
+
+## [1.0.17] - 2025-12-11
+
+### Added
+- **Themeable Z-Index System** - Added a multi-layer z-index system.
+  - **Global Variables**: `--fibogrid-z-popover`, `--fibogrid-z-popover-nested`, `--fibogrid-z-dialog`, `--fibogrid-z-panel`.
+  - **Granular Variables**: `--fibogrid-z-filter-popover`, `--fibogrid-z-column-menu`, `--fibogrid-z-filter-panel`, `--fibogrid-z-column-panel`.
+  - This structure allows you to override z-indices globally (e.g. all popovers) or for specific components (e.g. just the filter popover) independently.
+
+### Fixed
+- **Row Click event on Checkbox** - Fixed an issue where `onRowClicked` and `onRowClickFallback` were not firing when clicking the row selection checkbox.
+
 ## [1.0.15] - 2025-12-11
 
 ### Added

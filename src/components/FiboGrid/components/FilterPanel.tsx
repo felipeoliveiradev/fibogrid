@@ -36,8 +36,8 @@ export function FilterPanel<T>({
   };
 
   return (
-    <div className="fixed right-0 top-0 bottom-0 w-72 bg-popover border-l border-border shadow-xl z-50 flex flex-col">
-      {}
+    <div className="fixed right-0 top-0 bottom-0 w-72 bg-popover border-l border-border shadow-xl fibogrid-z-filter-panel flex flex-col">
+      { }
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
         <div className="flex items-center gap-2">
           <Filter className="h-4 w-4" />
@@ -53,7 +53,7 @@ export function FilterPanel<T>({
         </Button>
       </div>
 
-      {}
+      { }
       <div className="p-3 border-b border-border">
         <div className="relative">
           <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -66,7 +66,7 @@ export function FilterPanel<T>({
         </div>
       </div>
 
-      {}
+      { }
       {filterModel.length > 0 && (
         <div className="p-3 border-b border-border">
           <div className="flex items-center justify-between mb-2">
@@ -104,12 +104,12 @@ export function FilterPanel<T>({
         </div>
       )}
 
-      {}
+      { }
       <ScrollArea className="flex-1">
         <div className="p-2 space-y-1">
           {filteredColumns.map(column => {
             const filter = getFilterForColumn(column.field);
-            
+
             return (
               <div
                 key={column.field}
@@ -122,11 +122,11 @@ export function FilterPanel<T>({
                   'h-4 w-4',
                   filter ? 'text-primary' : 'text-muted-foreground'
                 )} />
-                
+
                 <span className="flex-1 text-sm truncate">
                   {column.headerName}
                 </span>
-                
+
                 {filter && (
                   <button
                     onClick={() => onFilterChange(null)}

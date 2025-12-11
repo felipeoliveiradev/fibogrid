@@ -61,7 +61,7 @@ export function ColumnMenu<T>({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild ref={triggerRef}>{children}</DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className={cn("fibogrid w-52 bg-popover border border-border z-[100]", className)}>
+      <DropdownMenuContent align="start" className={cn("fibogrid w-52 bg-popover border border-border fibogrid-z-column-menu", className)}>
         { }
         {column.sortable !== false && onSort && (
           <>
@@ -85,7 +85,7 @@ export function ColumnMenu<T>({
                 <Pin className="h-4 w-4 mr-2" />
                 {locale.columnMenu.pinColumn}
               </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent className="bg-popover border border-border z-[110]">
+              <DropdownMenuSubContent className="bg-popover border border-border fibogrid-z-popover-nested">
                 <DropdownMenuItem onClick={() => onPin(column.field, null)}>
                   {!column.pinned && <Check className="h-4 w-4 mr-2" />}
                   {column.pinned && <span className="w-4 mr-2" />}

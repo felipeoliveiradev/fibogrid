@@ -95,7 +95,6 @@ function GridRowInner<T>({
   const indentWidth = level * 20;
   const isChildRow = (row as any).isChildRow;
 
-  // Dynamic Row Class
   const dynamicRowClass = useMemo(() => {
     if (!getRowClass) return '';
     const result = getRowClass({
@@ -127,7 +126,6 @@ function GridRowInner<T>({
       return { ...col, stickyRight: pos, isFirstPinned: idx === right.length - 1 };
     }).reverse();
 
-    // Mark last center column if there are right pinned columns
     const centerWithFlags = center.map((col, idx) => ({
       ...col,
       isLastCenterBeforeRight: right.length > 0 && idx === center.length - 1
@@ -142,11 +140,6 @@ function GridRowInner<T>({
 
   const getPinnedBgClass = useMemo(() => {
     if (isSelected) return 'fibogrid-row-selected';
-    // If dynamic class is present, we might want it to override stripe? 
-    // Usually selection > dynamic > stripe
-
-    // For pinned columns, we need to ensure the background is solid so content doesn't show through
-    // We reuse the row's stripe class or selection class
     if (isEven) return 'fibogrid-row-even';
     return 'fibogrid-row-odd';
   }, [isSelected, isEven]);
@@ -172,7 +165,6 @@ function GridRowInner<T>({
           isPinned && 'sticky z-[2]',
           column.isLastPinned && column.pinned === 'left' && 'fibogrid-pinned-left-shadow',
           column.isFirstPinned && column.pinned === 'right' && 'fibogrid-pinned-right-shadow',
-          // Apply pinned background - selection takes precedence, then dynamic row class, then stripe
           isPinned && (isSelected ? 'fibogrid-row-selected' : (dynamicRowClass || (isEven ? 'fibogrid-row-even' : 'fibogrid-row-odd')))
         )}
         style={{
@@ -221,7 +213,7 @@ function GridRowInner<T>({
         'transition-[background-color] duration-150',
         'fibogrid-row-hover',
         isSelected && 'fibogrid-row-selected',
-        !isSelected && dynamicRowClass, // Apply dynamic class here if not selected
+        !isSelected && dynamicRowClass,
         !isSelected && !dynamicRowClass && isEven && 'fibogrid-row-even',
         !isSelected && !dynamicRowClass && !isEven && 'fibogrid-row-odd',
         isDragging && 'fibogrid-row-dragging',
@@ -269,7 +261,6 @@ function GridRowInner<T>({
             "flex items-center justify-center px-2 flex-shrink-0 fibogrid-checkbox-column",
             isSelected ? 'fibogrid-checkbox-column-bg-selected' : isEven ? 'fibogrid-checkbox-column-bg-even' : ''
           )}
-          onClick={(e) => e.stopPropagation()}
         >
           {rowDragEnabled && (
             <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab mr-1" />
@@ -281,7 +272,7 @@ function GridRowInner<T>({
             }}
             className="translate-y-[1px]"
             aria-label="Select row"
-            onClick={(e) => e.stopPropagation()}
+            onClick={onRowClick}
           />
         </div>
       )}

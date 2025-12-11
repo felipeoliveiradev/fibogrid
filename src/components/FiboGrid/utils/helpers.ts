@@ -32,10 +32,54 @@ export function processColumns<T>(
     ...col,
   }));
 
+  let usedWidth = 0;
+  let totalFlex = 0;
+
+  mergedColumns.forEach((col) => {
+    if (col.hide) return;
+
+    if (col.width) {
+      usedWidth += col.width;
+    } else if (col.flex) {
+      totalFlex += col.flex;
+      usedWidth += (col.minWidth || 50);
+    } else {
+      usedWidth += (col.width || 150);
+    }
+  });
+
+  const scrollbarWidth = 15;
+  const effectiveContainerWidth = Math.max(0, containerWidth - scrollbarWidth);
+  const availableForFlex = Math.max(0, effectiveContainerWidth - usedWidth);
+
+
   let currentLeft = 0;
   return mergedColumns.map((col, index) => {
+    if (col.hide) {
+      return {
+        ...col,
+        computedWidth: 0,
+        left: 0,
+        index,
+      };
+    }
 
-    const computedWidth = col.width || 150;
+    let computedWidth: number;
+
+    if (col.width) {
+      computedWidth = col.width;
+    } else if (col.flex && totalFlex > 0) {
+      const minW = col.minWidth || 50;
+      const share = (col.flex / totalFlex) * availableForFlex;
+
+      computedWidth = minW + (availableForFlex > 0 ? share : 0);
+    } else {
+      computedWidth = col.width || 150;
+    }
+
+    // Apply strict max/min constraints final check
+    if (col.minWidth && computedWidth < col.minWidth) computedWidth = col.minWidth;
+    if (col.maxWidth && computedWidth > col.maxWidth) computedWidth = col.maxWidth;
 
     const processed: ProcessedColumn<T> = {
       ...col,
@@ -72,11 +116,11 @@ export function sortRows<T>(
 
 
   const result = rows.slice();
-  
+
   result.sort((a, b) => {
     const dataA = a.data as Record<string, unknown>;
     const dataB = b.data as Record<string, unknown>;
-    
+
     for (let i = 0; i < sortConfigs.length; i++) {
       const { field, direction, column } = sortConfigs[i];
       const valueA = getValueFromPath(dataA, field);
@@ -157,7 +201,7 @@ export function filterRows<T>(
 
 
   const result: RowNode<T>[] = [];
-  
+
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
     const data = row.data as Record<string, unknown>;
@@ -167,7 +211,7 @@ export function filterRows<T>(
     for (let j = 0; j < filterFns.length && passes; j++) {
       const { field, filter, customFn } = filterFns[j];
       const value = getValueFromPath(data, field);
-      
+
       if (customFn) {
         passes = customFn(filter.value, value);
       } else {
@@ -184,11 +228,11 @@ export function filterRows<T>(
   if (quickFilterText) {
     const lowerFilter = quickFilterText.toLowerCase();
     const quickFiltered: RowNode<T>[] = [];
-    
+
     for (let i = 0; i < result.length; i++) {
       const row = result[i];
       const data = row.data as Record<string, unknown>;
-      
+
       for (let j = 0; j < columns.length; j++) {
         const value = getValueFromPath(data, columns[j].field);
         if (value != null && String(value).toLowerCase().includes(lowerFilter)) {
@@ -205,20 +249,20 @@ export function filterRows<T>(
 
 export function defaultFilterComparator(filter: FilterModel, value: any): boolean {
   const filterValue = filter.value;
-  
+
 
   if (filter.filterType === 'select' && Array.isArray(filterValue)) {
 
     if (filterValue.length === 0) {
       return false;
     }
-    
+
 
     const stringValue = String(value);
     const isIncluded = filterValue.some(fv => String(fv) === stringValue);
     return isIncluded;
   }
-  
+
   if (filterValue == null || filterValue === '') return true;
 
   switch (filter.operator || 'contains') {
@@ -282,7 +326,7 @@ export function exportToCsv<T>(
   const { fileName = 'export.csv', skipHeader = false } = options;
 
   const visibleColumns = columns.filter((col) => !col.hide);
-  
+
   let csv = '';
 
   if (!skipHeader) {
@@ -323,7 +367,7 @@ export async function copyToClipboard<T>(
   includeHeaders: boolean = true
 ): Promise<void> {
   const visibleColumns = columns.filter((col) => !col.hide);
-  
+
   let text = '';
 
   if (includeHeaders) {

@@ -12,6 +12,7 @@ import { useDemoColumns } from './hooks/useDemoColumns';
 import { GridRegistryProvider } from 'fibogrid';
 import { LinkedGrids } from './components/LinkedGrids';
 import { CustomLayoutDemo } from './components/CustomLayoutDemo';
+import { ZIndexDemo } from './components/ZIndexDemo';
 
 export default function Demo() {
     const [rowCount, setRowCount] = useState(1000);
@@ -157,7 +158,12 @@ export default function Demo() {
     }, []);
 
     const onRowClickStock = useCallback((event: RowClickedEvent<StockRow> & { clickType?: string | number }) => {
-        if (event.clickType === 'triple' || event.clickType === 3) toast({ title: 'Triple Click!', description: `You triple-clicked on ${event.rowNode.data.ticker}` });
+        console.log('Row Clicked:', event);
+        if (event.clickType === 'triple' || event.clickType === 3) {
+            toast({ title: 'Triple Click!', description: `You triple-clicked on ${event.rowNode.data.ticker}` });
+        } else {
+            toast({ title: 'Row Clicked', description: `Clicked on ${event.rowNode.data.ticker} (Type: ${event.clickType})` });
+        }
     }, []);
     const [configs, setConfigs] = useState<FiboGridConfigs>({
         header: {
@@ -249,6 +255,7 @@ export default function Demo() {
                     </div>
                     <LinkedGrids useServerSide={useServerSide} />
                     <CustomLayoutDemo />
+                    <ZIndexDemo />
                 </main>
             </div>
         </GridRegistryProvider>

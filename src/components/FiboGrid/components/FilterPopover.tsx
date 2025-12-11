@@ -218,7 +218,7 @@ export function FilterPopover<T>({
   return (
     <div
       ref={popoverRef}
-      className="w-80 bg-popover border border-border rounded-lg shadow-xl z-[100]"
+      className="w-80 bg-popover border border-border rounded-lg shadow-xl fibogrid-z-filter-popover"
       style={style}
       onClick={(e) => e.stopPropagation()}
     >
@@ -352,7 +352,7 @@ export function FilterPopover<T>({
                 <SelectTrigger className="h-8">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className={cn("fibogrid bg-popover border border-border z-[110]", className)}>
+                <SelectContent className={cn("fibogrid bg-popover border border-border fibogrid-z-popover-nested", className)}>
                   {operators.map((op) => (
                     <SelectItem key={op.value} value={op.value}>
                       {op.label}
@@ -440,7 +440,7 @@ function renderInput(
           <SelectTrigger className="h-8" onKeyDown={onKeyDown}>
             <SelectValue placeholder="Select..." />
           </SelectTrigger>
-          <SelectContent className={cn("fibogrid bg-popover border border-border z-[110]", className)}>
+          <SelectContent className={cn("fibogrid bg-popover border border-border fibogrid-z-popover-nested", className)}>
             <SelectItem value="true">Yes</SelectItem>
             <SelectItem value="false">No</SelectItem>
           </SelectContent>
