@@ -67,6 +67,12 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
   const [hiddenColumns, setHiddenColumns] = useState<Set<string>>(new Set());
   const [pinnedColumns, setPinnedColumns] = useState<Record<string, 'left' | 'right' | null>>({});
   const [internalQuickFilter, setInternalQuickFilter] = useState(quickFilterText || '');
+  const prevQuickFilterTextRef = useRef(quickFilterText);
+
+  if (quickFilterText !== undefined && quickFilterText !== prevQuickFilterTextRef.current) {
+    prevQuickFilterTextRef.current = quickFilterText;
+    setInternalQuickFilter(quickFilterText);
+  }
 
   const rowsRef = useRef<RowNode<T>[]>([]);
   const displayedRowsRef = useRef<RowNode<T>[]>([]);
@@ -700,5 +706,7 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
     serverSideLoading: serverSideState.loading,
     hasCustomRowNumber,
     hasCustomCheckbox,
+    quickFilter: internalQuickFilter,
+    setQuickFilter: setInternalQuickFilter,
   };
 }

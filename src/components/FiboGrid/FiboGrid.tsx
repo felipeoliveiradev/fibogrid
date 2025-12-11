@@ -101,7 +101,6 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
   const [containerHeight, setContainerHeight] = useState(0);
   const [filterState, setFilterState] = useState<FilterState<T> | null>(null);
 
-  const [quickFilterValue, setQuickFilterValue] = useState('');
   const [contextMenuTarget, setContextMenuTarget] = useState<any>(null);
   const [contextMenuItems, setContextMenuItems] = useState<ContextMenuItem[]>([]);
 
@@ -145,7 +144,9 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     serverSideLoading,
     hasCustomRowNumber,
     hasCustomCheckbox,
-  } = useGridState({ ...props, quickFilterText: quickFilterValue }, containerWidth);
+    quickFilter,
+    setQuickFilter,
+  } = useGridState(props, containerWidth);
 
   const isLoading = loading || serverSideLoading;
 
@@ -600,8 +601,8 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
         <GridToolbar
           api={api}
           columns={columns}
-          quickFilterValue={quickFilterValue}
-          onQuickFilterChange={setQuickFilterValue}
+          quickFilterValue={quickFilter}
+          onQuickFilterChange={setQuickFilter}
           onColumnVisibilityChange={handleColumnVisibilityChange}
           selectedCount={selection.selectedRows.size}
           totalCount={displayedRows.length}
@@ -609,7 +610,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
           headerConfig={configs?.header}
           onResetFilters={filterModel.length > 0 ? () => {
             api.setFilterModel([]);
-            setQuickFilterValue('');
+            setQuickFilter('');
           } : undefined}
           className={className}
         />

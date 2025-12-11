@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { ProcessedColumn, GridApi, FilterModel, FiboGridConfigs } from '../types';
 import { cn } from '@/lib/utils';
 import {
@@ -55,10 +55,12 @@ export function GridToolbar<T>({
   const [copied, setCopied] = useState(false);
   const [localSearch, setLocalSearch] = useState(quickFilterValue);
 
-  // Sync local search when external prop changes (e.g. clear filter)
-  React.useEffect(() => {
+  const prevQuickFilterValueRef = useRef(quickFilterValue);
+
+  if (quickFilterValue !== prevQuickFilterValueRef.current) {
+    prevQuickFilterValueRef.current = quickFilterValue;
     setLocalSearch(quickFilterValue);
-  }, [quickFilterValue]);
+  }
 
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {

@@ -164,6 +164,19 @@ export function LinkedGrids({ useServerSide = false }: { useServerSide?: boolean
                     <Button onClick={handleRefresh} variant="secondary" size="sm" className="gap-2">
                         <RefreshCw className="h-4 w-4" /> Refresh Data
                     </Button>
+                    <Button
+                        onClick={() => {
+                            const catApi = getGridApi('grid-categories');
+                            // Set a filter first to demonstrate removal (optional, or just rely on user typing)
+                            if (catApi) {
+                                catApi.params().removeQuickFilter().execute();
+                            }
+                        }}
+                        variant="outline"
+                        size="sm"
+                    >
+                        Clear Quick Filter (API)
+                    </Button>
                 </div>
             </CardHeader>
             <CardContent className="grid md:grid-cols-2 gap-6">
