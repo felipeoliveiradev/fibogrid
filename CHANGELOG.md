@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.14] - 2025-12-11
+
+### Added
+- **Custom Layouts** - Added `configs.header.layout` and `configs.footer.layout` to allow full reordering of toolbar and footer elements.
+- **Granular Footer Control** - Header and Footer can now be customized with specific keys (e.g., `'search'`, `'pagination-controls'`, `'status-info'`) and spacers for flexible implementation.
+- **Custom Layout Demo** - Added a new demo section showcasing the new layout capabilities.
+
 ## [1.0.13] - 2025-12-11
 
 ### Added

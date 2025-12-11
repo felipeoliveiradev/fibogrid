@@ -6,6 +6,7 @@ interface ServerSideDataState<T> {
   totalRows: number;
   loading: boolean;
   error: Error | null;
+  refresh: () => void;
 }
 
 interface CacheKey {
@@ -17,7 +18,7 @@ interface CacheKey {
 }
 
 
- 
+
 export function useServerSideData<T>(
   enabled: boolean,
   dataSource: ServerSideDataSource<T> | undefined,
@@ -28,6 +29,7 @@ export function useServerSideData<T>(
     totalRows: 0,
     loading: false,
     error: null,
+    refresh: () => { },
   });
 
   const listenersRef = useRef<Set<() => void>>(new Set());
@@ -48,7 +50,7 @@ export function useServerSideData<T>(
       if (!enabled || !dataSource) return;
 
       const cacheKey = getCacheKey(req);
-      
+
 
       if (currentRequestRef.current === cacheKey) return;
 
@@ -66,7 +68,7 @@ export function useServerSideData<T>(
 
       try {
         const response = await dataSource.getRows(req);
-        
+
 
         if (currentRequestRef.current === cacheKey) {
           stateRef.current = {
@@ -74,6 +76,7 @@ export function useServerSideData<T>(
             totalRows: response.totalRows,
             loading: false,
             error: null,
+            refresh: stateRef.current.refresh,
           };
           listenersRef.current.forEach((listener) => listener());
         }
@@ -100,24 +103,32 @@ export function useServerSideData<T>(
   }, []);
 
 
+  const refresh = useCallback(() => {
+    currentRequestRef.current = '';
+    listenersRef.current.forEach((listener) => listener());
+  }, []);
+
   const getSnapshot = useCallback(() => {
     const cacheKey = getCacheKey(request);
-    
+
 
     const dataSourceChanged = dataSourceRef.current !== dataSource;
     if (dataSourceChanged) {
       dataSourceRef.current = dataSource;
       currentRequestRef.current = '';
     }
-    
+
 
     if (currentRequestRef.current !== cacheKey || dataSourceChanged) {
 
       queueMicrotask(() => fetchData(request));
     }
-    
+    if (stateRef.current.refresh !== refresh) {
+      stateRef.current = { ...stateRef.current, refresh };
+    }
+
     return stateRef.current;
-  }, [request, dataSource, getCacheKey, fetchData]);
+  }, [request, dataSource, getCacheKey, fetchData, refresh]);
 
 
   const state = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);

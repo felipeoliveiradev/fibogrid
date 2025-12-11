@@ -10,6 +10,7 @@ import {
   EditingCell,
   GridApi,
   FiboGridProps,
+  GridApiBuilder,
   ServerSideDataSourceRequest,
 } from '../types';
 import { useServerSideData } from './useServerSideData';
@@ -440,7 +441,24 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
 
     setSortModel: (model) => setSortModel(model),
     getSortModel: () => sortModel,
-    setFilterModel: (model) => setFilterModel(model),
+    setFilterModel: (model, options) => {
+      if (options?.behavior === 'merge') {
+        setFilterModel(prev => {
+          const newModel = [...prev];
+          model.forEach(newFilter => {
+            const existingIndex = newModel.findIndex(f => f.field === newFilter.field);
+            if (existingIndex >= 0) {
+              newModel[existingIndex] = newFilter;
+            } else {
+              newModel.push(newFilter);
+            }
+          });
+          return newModel;
+        });
+      } else {
+        setFilterModel(model);
+      }
+    },
     getFilterModel: () => filterModel,
     setQuickFilter: (text) => setInternalQuickFilter(text),
 
@@ -487,7 +505,172 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
 
     refreshCells: () => { },
     redrawRows: () => { },
-  }), [rowData, columnDefs, columns, sortModel, filterModel, selection, selectAll, deselectAll, selectRow]);
+    refresh: () => {
+      if (paginationMode === 'server') {
+        serverSideState.refresh();
+      } else {
+        setFilterModel([]);
+        setSortModel([]);
+        setInternalQuickFilter('');
+        setPaginationState(prev => ({ ...prev, currentPage: 0 }));
+        setSelection(prev => ({ ...prev, selectedRows: new Set(), lastSelectedIndex: null, anchorIndex: null }));
+      }
+    },
+
+    params: () => {
+      const filterUpdates: ((current: FilterModel[]) => FilterModel[])[] = [];
+      let pendingQuickFilter: string | null = null;
+      const sortUpdates: ((current: SortModel[]) => SortModel[])[] = [];
+
+      let pendingPage: number | null = null;
+      let pendingPageSize: number | null = null;
+      let pendingSelection: { ids: string[]; selected: boolean; mode: 'single' | 'multiple' | 'all' | 'none' } | null = null;
+      let pendingReset = false;
+
+      const builder: GridApiBuilder<T> = {
+        setFilterModel: (model, options) => {
+          filterUpdates.push((prev) => {
+            if (options?.behavior === 'merge') {
+              const newModel = [...prev];
+              model.forEach(newFilter => {
+                const existingIndex = newModel.findIndex(f => f.field === newFilter.field);
+                if (existingIndex >= 0) {
+                  newModel[existingIndex] = newFilter;
+                } else {
+                  newModel.push(newFilter);
+                }
+              });
+              return newModel;
+            }
+            return model;
+          });
+          return builder;
+        },
+        removeFilter: (field) => {
+          filterUpdates.push((prev) => prev.filter(f => f.field !== field));
+          return builder;
+        },
+        removeAllFilter: () => {
+          filterUpdates.push(() => []);
+          return builder;
+        },
+        setQuickFilter: (text) => {
+          pendingQuickFilter = text;
+          return builder;
+        },
+        removeQuickFilter: () => {
+          pendingQuickFilter = '';
+          return builder;
+        },
+        setSortModel: (model) => {
+          sortUpdates.push(() => model);
+          return builder;
+        },
+        removeSort: (field) => {
+          sortUpdates.push((prev) => prev.filter(s => s.field !== field));
+          return builder;
+        },
+        removeAllSort: () => {
+          sortUpdates.push(() => []);
+          return builder;
+        },
+        setPage: (page) => {
+          pendingPage = page;
+          return builder;
+        },
+        setPageSize: (size) => {
+          pendingPageSize = size;
+          return builder;
+        },
+        selectRow: (id, selected = true) => {
+          pendingSelection = { ids: [id], selected, mode: 'single' };
+          return builder;
+        },
+        selectRows: (ids, selected = true) => {
+          pendingSelection = { ids, selected, mode: 'multiple' };
+          return builder;
+        },
+        selectAll: () => {
+          pendingSelection = { ids: [], selected: true, mode: 'all' };
+          return builder;
+        },
+        deselectAll: () => {
+          pendingSelection = { ids: [], selected: false, mode: 'none' };
+          return builder;
+        },
+        updateRowData: (updates) => {
+          console.warn('updateRowData in builder is not fully implemented yet');
+          return builder;
+        },
+        resetState: () => {
+          pendingReset = true;
+          return builder;
+        },
+        execute: () => {
+          if (pendingReset) {
+            setFilterModel([]);
+            setInternalQuickFilter('');
+            setSortModel([]);
+            setPaginationState(prev => ({ ...prev, currentPage: 0, pageSize: paginationPageSize }));
+            setSelection({ selectedRows: new Set(), lastSelectedIndex: null, anchorIndex: null });
+            return;
+          }
+
+          // Apply Batch Updates
+          if (filterUpdates.length > 0) {
+            setFilterModel(prev => {
+              let current = prev;
+              for (const update of filterUpdates) {
+                current = update(current);
+              }
+              return current;
+            });
+          }
+
+          if (pendingQuickFilter !== null) {
+            setInternalQuickFilter(pendingQuickFilter);
+          }
+
+          if (sortUpdates.length > 0) {
+            setSortModel(prev => {
+              let current = prev;
+              for (const update of sortUpdates) {
+                current = update(current);
+              }
+              return current;
+            });
+          }
+
+          if (pendingPageSize !== null) {
+            setPaginationState(prev => ({ ...prev, pageSize: pendingPageSize!, currentPage: 0 }));
+          } else if (pendingPage !== null) {
+            setPaginationState(prev => ({
+              ...prev,
+              currentPage: Math.max(0, Math.min(pendingPage!, prev.totalPages - 1))
+            }));
+          }
+
+          if (pendingSelection) {
+            const { ids, selected, mode } = pendingSelection;
+            if (mode === 'all') selectAll();
+            else if (mode === 'none') deselectAll();
+            else if (mode === 'single') selectRow(ids[0], selected);
+            else if (mode === 'multiple') {
+              setSelection((prev) => {
+                const newSelected = new Set(prev.selectedRows);
+                ids.forEach((id) => {
+                  if (selected) newSelected.add(id);
+                  else newSelected.delete(id);
+                });
+                return { ...prev, selectedRows: newSelected };
+              });
+            }
+          }
+        }
+      };
+      return builder;
+    },
+  }), [rowData, columnDefs, columns, sortModel, filterModel, selection, selectAll, deselectAll, selectRow, paginationPageSize, setSelection]);
 
   const setColumnPinned = useCallback((field: string, pinned: 'left' | 'right' | null) => {
     setPinnedColumns((prev) => ({ ...prev, [field]: pinned }));

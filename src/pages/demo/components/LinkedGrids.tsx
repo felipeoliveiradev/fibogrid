@@ -73,11 +73,19 @@ export function LinkedGrids({ useServerSide = false }: { useServerSide?: boolean
         const catApi = getGridApi('grid-categories');
         const itemApi = getGridApi('grid-items');
 
-        catApi?.deselectAll();
-        itemApi?.deselectAll();
+        // Use new Builder API for cleaner reset
+        catApi?.params().resetState().execute();
+        itemApi?.params().resetState().execute();
+        catApi?.params().resetState().execute();
+        itemApi?.params().resetState().execute();
+    }, [getGridApi]);
 
-        catApi?.setFilterModel([]);
-        itemApi?.setFilterModel([]);
+    const handleRefresh = useCallback(() => {
+        const catApi = getGridApi('grid-categories');
+        const itemApi = getGridApi('grid-items');
+
+        catApi?.refresh();
+        itemApi?.refresh();
     }, [getGridApi]);
 
     const handleCategoryClick = useCallback((e: any) => {
@@ -90,18 +98,16 @@ export function LinkedGrids({ useServerSide = false }: { useServerSide?: boolean
             const isSelected = selectedRows.some((row: any) => row.data.id === categoryId);
 
             if (isSelected && itemApi) {
-                const valueToFilter = categoryId;
-
-                itemApi.setFilterModel([
-                    {
+                itemApi.params()
+                    .setFilterModel([{
                         field: 'categoryId',
                         filterType: 'text',
                         operator: 'equals',
-                        value: valueToFilter
-                    }
-                ]);
+                        value: categoryId
+                    }])
+                    .execute();
             } else if (itemApi) {
-                itemApi.setFilterModel([]);
+                itemApi.params().setFilterModel([]).execute();
             }
         });
     }, [getGridApi]);
@@ -117,29 +123,30 @@ export function LinkedGrids({ useServerSide = false }: { useServerSide?: boolean
 
             if (isSelected) {
                 if (catApi) {
-                    catApi.setFilterModel([
-                        {
+                    // Use Builder API
+                    catApi.params()
+                        .setFilterModel([{
                             field: 'id',
                             filterType: 'text',
                             operator: 'equals',
                             value: categoryId
-                        }
-                    ]);
+                        }])
+                        .execute();
                 }
 
                 if (itemApi) {
-                    itemApi.setFilterModel([
-                        {
+                    itemApi.params()
+                        .setFilterModel([{
                             field: 'categoryId',
                             filterType: 'text',
                             operator: 'equals',
                             value: categoryId
-                        }
-                    ]);
+                        }], { behavior: 'merge' }) // Demonstrate merge behavior
+                        .execute();
                 }
             } else {
-                catApi?.setFilterModel([]);
-                itemApi?.setFilterModel([]);
+                catApi?.params().setFilterModel([]).execute();
+                itemApi?.params().setFilterModel([]).execute();
             }
         });
     }, [getGridApi]);
@@ -153,6 +160,9 @@ export function LinkedGrids({ useServerSide = false }: { useServerSide?: boolean
                 <div className="flex gap-2">
                     <Button onClick={handleReset} variant="outline" size="sm" className="gap-2">
                         <RefreshCw className="h-4 w-4" /> Reset Interaction
+                    </Button>
+                    <Button onClick={handleRefresh} variant="secondary" size="sm" className="gap-2">
+                        <RefreshCw className="h-4 w-4" /> Refresh Data
                     </Button>
                 </div>
             </CardHeader>

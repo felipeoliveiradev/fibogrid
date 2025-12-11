@@ -11,6 +11,7 @@ import { StockRow } from './data/types';
 import { useDemoColumns } from './hooks/useDemoColumns';
 import { GridRegistryProvider } from 'fibogrid';
 import { LinkedGrids } from './components/LinkedGrids';
+import { CustomLayoutDemo } from './components/CustomLayoutDemo';
 
 export default function Demo() {
     const [rowCount, setRowCount] = useState(1000);
@@ -247,6 +248,7 @@ export default function Demo() {
                         />
                     </div>
                     <LinkedGrids useServerSide={useServerSide} />
+                    <CustomLayoutDemo />
                 </main>
             </div>
         </GridRegistryProvider>

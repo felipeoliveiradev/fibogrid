@@ -17,12 +17,12 @@ import { useGridRegistry } from './context/GridRegistryContext';
 import { GridHeader } from './components/GridHeader';
 import { GridRow } from './components/GridRow';
 import { GroupRow } from './components/GroupRow';
-import { GridPagination } from './components/GridPagination';
+
 import { GridOverlay } from './components/GridOverlay';
 import { FilterPopover } from './components/FilterPopover';
 import { GridContextMenu } from './components/ContextMenu';
 import { GridToolbar } from './components/GridToolbar';
-import { GridStatusBar } from './components/GridStatusBar';
+import { GridFooter } from './components/GridFooter';
 import { isGroupNode, GroupRowNode } from './utils/grouping';
 import { cn } from '@/lib/utils';
 import { Copy, Download, Trash2 } from 'lucide-react';
@@ -876,22 +876,24 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
       </div>
 
       <div className="flex-none">
-        {effectiveShowPagination && paginationState.enabled && (
-          <GridPagination
-            pagination={paginationState}
-            onPageChange={handlePageChange}
-            onPageSizeChange={handlePageSizeChange}
-            pageSizeOptions={paginationPageSizeOptions}
-          />
-        )}
-
-        {effectiveShowStatusBar && footerInfo && (
-          <GridStatusBar
+        {(effectiveShowPagination || effectiveShowStatusBar) && (
+          <GridFooter
             displayedRows={displayedRows}
             totalRows={paginationState.totalRows}
             selectedCount={selection.selectedRows.size}
             columns={columns}
             aggregations={groupAggregations as any}
+            paginationState={paginationState}
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
+            pageSizeOptions={paginationPageSizeOptions}
+            config={{
+              ...configs?.footer,
+              layout: configs?.footer?.layout || [
+                ...(effectiveShowPagination && paginationState.enabled ? ['pagination'] as const : []),
+                ...(effectiveShowStatusBar && footerInfo ? ['status-bar'] as const : [])
+              ]
+            }}
           />
         )}
       </div>

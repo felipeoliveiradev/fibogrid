@@ -246,6 +246,69 @@ gridApi.setColumnPinned('email', null);  // Unpin
                     </Card>
                 </div>
             )}
+
+            {activeSection === 'layout' && (
+                <div className="space-y-8 animate-fade-in">
+                    <h1 className="text-4xl md:text-5xl font-display font-bold text-gradient-gold">Custom Layouts</h1>
+
+                    <Card className="paper-aged border-primary/10">
+                        <CardHeader>
+                            <CardTitle className="font-display text-xl">Flexible Header & Footer</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <p className="font-body text-muted-foreground">
+                                Customize the arrangement of toolbar items and footer elements using the `configs` prop.
+                                define arrays of keys to reorder components or add spacers.
+                            </p>
+                            <CodeBlock code={`<FiboGrid
+  // ...
+  configs={{
+    header: {
+      // Reorder toolbar: Search first, spacer pushes actions to right
+      layout: ['search', 'spacer', 'actions', 'export-button']
+    },
+    footer: {
+      // Single line footer: Status info on left, Pagination on right
+      layout: ['status-info', 'spacer', 'pagination-controls']
+    }
+  }}
+/>`} />
+                        </CardContent>
+                    </Card>
+
+                    <ExampleBlock
+                        title="Granular Footer Layout"
+                        description="Merge the Status Bar and Pagination into a single line or create complex layouts using granular keys like 'pagination-page-size', 'status-selected', etc."
+                        code={`const customFooterLayout = [
+  'status-info', 
+  'status-selected', 
+  'spacer', 
+  'pagination-page-size', 
+  'pagination-controls'
+];
+
+// ... inside FiboGrid props
+configs={{
+  footer: {
+    layout: customFooterLayout
+  }
+}}`}
+                        preview={
+                            <FiboGrid
+                                rowData={sampleData}
+                                columnDefs={statusColumns}
+                                pagination={true}
+                                paginationPageSize={5}
+                                configs={{
+                                    footer: {
+                                        layout: ['status-info', 'spacer', 'pagination-controls']
+                                    }
+                                }}
+                            />
+                        }
+                    />
+                </div>
+            )}
         </>
     );
 };

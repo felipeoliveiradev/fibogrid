@@ -105,11 +105,12 @@ export interface SortModel {
   direction: SortDirection;
 }
 
-export interface FilterModel {
+export interface FilterModel<T = any> {
   field: string;
   filterType: FilterType;
   value: any;
   operator?: 'equals' | 'contains' | 'startsWith' | 'endsWith' | 'greaterThan' | 'lessThan' | 'between';
+  meta?: T; // Generic metadata for server-side or custom filter logic
 }
 
 export interface SelectionState {
@@ -191,7 +192,7 @@ export interface GridApi<T = any> {
   getSortModel: () => SortModel[];
 
 
-  setFilterModel: (model: FilterModel[]) => void;
+  setFilterModel: (model: FilterModel[], options?: SetFilterOptions) => void;
   getFilterModel: () => FilterModel[];
   setQuickFilter: (text: string) => void;
 
@@ -224,8 +225,34 @@ export interface GridApi<T = any> {
   copyToClipboard: (includeHeaders?: boolean) => Promise<void>;
 
 
+  params: () => GridApiBuilder<T>;
   refreshCells: () => void;
   redrawRows: () => void;
+  refresh: () => void;
+}
+
+export interface SetFilterOptions {
+  behavior?: 'replace' | 'merge';
+}
+
+export interface GridApiBuilder<T = any> {
+  setFilterModel: (model: FilterModel[], options?: SetFilterOptions) => GridApiBuilder<T>;
+  removeFilter: (field: string) => GridApiBuilder<T>;
+  removeAllFilter: () => GridApiBuilder<T>;
+  setQuickFilter: (text: string) => GridApiBuilder<T>;
+  removeQuickFilter: () => GridApiBuilder<T>;
+  setSortModel: (model: SortModel[]) => GridApiBuilder<T>;
+  removeSort: (field: string) => GridApiBuilder<T>;
+  removeAllSort: () => GridApiBuilder<T>;
+  setPage: (page: number) => GridApiBuilder<T>;
+  setPageSize: (size: number) => GridApiBuilder<T>;
+  selectRow: (id: string, selected?: boolean) => GridApiBuilder<T>;
+  selectRows: (ids: string[], selected?: boolean) => GridApiBuilder<T>;
+  selectAll: () => GridApiBuilder<T>;
+  deselectAll: () => GridApiBuilder<T>;
+  updateRowData: (updates: { add?: T[]; update?: T[]; remove?: T[] }) => GridApiBuilder<T>;
+  resetState: () => GridApiBuilder<T>;
+  execute: () => void;
 }
 
 export interface ExportParams {
@@ -351,9 +378,13 @@ export interface PaginationChangedEvent {
 }
 
 
+export type HeaderLayoutItem = 'search' | 'active-filters' | 'filter-button' | 'density-button' | 'export-button' | 'columns-button' | 'copy-button' | 'refresh-button' | 'custom-actions' | 'spacer';
+export type FooterLayoutItem = 'pagination' | 'pagination-page-size' | 'pagination-info' | 'pagination-controls' | 'status-bar' | 'status-info' | 'status-selected' | 'status-aggregations' | 'spacer';
+
 export interface FiboGridConfigs {
   header?: {
     show?: boolean;
+    layout?: HeaderLayoutItem[];
     search?: boolean;
     filterButton?: boolean;
     densityButton?: boolean;
@@ -372,6 +403,7 @@ export interface FiboGridConfigs {
   };
   footer?: {
     show?: boolean;
+    layout?: FooterLayoutItem[];
     pagination?: boolean;
     information?: boolean;
   };
