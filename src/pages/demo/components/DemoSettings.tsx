@@ -28,6 +28,12 @@ interface DemoSettingsProps {
     onConfigChange?: (section: string, key: string, value: boolean) => void;
     onUpAddTest?: () => void;
     onResetGrid?: () => void;
+    onReplaceAllTest?: () => void;
+    onResetEdits?: () => void;
+    onResetCellTest?: () => void;
+    onResetRowTest?: () => void;
+    onUpdateTest?: () => void;
+    onUpAddUpdateTest?: () => void;
 }
 
 export function DemoSettings(props: DemoSettingsProps) {
@@ -123,7 +129,6 @@ export function DemoSettings(props: DemoSettingsProps) {
                             ))}
                         </div>
                     </div>
-                    {/* ... other settings ... */}
                     <div className="space-y-2">
                         <div className="flex justify-between text-sm font-body">
                             <span>Update Interval</span>
@@ -154,12 +159,30 @@ export function DemoSettings(props: DemoSettingsProps) {
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <div className="flex flex-col gap-2">
+                    <div className="grid grid-cols-2 gap-2">
                         <Button variant="outline" size="sm" onClick={props.onUpAddTest} className="w-full border-primary/30 hover:border-primary font-body">
-                            Test upAdd
+                            Test upAdd (Mix)
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={props.onUpAddUpdateTest} className="w-full border-primary/30 hover:border-primary font-body">
+                            Test upAdd (Update)
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={props.onUpdateTest} className="w-full border-primary/30 hover:border-primary font-body">
+                            Test Update
                         </Button>
                         <Button variant="outline" size="sm" onClick={props.onResetGrid} className="w-full border-primary/30 hover:border-primary font-body">
                             Reset Grid
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={props.onReplaceAllTest} className="w-full border-primary/30 hover:border-primary font-body">
+                            Test replaceAll
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={props.onResetEdits} className="w-full border-primary/30 hover:border-primary font-body">
+                            Reset Edits
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={props.onResetCellTest} className="w-full border-primary/30 hover:border-primary font-body">
+                            Reset Cell (Test)
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={props.onResetRowTest} className="w-full border-primary/30 hover:border-primary font-body">
+                            Reset Row (Test)
                         </Button>
                     </div>
                 </CardContent>

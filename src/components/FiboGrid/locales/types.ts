@@ -60,8 +60,8 @@ export interface FiboGridLocale {
             greaterThan: string;
             lessThan: string;
             between: string;
-            after: string; // Date specific
-            before: string; // Date specific
+            after: string;
+            before: string;
         };
         boolean: {
             true: string;

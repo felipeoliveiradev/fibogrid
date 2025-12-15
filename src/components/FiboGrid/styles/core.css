@@ -1,10 +1,6 @@
-/* FiboGrid - Fully Isolated Styles
- * This file contains ALL styles needed for FiboGrid to work independently
- * No Tailwind, no global resets, no side effects on user's application
- * NOTE: Requires theme.css to be imported separately
- */
 
-/* Reset and base styles - ONLY for .fibogrid container */
+
+
 .fibogrid {
   box-sizing: border-box;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -23,7 +19,7 @@
   box-sizing: border-box;
 }
 
-/* Grid container */
+
 .fibogrid {
   position: relative;
   display: flex;
@@ -38,7 +34,7 @@
   border-color: var(--fibogrid-container-border-focus);
 }
 
-/* Toolbar */
+
 .fibogrid-toolbar {
   display: flex;
   align-items: center;
@@ -57,7 +53,7 @@
   gap: var(--fibogrid-spacing-sm);
 }
 
-/* Search input */
+
 .fibogrid-search {
   position: relative;
   display: flex;
@@ -106,7 +102,7 @@
   color: var(--fibogrid-search-icon-color);
 }
 
-/* Buttons */
+
 .fibogrid-button {
   display: inline-flex;
   align-items: center;
@@ -161,7 +157,7 @@
   padding: 0;
 }
 
-/* Header */
+
 .fibogrid-header {
   display: flex;
   align-items: stretch;
@@ -238,7 +234,7 @@
   color: var(--fibogrid-filter-icon-color-active);
 }
 
-/* Column resize handle */
+
 .fibogrid-resize-handle {
   position: absolute;
   top: 0;
@@ -254,7 +250,7 @@
   background-color: var(--fibogrid-primary);
 }
 
-/* Pinned columns */
+
 .fibogrid-header-cell-pinned-left,
 .fibogrid-cell-pinned-left {
   position: sticky;
@@ -273,7 +269,7 @@
   box-shadow: var(--fibogrid-pinned-shadow-left);
 }
 
-/* Body */
+
 .fibogrid-body {
   position: relative;
   flex: 1;
@@ -286,7 +282,7 @@
   overflow: hidden;
 }
 
-/* Row */
+
 .fibogrid-row {
   display: flex;
   align-items: stretch;
@@ -318,13 +314,13 @@
   border-bottom-color: var(--fibogrid-row-border-bottom-group);
 }
 
-/* Default to transparent/bg color for rows if not striped */
+
 .fibogrid-row-even,
 .fibogrid-row-odd {
   background-color: var(--fibogrid-bg);
 }
 
-/* Only apply striped colors if .fibogrid-striped class is present on container */
+
 .fibogrid-striped .fibogrid-row-even {
   background-color: var(--fibogrid-row-bg-even);
 }
@@ -337,7 +333,7 @@
   background-color: var(--fibogrid-row-bg-selected);
 }
 
-/* Cell */
+
 .fibogrid-cell {
   position: relative;
   display: flex;
@@ -386,7 +382,7 @@
   outline: none;
 }
 
-/* Checkbox cell */
+
 .fibogrid-cell-checkbox {
   display: flex;
   align-items: center;
@@ -421,7 +417,7 @@
   cursor: not-allowed;
 }
 
-/* Row numbers */
+
 .fibogrid-cell-row-number {
   display: flex;
   align-items: center;
@@ -434,7 +430,7 @@
   flex-shrink: 0;
 }
 
-/* Pagination */
+
 .fibogrid-pagination {
   display: flex;
   align-items: center;
@@ -470,7 +466,7 @@
   cursor: pointer;
 }
 
-/* Status bar */
+
 .fibogrid-statusbar {
   display: flex;
   align-items: center;
@@ -483,7 +479,7 @@
   color: var(--fibogrid-text-secondary);
 }
 
-/* Loading overlay */
+
 .fibogrid-overlay {
   position: absolute;
   top: 0;
@@ -512,7 +508,7 @@
   }
 }
 
-/* Context menu */
+
 .fibogrid-context-menu {
   position: fixed;
   min-width: 180px;
@@ -553,7 +549,7 @@
   background-color: var(--fibogrid-border);
 }
 
-/* Filter popover */
+
 .fibogrid-filter-popover {
   position: fixed;
   min-width: 240px;
@@ -592,7 +588,7 @@
   background-color: var(--fibogrid-input-bg-focus);
 }
 
-/* Scrollbar styling */
+
 .fibogrid-body::-webkit-scrollbar {
   width: var(--fibogrid-scrollbar-width);
   height: var(--fibogrid-scrollbar-height);
@@ -613,7 +609,7 @@
   background-color: var(--fibogrid-scrollbar-thumb-bg-hover);
 }
 
-/* Utility classes */
+
 .fibogrid-truncate {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -632,7 +628,7 @@
   border-width: 0;
 }
 
-/* Borderless mode */
+
 .fibogrid-no-borders {
   border: none;
 }
@@ -653,6 +649,3 @@
   border-top: none;
 }
 
-/* Ensure pinned shadows still work if needed, or maybe remove them too? 
-   Usually users want valid table look even without borders, but borders often imply internal lines.
-   Let's keep shadows but remove lines. */

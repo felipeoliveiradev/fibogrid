@@ -33,9 +33,6 @@ export const CheckboxCellRenderer = (params: CellRendererParams) => {
 
 export const CheckboxHeaderRenderer = (params: HeaderRendererParams) => {
     const { api } = params;
-    // This is a simplified check. Ideally we'd subscribe to selection changes to update this efficiently.
-    // For now, it might not reactively update without extra logic in GridHeader, 
-    // but let's provide the basic structure. The GridHeader re-renders on selection changes usually.
     const selectedCount = api.getSelectedRows().length;
     const totalCount = api.getDisplayedRows().length;
     const isAllSelected = totalCount > 0 && selectedCount === totalCount;

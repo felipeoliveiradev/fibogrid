@@ -1,9 +1,8 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
-import "./components/FiboGrid/styles/index.css"; // Use local CSS for documentation site
+import "./components/FiboGrid/styles/index.css";
 
-// Initialize theme from localStorage or system preference
 const initTheme = () => {
   const stored = localStorage.getItem('theme');
   if (stored === 'dark') {

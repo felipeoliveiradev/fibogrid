@@ -37,13 +37,8 @@ export function GridFooter<T>({
 }: GridFooterProps<T>) {
     const { locale } = useGridContext<T>()!;
     const layout: FooterLayoutItem[] = config?.layout || ['pagination', 'status-bar'];
-
-    // Check if we are in "granular mode" (using granular keys) or "block mode" (using solid keys like 'pagination' only)
-    // If layout mixes them, flex-wrap will likely handle it, but solid keys bring their own borders/padding.
-    // We apply a wrapper class if specialized layout contains granular items to act as the bar container.
     const hasGranular = layout.some(i => !['pagination', 'status-bar'].includes(i));
 
-    // Calculate aggregations (logic copied from GridStatusBar)
     const numericColumns = columns.filter(col => col.filterType === 'number' || col.aggFunc);
     const aggData = aggregations || (() => {
         if (displayedRows.length === 0) return null;
@@ -75,7 +70,7 @@ export function GridFooter<T>({
                     pageSizeOptions={pageSizeOptions}
                     onPageChange={onPageChange}
                     onPageSizeChange={onPageSizeChange}
-                    className="border-none bg-transparent" // Strip default styles if inside footer? 
+                    className="border-none bg-transparent"
                 />;
 
             case 'status-bar':
@@ -85,8 +80,6 @@ export function GridFooter<T>({
                     totalRows={totalRows}
                     selectedCount={selectedCount}
                     columns={columns}
-                    aggregations={aggData}
-                // We might need to make GridStatusBar accept className to strip border
                 />;
 
             case 'spacer':
@@ -176,7 +169,6 @@ export function GridFooter<T>({
     return (
         <div className={cn(
             "w-full",
-            // If granular, we treat this wrapper as the main bar
             hasGranular ? "flex items-center flex-wrap px-4 py-2 border-t border-border bg-muted/30 gap-2" : "flex flex-col",
             className
         )}>

@@ -13,6 +13,7 @@ interface GridRowProps<T> {
   isSelected: boolean;
   onRowClick: (e: React.MouseEvent) => void;
   onRowDoubleClick: (e: React.MouseEvent) => void;
+  onContextMenu?: (e: React.MouseEvent) => void;
   onCellClick: (column: ProcessedColumn<T>, e: React.MouseEvent) => void;
   onCellDoubleClick: (column: ProcessedColumn<T>, e: React.MouseEvent) => void;
   showCheckboxColumn?: boolean;
@@ -77,6 +78,7 @@ function GridRowInner<T>({
   onCellMouseDown,
   onCellMouseEnter,
   onCellContextMenu,
+  onContextMenu,
   api,
   isEven,
   level = 0,
@@ -224,6 +226,7 @@ function GridRowInner<T>({
       style={{ height: `${rowHeight}px` }}
       onClick={onRowClick}
       onDoubleClick={onRowDoubleClick}
+      onContextMenu={onContextMenu}
       draggable={rowDragEnabled}
       onDragStart={onRowDragStart}
       onDragOver={onRowDragOver}

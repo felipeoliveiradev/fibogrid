@@ -77,7 +77,7 @@ export interface ProcessedColumn<T = any> extends ColumnDef<T> {
   left: number;
   index: number;
 }
-// ... skipped lines ...
+
 export interface ContextMenuItem {
   name?: string;
   action?: () => void;
@@ -114,7 +114,7 @@ export interface KeyboardEventParams<T = any> {
 
 export interface ShortcutDef<T = any> {
   id: string;
-  keys: string | string[]; // 'ArrowUp', 'Ctrl+c', 'Meta+c'
+  keys: string | string[];
   action: (params: KeyboardEventParams<T>) => void;
   description?: string;
   preventDefault?: boolean;
@@ -130,7 +130,7 @@ export interface FilterModel<T = any> {
   filterType: FilterType;
   value: any;
   operator?: 'equals' | 'contains' | 'startsWith' | 'endsWith' | 'greaterThan' | 'lessThan' | 'between';
-  meta?: T; // Generic metadata for server-side or custom filter logic
+  meta?: T;
 }
 
 export interface SelectionState {
@@ -275,16 +275,21 @@ export interface GridApiBuilder<T = any> {
   deselectAll: () => GridApiBuilder<T>;
   updateRowData: (updates: { add?: T[]; update?: T[]; remove?: T[] }) => GridApiBuilder<T>;
   resetState: () => GridApiBuilder<T>;
+  resetEdits: () => GridApiBuilder<T>;
   execute: () => void;
 }
 
 export interface GridManagerBuilder<T = any> {
   add: (rows: T[]) => GridManagerBuilder<T>;
   upAdd: (rows: T[]) => GridManagerBuilder<T>;
+  replaceAll: (rows: T[]) => GridManagerBuilder<T>;
   remove: (rowIds: string[]) => GridManagerBuilder<T>;
   update: (rows: T[]) => GridManagerBuilder<T>;
   updateCell: (rowId: string, field: string, value: any) => GridManagerBuilder<T>;
+  resetCell: (rowId: string, field: string) => GridManagerBuilder<T>;
+  resetRow: (rowId: string) => GridManagerBuilder<T>;
   reset: () => GridManagerBuilder<T>;
+  resetEdits: () => GridManagerBuilder<T>;
   execute: () => void;
 }
 
@@ -296,7 +301,7 @@ export interface ExportParams {
 }
 
 export interface RowClickFallbackEvent<T = any> {
-  clickType: 'single' | 'double' | 'triple' | number;
+  clickType: 'single' | 'double' | 'triple' | 'menu' | number;
   rowData: T;
   allRowsData: T[];
   rowNode: RowNode<T>;
@@ -447,9 +452,7 @@ export interface FiboGridProps<T = any> extends GridEvents<T> {
   columnDefs: ColumnDef<T>[];
   getRowId?: (data: T) => string;
 
-  /**
-   * Configuration for visual elements and logic
-   */
+
   configs?: FiboGridConfigs;
 
   gridId?: string;
@@ -510,16 +513,7 @@ export interface FiboGridProps<T = any> extends GridEvents<T> {
   getChildRows?: (parentData: T) => T[] | Promise<T[]>;
   childRowsField?: string;
 
-  /**
-   * Locale configuration for internationalization
-   * Defaults to en-US
-   */
   lang?: import('./locales/types').FiboGridLocale;
-  /**
-   * Keyboard shortcuts customization.
-   * - boolean: Enable/disable all defaults
-   * - ShortcutDef[]: Whitelist specific shortcuts
-   */
   shortcuts?: boolean | ShortcutDef<T>[];
 }
 

@@ -106,7 +106,6 @@ export function GridHeader<T>({
       return { ...col, stickyRight: pos, isFirstPinned: idx === right.length - 1 };
     }).reverse();
 
-    // Mark last center column if there are right pinned columns
     const centerWithFlags = center.map((col, idx) => ({
       ...col,
       isLastCenterBeforeRight: right.length > 0 && idx === center.length - 1
@@ -157,7 +156,6 @@ export function GridHeader<T>({
     const handleMouseUp = () => {
       setTimeout(() => {
         wasResizingRef.current = false;
-        // Clean up the style that might have been applied to body during resize
         document.body.style.cursor = '';
       }, 100);
       document.removeEventListener('mouseup', handleMouseUp);

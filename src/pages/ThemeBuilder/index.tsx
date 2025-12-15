@@ -38,7 +38,6 @@ export default function ThemeBuilder() {
   const [copied, setCopied] = useState(false);
   const styleRef = useRef<HTMLStyleElement | null>(null);
 
-  // Apply theme to preview via style tag
   useEffect(() => {
     if (!styleRef.current) {
       styleRef.current = document.createElement('style');
@@ -46,11 +45,7 @@ export default function ThemeBuilder() {
       document.head.appendChild(styleRef.current);
     }
 
-    // Generate CSS variables block
-    // We target .fibogrid.theme-builder-preview to scope these variables
-    // to the preview grid instance.
     const css = `
-/* Theme Builder Preview Scope */
 .fibogrid.theme-builder-preview {
 ${Object.entries(theme)
         .filter(([key]) => key.startsWith('--fibogrid-'))
@@ -70,7 +65,6 @@ ${Object.entries(theme)
     styleRef.current.textContent = css;
 
     return () => {
-      // Cleanup on unmount
       if (styleRef.current && document.head.contains(styleRef.current)) {
         document.head.removeChild(styleRef.current);
         styleRef.current = null;

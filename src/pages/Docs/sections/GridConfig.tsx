@@ -51,31 +51,31 @@ export const GridConfig = ({ activeSection }: { activeSection: string }) => {
                         </CardHeader>
                         <CardContent>
                             <CodeBlock code={`interface ColumnDef<T = any> {
-  field: string;                    // Data field key
-  headerName: string;               // Column header text
-  width?: number;                   // Fixed width in pixels
-  minWidth?: number;                // Minimum width
-  maxWidth?: number;                // Maximum width
-  flex?: number;                    // Flex grow factor
-  sortable?: boolean;               // Enable sorting
-  filterable?: boolean;             // Enable filtering
-  resizable?: boolean;              // Enable resize
-  editable?: boolean;               // Enable inline editing
-  pinned?: 'left' | 'right';        // Pin column
-  pinnedPriority?: number;          // Sort order for pinned columns
-  hide?: boolean;                   // Hide column
-  type?: 'data' | 'action' | 'checkbox' | 'rowNumber'; // Special types
+  field: string;                    
+  headerName: string;               
+  width?: number;                   
+  minWidth?: number;                
+  maxWidth?: number;                
+  flex?: number;                    
+  sortable?: boolean;               
+  filterable?: boolean;             
+  resizable?: boolean;              
+  editable?: boolean;               
+  pinned?: 'left' | 'right';        
+  pinnedPriority?: number;          
+  hide?: boolean;                   
+  type?: 'data' | 'action' | 'checkbox' | 'rowNumber'; 
   
-  // Custom renderers
+  
   cellRenderer?: (params) => React.ReactNode;
   headerRenderer?: (params) => React.ReactNode;
   valueFormatter?: (value, row) => string;
   
-  // Editing
+  
   cellEditor?: 'text' | 'number' | 'date' | 'select' | 'checkbox';
   cellEditorParams?: { values?: string[] };
   
-  // Aggregations
+  
   aggFunc?: 'sum' | 'avg' | 'min' | 'max' | 'count';
 }`} />
                         </CardContent>
@@ -126,29 +126,21 @@ export const GridConfig = ({ activeSection }: { activeSection: string }) => {
   { 
     field: 'id', 
     headerName: 'ID', 
-    pinned: 'left'  // Pin to left side
+    pinned: 'left'  
   },
   { field: 'name', headerName: 'Name' },
   { field: 'email', headerName: 'Email' },
   { 
     field: 'status', 
     headerName: 'Status', 
-    pinned: 'right'  // Pin to right side
+    pinned: 'right'  
   },
 ];
 
-// Or pin programmatically via API
+// Programmatic control
 gridApi.setColumnPinned('id', 'left');
 gridApi.setColumnPinned('actions', 'right');
-gridApi.setColumnPinned('id', 'left');
-gridApi.setColumnPinned('actions', 'right');
-gridApi.setColumnPinned('email', null);  // Unpin
-
-// Use pinnedPriority to control order (lower number = higher priority/closer to edge)
-// columns = [
-//   { field: 'a', pinned: 'left', pinnedPriority: 1 }, // Leftmost
-//   { field: 'b', pinned: 'left', pinnedPriority: 2 }  // After 'a'
-// ];`}
+gridApi.setColumnPinned('email', null);`}
                         preview={
                             <FiboGrid
                                 rowData={sampleData}
@@ -161,28 +153,27 @@ gridApi.setColumnPinned('email', null);  // Unpin
                     <ExampleBlock
                         title="Custom Layout Columns"
                         description="You can define Row Numbers and Checkboxes as regular columns to control their position and styling using 'field: number' or 'field: checkbox' (or type). You can also use 'pinnedPriority' to ensure specific pinned columns are always closest to the content."
-                        code={`const columns: ColumnDef[] = [
-  // 1. Custom Row Number Column (Pinned Left, Priority 1 = Leftmost)
-  { 
-    field: 'number', 
-    headerName: '#', 
-    pinned: 'left',
-    pinnedPriority: 1, 
-    width: 60 
+                        code={`const columns:ColumnDef[] = [
+
+                    {
+                        field: 'number',
+                    headerName: '#',
+                    pinned: 'left',
+                    pinnedPriority: 1,
+                    width: 60 
   },
-  // 2. Custom Checkbox Column (Pinned Left, Priority 2 = After Row Number)
-  { 
-    field: 'checkbox', 
-    headerName: '', 
-    pinned: 'left',
-    pinnedPriority: 2,
-    width: 50 
+
+                    {
+                        field: 'checkbox',
+                    headerName: '',
+                    pinned: 'left',
+                    pinnedPriority: 2,
+                    width: 50 
   },
-  // 3. Regular Data Columns
-  { field: 'name', headerName: 'Name', width: 200 },
-  { field: 'email', headerName: 'Email', width: 250 },
-];
-// Note: When using custom columns, the built-in side bars (configs.center.rowNumbers) are automatically disabled.`}
+
+                    {field: 'name', headerName: 'Name', width: 200 },
+                    {field: 'email', headerName: 'Email', width: 250 },
+];`}
                         preview={
                             <FiboGrid
                                 rowData={sampleData}
@@ -239,7 +230,7 @@ gridApi.setColumnPinned('email', null);  // Unpin
   columnDefs={columns}
   treeData={true}
   childRowsField="children"
-  // or use a function
+  
   getChildRows={(parent) => fetchChildren(parent.id)}
 />`} />
                         </CardContent>
@@ -261,14 +252,14 @@ gridApi.setColumnPinned('email', null);  // Unpin
                                 define arrays of keys to reorder components or add spacers.
                             </p>
                             <CodeBlock code={`<FiboGrid
-  // ...
+  
   configs={{
     header: {
-      // Reorder toolbar: Search first, spacer pushes actions to right
+      
       layout: ['search', 'spacer', 'actions', 'export-button']
     },
     footer: {
-      // Single line footer: Status info on left, Pagination on right
+      
       layout: ['status-info', 'spacer', 'pagination-controls']
     }
   }}
@@ -287,7 +278,7 @@ gridApi.setColumnPinned('email', null);  // Unpin
   'pagination-controls'
 ];
 
-// ... inside FiboGrid props
+
 configs={{
   footer: {
     layout: customFooterLayout

@@ -1,7 +1,5 @@
-// Styles - use lib version for build that doesn't include Tailwind base
 import './components/FiboGrid/styles/lib.css';
 
-// Main exports
 export { FiboGrid } from './components/FiboGrid';
 export * from './components/FiboGrid/types';
 export * from './components/FiboGrid/utils/helpers';

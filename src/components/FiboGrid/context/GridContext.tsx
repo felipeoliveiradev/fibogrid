@@ -4,20 +4,16 @@ import { FiboGridLocale } from '../locales/types';
 import { enUS } from '../locales/enUS';
 
 interface GridContextValue<T = any> {
-  // ... existing properties
   selectedRow: RowNode<T> | null;
   setSelectedRow: (row: RowNode<T> | null) => void;
 
-  // Grid Registry
   registerGrid: (id: string, api: GridApi<T>) => void;
   unregisterGrid: (id: string) => void;
   getGridApi: (id: string) => GridApi<T> | undefined;
 
-  // Row Selection Events
   onRowSelect: (gridId: string, row: RowNode<T>) => void;
   subscribeToRowSelect: (callback: (gridId: string, row: RowNode<T>) => void) => () => void;
 
-  // Localization
   locale: FiboGridLocale;
 }
 

@@ -151,9 +151,10 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
 
   const isLoading = loading || serverSideLoading;
 
-  useEffect(() => {
-    editingCellRef.current = editingCell;
-  }, [editingCell]);
+  editingCellRef.current = editingCell;
+
+  const selectionRef = useRef(selection);
+  selectionRef.current = selection;
 
   const {
     displayRows: groupedDisplayRows,
@@ -362,9 +363,9 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     columns,
     api,
     onStartEdit: (rowId, field) => {
-      // Fetch value
+
       const rowNode = api.getRowNode(rowId);
-      const value = rowNode ? (rowNode.data as any)[field] : null; 
+      const value = rowNode ? (rowNode.data as any)[field] : null;
       setEditingCell({ rowId, field, value, originalValue: value });
     },
     onStopEdit: () => {
@@ -491,10 +492,8 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     const row = displayedRows[rowIndex];
     const column = columns[colIndex];
     if (row && column) {
-      // Focus logic
       focusCell(row.id, column.field);
     }
-    // Range selection logic
     handleRangeMouseDown(rowIndex, colIndex, e);
   }, [displayedRows, columns, focusCell, handleRangeMouseDown]);
 
@@ -514,20 +513,35 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
       if (onRowClickFallback) {
         const row = displayedRows.find(r => r.id === rowId);
         if (row) {
-          detectRowClick((clickType) => {
+          const currentSelection = selectionRef.current;
+          let futureSelected = currentSelection.selectedRows.has(row.id);
+
+          if (rowSelection && !isCheckboxClick) {
+            const isShift = e.shiftKey;
+            if (rowSelection === 'single') {
+              futureSelected = true;
+            } else {
+              if (!isShift) {
+                futureSelected = !futureSelected;
+              }
+              if (isShift) futureSelected = true;
+            }
+          }
+
+          detectRowClick((clickType) =>
             onRowClickFallback({
               clickType,
               rowData: row.data,
               allRowsData: displayedRows.map(r => r.data),
-              rowNode: row,
+              rowNode: { ...row, selected: futureSelected },
               event: e,
               api,
-            });
-          });
+            })
+          );
         }
       }
     },
-    [rowSelection, selectRow, isRowDragging, isDraggingRows, onRowClickFallback, displayedRows, detectRowClick, api]
+    [rowSelection, selectRow, isRowDragging, isDraggingRows, onRowClickFallback, displayedRows, detectRowClick, api, selection.selectedRows]
   );
 
   useEffect(() => {
@@ -712,16 +726,45 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                           isSelected={isSelected}
                           onRowClick={(e) => handleRowClick(row.id, e)}
                           onRowDoubleClick={onRowDoubleClicked ? (e) => onRowDoubleClicked({ rowNode: row, event: e, api }) : () => { }}
+                          onContextMenu={(e) => {
+                            if (onRowClickFallback) {
+                              const currentSelection = selectionRef.current;
+                              const isCurrentlySelected = currentSelection.selectedRows.has(row.id);
+
+                              onRowClickFallback({
+                                clickType: 'menu',
+                                rowData: row.data,
+                                allRowsData: displayedRows.map(r => r.data),
+                                rowNode: { ...row, selected: isCurrentlySelected },
+                                event: e,
+                                api,
+                              });
+                            }
+                          }}
                           onCellClick={(col, e) => {
                             e.stopPropagation();
 
+                            const currentSelection = selectionRef.current;
+                            const isCurrentlySelected = currentSelection.selectedRows.has(row.id);
+                            let futureSelected = isCurrentlySelected;
+
                             if (rowSelection && !isRowDragging && !isDraggingRows) {
-                              const shouldSelect = rowSelection === 'single' ? !isSelected : true;
+                              if (rowSelection === 'single') {
+                                futureSelected = true;
+                              } else {
+                                if (e.shiftKey) {
+                                  futureSelected = true;
+                                } else {
+                                  futureSelected = !isCurrentlySelected;
+                                }
+                              }
+
+                              const shouldSelect = rowSelection === 'single' ? !isCurrentlySelected : true;
                               selectRow(row.id, shouldSelect, e.shiftKey, e.ctrlKey || e.metaKey);
                             }
 
                             focusCell(row.id, col.field);
-                            onCellClicked?.({ rowNode: row, column: col, value: (row.data as any)[col.field], event: e, api });
+                            onCellClicked?.({ rowNode: { ...row, selected: futureSelected }, column: col, value: (row.data as any)[col.field], event: e, api });
 
                             if (onRowClickFallback) {
                               detectCellClick((clickType) => {
@@ -729,7 +772,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                                   clickType,
                                   rowData: row.data,
                                   allRowsData: displayedRows.map(r => r.data),
-                                  rowNode: row,
+                                  rowNode: { ...row, selected: futureSelected },
                                   event: e,
                                   api,
                                   cell: {
@@ -831,31 +874,32 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
 
                           onRowRangeMouseEnter={handleRowRangeMouseEnter}
                           onCellContextMenu={(rowIndex, colIndex, e) => {
-
                             const column = columns[colIndex];
                             const value = getValueFromPath(row.data, column.field);
 
                             focusCell(row.id, column.field);
 
-                            let currentSelectedRows = new Set(selection.selectedRows);
+                            const currentSelection = selectionRef.current;
+                            let newSelectedRows = new Set(currentSelection.selectedRows);
+
                             if (rowSelection) {
                               if (rowSelection === 'multiple') {
-                                if (currentSelectedRows.has(row.id)) {
+                                if (currentSelection.selectedRows.has(row.id)) {
                                 } else {
-                                  currentSelectedRows.add(row.id);
+                                  newSelectedRows.add(row.id);
                                   selectRow(row.id, true);
                                 }
                               } else {
-                                if (!currentSelectedRows.has(row.id)) {
+                                if (!currentSelection.selectedRows.has(row.id)) {
                                   deselectAll();
                                   selectRow(row.id, true);
-                                  currentSelectedRows = new Set([row.id]);
+                                  newSelectedRows = new Set([row.id]);
                                 }
                               }
                             }
 
                             const selectedData = displayedRows
-                              .filter(r => currentSelectedRows.has(r.id))
+                              .filter(r => newSelectedRows.has(r.id))
                               .map(r => r.data);
 
                             const params = {

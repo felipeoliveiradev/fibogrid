@@ -149,7 +149,7 @@ export function GridToolbar<T>({
         </div>
       )}
 
-      {/* Customizable Toolbar Row */}
+
       <div className="flex items-center gap-2 p-2 border-b border-border bg-muted/30 w-full overflow-x-auto">
         {(headerConfig?.layout || ['search', 'spacer', 'custom-actions', 'columns-button', 'copy-button', 'export-button', 'refresh-button']).map((item, index) => {
           switch (item) {
@@ -161,7 +161,10 @@ export function GridToolbar<T>({
                     placeholder={locale.toolbar.searchPlaceholder}
                     value={localSearch}
                     onChange={(e) => setLocalSearch(e.target.value)}
-                    onKeyDown={handleSearchKeyDown}
+                    onKeyDown={(e) => {
+                      e.stopPropagation();
+                      handleSearchKeyDown(e);
+                    }}
                     className="pl-9 h-8 text-sm"
                   />
                   {quickFilterValue && (

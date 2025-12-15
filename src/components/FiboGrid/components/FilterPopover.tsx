@@ -284,6 +284,7 @@ export function FilterPopover<T>({
                   placeholder={locale.filter.searchPlaceholder}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyDown={(e) => e.stopPropagation()}
                   className="pl-8 h-8"
                 />
               </div>
@@ -453,7 +454,10 @@ function renderInput(
           placeholder="Enter value..."
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          onKeyDown={onKeyDown}
+          onKeyDown={(e) => {
+            e.stopPropagation();
+            onKeyDown(e);
+          }}
           className="h-8"
         />
       );

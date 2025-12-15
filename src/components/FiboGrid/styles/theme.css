@@ -1,81 +1,78 @@
-/* ================================
-   FiboGrid Theme System
-   Isolated CSS Variables
-   ================================ */
 
-/* Light Theme - Default */
+
+
 .fibogrid {
-  /* Colors - Background & Surface */
+  
   --fibogrid-bg: #ffffff;
   --fibogrid-surface: #fafafa;
   --fibogrid-surface-hover: #f5f5f5;
   --fibogrid-surface-selected: #e8f4fd;
 
-  /* Colors - Text */
+  
   --fibogrid-text: #1a1a1a;
   --fibogrid-text-secondary: #666666;
   --fibogrid-text-muted: #999999;
   --fibogrid-text-inverse: #ffffff;
 
-  /* Colors - Border (General) */
+  
   --fibogrid-border: #e0e0e0;
   --fibogrid-border-strong: #c0c0c0;
   --fibogrid-border-hover: #b0b0b0;
   --fibogrid-border-light: #f0f0f0;
 
-  /* Cell Borders - Horizontal & Vertical Lines */
+  
   --fibogrid-cell-border-right: #e0e0e0;
   --fibogrid-cell-border-bottom: #e0e0e0;
   --fibogrid-cell-border-hover: #d0d0d0;
   --fibogrid-cell-border-selected: #3b82f6;
   --fibogrid-cell-border-editing: #3b82f6;
 
-  /* Row Borders */
+  
   --fibogrid-row-border-bottom: #e0e0e0;
   --fibogrid-row-border-bottom-hover: #d0d0d0;
   --fibogrid-row-border-bottom-selected: #3b82f6;
   --fibogrid-row-border-bottom-group: #c0c0c0;
 
-  /* Header Borders */
+  
   --fibogrid-header-border-bottom: #c0c0c0;
   --fibogrid-header-cell-border-right: #e0e0e0;
   --fibogrid-header-cell-border-right-hover: #d0d0d0;
   --fibogrid-header-cell-border-right-active: #3b82f6;
 
-  /* Toolbar & Statusbar Borders */
+  
   --fibogrid-toolbar-border-bottom: #e0e0e0;
   --fibogrid-statusbar-border-top: #e0e0e0;
 
-  /* Grid Container Borders */
+  
   --fibogrid-container-border: #e0e0e0;
   --fibogrid-container-border-focus: #3b82f6;
 
-  /* Colors - Primary (Gold) */
+  
   --fibogrid-primary: hsl(40, 65%, 45%);
   --fibogrid-primary-hover: hsl(42, 70%, 50%);
   --fibogrid-primary-active: hsl(38, 60%, 40%);
   --fibogrid-primary-text: #ffffff;
 
-  /* Colors - States */
+  
   --fibogrid-success: #22c55e;
   --fibogrid-warning: #f59e0b;
   --fibogrid-error: #ef4444;
   --fibogrid-info: #3b82f6;
 
-  /* Colors - Overlay & Shadow */
+  
   --fibogrid-overlay: rgba(0, 0, 0, 0.5);
   --fibogrid-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --fibogrid-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   --fibogrid-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 
-  /* Sizing */
+  
   --fibogrid-header-height: 44px;
   --fibogrid-row-height: 40px;
   --fibogrid-toolbar-height: 48px;
   --fibogrid-statusbar-height: 36px;
   --fibogrid-cell-padding: 12px;
 
-  /* Typography */
+  
   --fibogrid-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --fibogrid-font-size: 14px;
   --fibogrid-font-size-sm: 12px;
@@ -86,23 +83,23 @@
   --fibogrid-font-weight-bold: 700;
   --fibogrid-line-height: 1.5;
 
-  /* Spacing */
+  
   --fibogrid-spacing-xs: 4px;
   --fibogrid-spacing-sm: 8px;
   --fibogrid-spacing-md: 12px;
   --fibogrid-spacing-lg: 16px;
   --fibogrid-spacing-xl: 24px;
 
-  /* Border Radius */
+  
   --fibogrid-radius-sm: 4px;
   --fibogrid-radius-md: 6px;
   --fibogrid-radius-lg: 8px;
 
-  /* Transitions */
+  
   --fibogrid-transition: all 0.2s ease;
   --fibogrid-transition-fast: all 0.1s ease;
 
-  /* Z-Index */
+  
   --fibogrid-z-dropdown: 1040;
   --fibogrid-z-modal: 1050;
   --fibogrid-z-tooltip: 1100;
@@ -115,18 +112,18 @@
   --fibogrid-z-dialog: 1050;
   --fibogrid-z-panel: 50;
 
-  /* Specific Z-Indices (Inherit from Base) */
+  
   --fibogrid-z-filter-popover: var(--fibogrid-z-popover);
   --fibogrid-z-column-menu: var(--fibogrid-z-popover);
   --fibogrid-z-filter-panel: var(--fibogrid-z-panel);
   --fibogrid-z-column-panel: var(--fibogrid-z-panel);
 
-  /* Selection */
+  
   --fibogrid-selection-bg: rgba(59, 130, 246, 0.1);
   --fibogrid-selection-border: #3b82f6;
   --fibogrid-selection-hover: rgba(59, 130, 246, 0.15);
 
-  /* Pinned Columns */
+  
   --fibogrid-pinned-bg: var(--fibogrid-bg);
   --fibogrid-pinned-header-bg: var(--fibogrid-header-bg);
   --fibogrid-pinned-cell-bg: var(--fibogrid-bg);
@@ -138,10 +135,10 @@
   --fibogrid-pinned-shadow-left: 2px 0 5px rgba(0, 0, 0, 0.1);
   --fibogrid-pinned-shadow-right: -2px 0 5px rgba(0, 0, 0, 0.1);
 
-  /* Toolbar Padding */
+  
   --fibogrid-toolbar-padding: var(--fibogrid-spacing-md);
 
-  /* Buttons */
+  
   --fibogrid-button-bg: transparent;
   --fibogrid-button-bg-hover: var(--fibogrid-surface-hover);
   --fibogrid-button-bg-active: var(--fibogrid-surface-active);
@@ -154,7 +151,7 @@
   --fibogrid-button-border-active: var(--fibogrid-primary-active);
   --fibogrid-button-border-disabled: var(--fibogrid-border-light);
 
-  /* Inputs */
+  
   --fibogrid-input-bg: var(--fibogrid-bg);
   --fibogrid-input-bg-focus: var(--fibogrid-bg);
   --fibogrid-input-bg-disabled: var(--fibogrid-surface);
@@ -166,7 +163,7 @@
   --fibogrid-input-border-hover: var(--fibogrid-border-hover);
   --fibogrid-input-border-disabled: var(--fibogrid-border-light);
 
-  /* Icons */
+  
   --fibogrid-icon-color: var(--fibogrid-text-secondary);
   --fibogrid-icon-color-hover: var(--fibogrid-primary);
   --fibogrid-icon-color-active: var(--fibogrid-primary-active);
@@ -178,7 +175,7 @@
   --fibogrid-filter-icon-color-active: var(--fibogrid-primary);
   --fibogrid-search-icon-color: var(--fibogrid-text-secondary);
 
-  /* Scrollbar */
+  
   --fibogrid-scrollbar-width: 12px;
   --fibogrid-scrollbar-height: 12px;
   --fibogrid-scrollbar-track-bg: var(--fibogrid-bg);
@@ -187,7 +184,7 @@
   --fibogrid-scrollbar-thumb-border: var(--fibogrid-bg);
   --fibogrid-scrollbar-thumb-radius: 6px;
 
-  /* Checkbox */
+  
   --fibogrid-checkbox-bg: var(--fibogrid-bg);
   --fibogrid-checkbox-bg-checked: var(--fibogrid-primary);
   --fibogrid-checkbox-bg-hover: var(--fibogrid-surface-hover);
@@ -197,13 +194,13 @@
   --fibogrid-checkbox-checkmark: var(--fibogrid-primary-text);
   --fibogrid-checkbox-size: 16px;
 
-  /* Tooltip */
+  
   --fibogrid-tooltip-bg: var(--fibogrid-text-inverse);
   --fibogrid-tooltip-text: var(--fibogrid-bg);
   --fibogrid-tooltip-border: transparent;
   --fibogrid-tooltip-shadow: var(--fibogrid-shadow-lg);
 
-  /* Dropdown / Popover */
+  
   --fibogrid-dropdown-bg: var(--fibogrid-surface);
   --fibogrid-dropdown-border: var(--fibogrid-border);
   --fibogrid-dropdown-shadow: var(--fibogrid-shadow-md);
@@ -212,23 +209,23 @@
   --fibogrid-dropdown-item-text: var(--fibogrid-text);
   --fibogrid-dropdown-item-text-hover: var(--fibogrid-text);
 
-  /* Loading Spinner */
+  
   --fibogrid-spinner-color: var(--fibogrid-primary);
   --fibogrid-spinner-bg: var(--fibogrid-border);
   --fibogrid-spinner-size: 40px;
   --fibogrid-spinner-width: 4px;
 
-  /* Group Row */
+  
   --fibogrid-group-row-bg: var(--fibogrid-surface);
   --fibogrid-group-row-text: var(--fibogrid-text);
   --fibogrid-group-row-border: var(--fibogrid-border);
 
-  /* Focus Ring */
+  
   --fibogrid-focus-ring-color: var(--fibogrid-primary);
   --fibogrid-focus-ring-width: 2px;
   --fibogrid-focus-ring-offset: 2px;
 
-  /* Row States - Even/Odd */
+  
   --fibogrid-row-bg-even: var(--fibogrid-bg);
   --fibogrid-row-bg-odd: var(--fibogrid-surface);
   --fibogrid-row-bg-hover: var(--fibogrid-surface-hover);
@@ -236,14 +233,14 @@
   --fibogrid-row-bg-selected-hover: var(--fibogrid-surface-active);
   --fibogrid-row-bg-child: var(--fibogrid-surface);
 
-  /* Header States */
+  
   --fibogrid-header-bg: var(--fibogrid-surface);
   --fibogrid-header-bg-hover: var(--fibogrid-surface-hover);
   --fibogrid-header-bg-drag-over: rgba(59, 130, 246, 0.2);
   --fibogrid-header-text: var(--fibogrid-text);
   --fibogrid-header-text-secondary: var(--fibogrid-text-secondary);
 
-  /* Filter Row */
+  
   --fibogrid-filter-row-bg: var(--fibogrid-surface);
   --fibogrid-filter-row-border: var(--fibogrid-border);
   --fibogrid-filter-input-bg: transparent;
@@ -255,19 +252,19 @@
   --fibogrid-filter-active-text: var(--fibogrid-primary);
   --fibogrid-filter-active-border: var(--fibogrid-primary);
 
-  /* Drag & Drop */
+  
   --fibogrid-drag-opacity: 0.5;
   --fibogrid-drag-over-bg: rgba(59, 130, 246, 0.2);
   --fibogrid-drop-target-border: var(--fibogrid-primary);
   --fibogrid-drop-target-border-width: 2px;
 
-  /* Column Resize */
+  
   --fibogrid-resize-handle-bg: transparent;
   --fibogrid-resize-handle-bg-hover: var(--fibogrid-primary);
   --fibogrid-resize-handle-bg-active: var(--fibogrid-primary);
   --fibogrid-resize-handle-width: 2px;
 
-  /* Pagination */
+  
   --fibogrid-pagination-bg: var(--fibogrid-surface);
   --fibogrid-pagination-text: var(--fibogrid-text-secondary);
   --fibogrid-pagination-border: var(--fibogrid-border);
@@ -280,7 +277,7 @@
   --fibogrid-pagination-select-text: var(--fibogrid-text);
   --fibogrid-pagination-select-border: var(--fibogrid-border);
 
-  /* Quick Filter / Active Filters */
+  
   --fibogrid-quick-filter-bg: var(--fibogrid-surface);
   --fibogrid-quick-filter-border: var(--fibogrid-border);
   --fibogrid-active-filter-bg: rgba(59, 130, 246, 0.1);
@@ -289,17 +286,17 @@
   --fibogrid-active-filter-remove-bg: transparent;
   --fibogrid-active-filter-remove-bg-hover: rgba(59, 130, 246, 0.2);
 
-  /* Row Numbers */
+  
   --fibogrid-row-number-bg: var(--fibogrid-surface);
   --fibogrid-row-number-bg-selected: rgba(59, 130, 246, 0.15);
   --fibogrid-row-number-text: var(--fibogrid-text-secondary);
   --fibogrid-row-number-border: var(--fibogrid-border);
 
-  /* Checkbox Column */
+  
   --fibogrid-checkbox-column-bg: var(--fibogrid-surface);
   --fibogrid-checkbox-column-border: var(--fibogrid-border);
 
-  /* Popover / Dropdown Content */
+  
   --fibogrid-popover-bg: var(--fibogrid-dropdown-bg);
   --fibogrid-popover-border: var(--fibogrid-dropdown-border);
   --fibogrid-popover-shadow: var(--fibogrid-dropdown-shadow);
@@ -317,7 +314,7 @@
   --fibogrid-popover-item-border-focus: var(--fibogrid-primary);
   --fibogrid-popover-item-opacity-dragging: 0.5;
 
-  /* Popover Input (Search) */
+  
   --fibogrid-popover-input-bg: var(--fibogrid-input-bg);
   --fibogrid-popover-input-bg-focus: var(--fibogrid-input-bg-focus);
   --fibogrid-popover-input-bg-hover: var(--fibogrid-input-bg);
@@ -330,123 +327,123 @@
   --fibogrid-popover-input-ring-width: var(--fibogrid-focus-ring-width);
   --fibogrid-popover-input-ring-offset: var(--fibogrid-focus-ring-offset);
 
-  /* Popover Icons */
+  
   --fibogrid-popover-icon-color: var(--fibogrid-icon-color);
   --fibogrid-popover-icon-color-hover: var(--fibogrid-icon-color-hover);
   --fibogrid-popover-icon-color-active: var(--fibogrid-icon-color-active);
   --fibogrid-popover-icon-opacity-default: 0;
   --fibogrid-popover-icon-opacity-hover: 1;
 
-  /* Popover Scrollbar */
+  
   --fibogrid-popover-scrollbar-track-bg: transparent;
   --fibogrid-popover-scrollbar-thumb-bg: var(--fibogrid-scrollbar-thumb-bg);
   --fibogrid-popover-scrollbar-thumb-bg-hover: var(--fibogrid-scrollbar-thumb-bg-hover);
 
-  /* Column Menu */
+  
   --fibogrid-column-menu-bg: var(--fibogrid-dropdown-bg);
   --fibogrid-column-menu-item-bg-hover: var(--fibogrid-dropdown-item-bg-hover);
   --fibogrid-column-menu-item-bg-focus: var(--fibogrid-dropdown-item-bg-hover);
   --fibogrid-column-menu-item-bg-active: var(--fibogrid-surface-active);
   --fibogrid-column-menu-icon: var(--fibogrid-icon-color);
 
-  /* Dynamic Dimensions */
+  
   --fibogrid-row-number-width: 50px;
   --fibogrid-checkbox-column-width: 48px;
   --fibogrid-cell-indent-base: 12px;
   --fibogrid-cell-indent-level: 20px;
 
-  /* Virtualization */
+  
   --fibogrid-virtual-container-height: auto;
   --fibogrid-virtual-transform: translateY(0);
 
-  /* Overlay */
+  
   --fibogrid-overlay-top: 0;
   --fibogrid-overlay-left: 0;
   --fibogrid-overlay-right: 0;
   --fibogrid-overlay-bottom: 0;
 }
 
-/* Dark Theme */
+
 .fibogrid.fibogrid-dark,
 .dark .fibogrid {
-  /* Colors - Background & Surface */
+  
   --fibogrid-bg: #1a1a1a;
   --fibogrid-surface: #262626;
   --fibogrid-surface-hover: #333333;
   --fibogrid-surface-selected: #1e3a5f;
 
-  /* Colors - Text */
+  
   --fibogrid-text: #e5e5e5;
   --fibogrid-text-secondary: #a3a3a3;
   --fibogrid-text-muted: #737373;
   --fibogrid-text-inverse: #1a1a1a;
 
-  /* Colors - Border (General) */
+  
   --fibogrid-border: #404040;
   --fibogrid-border-strong: #525252;
   --fibogrid-border-hover: #666666;
   --fibogrid-border-light: #333333;
 
-  /* Cell Borders - Horizontal & Vertical Lines */
+  
   --fibogrid-cell-border-right: #404040;
   --fibogrid-cell-border-bottom: #404040;
   --fibogrid-cell-border-hover: #525252;
   --fibogrid-cell-border-selected: #60a5fa;
   --fibogrid-cell-border-editing: #60a5fa;
 
-  /* Row Borders */
+  
   --fibogrid-row-border-bottom: #404040;
   --fibogrid-row-border-bottom-hover: #525252;
   --fibogrid-row-border-bottom-selected: #60a5fa;
   --fibogrid-row-border-bottom-group: #525252;
 
-  /* Header Borders */
+  
   --fibogrid-header-border-bottom: #525252;
   --fibogrid-header-cell-border-right: #404040;
   --fibogrid-header-cell-border-right-hover: #525252;
   --fibogrid-header-cell-border-right-active: #60a5fa;
 
-  /* Toolbar & Statusbar Borders */
+  
   --fibogrid-toolbar-border-bottom: #404040;
   --fibogrid-statusbar-border-top: #404040;
 
-  /* Grid Container Borders */
+  
   --fibogrid-container-border: #404040;
   --fibogrid-container-border-focus: #60a5fa;
 
-  /* Colors - Primary (Gold) */
+  
   --fibogrid-primary: hsl(42, 70%, 50%);
   --fibogrid-primary-hover: hsl(44, 75%, 55%);
   --fibogrid-primary-active: hsl(40, 65%, 45%);
   --fibogrid-primary-text: #1a1a1a;
 
-  /* Colors - States */
+  
   --fibogrid-success: #22c55e;
   --fibogrid-warning: #f59e0b;
   --fibogrid-error: #ef4444;
   --fibogrid-info: #3b82f6;
 
-  /* Colors - Overlay & Shadow */
+  
   --fibogrid-overlay: rgba(0, 0, 0, 0.7);
   --fibogrid-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
   --fibogrid-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
   --fibogrid-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
 
-  /* Selection */
+  
   --fibogrid-selection-bg: rgba(59, 130, 246, 0.2);
   --fibogrid-selection-border: #60a5fa;
   --fibogrid-selection-hover: rgba(96, 165, 250, 0.25);
 
-  /* Pinned Columns */
+  
   --fibogrid-pinned-bg: var(--fibogrid-bg);
   --fibogrid-pinned-shadow: 2px 0 5px rgba(0, 0, 0, 0.3);
   --fibogrid-pinned-shadow-left: 2px 0 5px rgba(0, 0, 0, 0.3);
   --fibogrid-pinned-shadow-right: -2px 0 5px rgba(0, 0, 0, 0.3);
 
-  /* Toolbar Padding */
+  
   --fibogrid-toolbar-padding: var(--fibogrid-spacing-md);
 
-  /* Buttons */
+  
   --fibogrid-button-bg: transparent;
   --fibogrid-button-bg-hover: var(--fibogrid-surface-hover);
   --fibogrid-button-bg-active: var(--fibogrid-surface-active);
@@ -459,7 +456,7 @@
   --fibogrid-button-border-active: var(--fibogrid-primary-active);
   --fibogrid-button-border-disabled: var(--fibogrid-border-light);
 
-  /* Inputs */
+  
   --fibogrid-input-bg: var(--fibogrid-bg);
   --fibogrid-input-bg-focus: var(--fibogrid-bg);
   --fibogrid-input-bg-disabled: var(--fibogrid-surface);
@@ -471,7 +468,7 @@
   --fibogrid-input-border-hover: var(--fibogrid-border-hover);
   --fibogrid-input-border-disabled: var(--fibogrid-border-light);
 
-  /* Icons */
+  
   --fibogrid-icon-color: var(--fibogrid-text-secondary);
   --fibogrid-icon-color-hover: var(--fibogrid-primary);
   --fibogrid-icon-color-active: var(--fibogrid-primary-active);
@@ -483,7 +480,7 @@
   --fibogrid-filter-icon-color-active: var(--fibogrid-primary);
   --fibogrid-search-icon-color: var(--fibogrid-text-secondary);
 
-  /* Scrollbar */
+  
   --fibogrid-scrollbar-width: 12px;
   --fibogrid-scrollbar-height: 12px;
   --fibogrid-scrollbar-track-bg: var(--fibogrid-bg);
@@ -492,7 +489,7 @@
   --fibogrid-scrollbar-thumb-border: var(--fibogrid-bg);
   --fibogrid-scrollbar-thumb-radius: 6px;
 
-  /* Checkbox */
+  
   --fibogrid-checkbox-bg: var(--fibogrid-bg);
   --fibogrid-checkbox-bg-checked: var(--fibogrid-primary);
   --fibogrid-checkbox-bg-hover: var(--fibogrid-surface-hover);
@@ -502,13 +499,13 @@
   --fibogrid-checkbox-checkmark: var(--fibogrid-primary-text);
   --fibogrid-checkbox-size: 16px;
 
-  /* Tooltip */
+  
   --fibogrid-tooltip-bg: var(--fibogrid-text-inverse);
   --fibogrid-tooltip-text: var(--fibogrid-bg);
   --fibogrid-tooltip-border: transparent;
   --fibogrid-tooltip-shadow: var(--fibogrid-shadow-lg);
 
-  /* Dropdown / Popover */
+  
   --fibogrid-dropdown-bg: var(--fibogrid-surface);
   --fibogrid-dropdown-border: var(--fibogrid-border);
   --fibogrid-dropdown-shadow: var(--fibogrid-shadow-md);
@@ -517,23 +514,23 @@
   --fibogrid-dropdown-item-text: var(--fibogrid-text);
   --fibogrid-dropdown-item-text-hover: var(--fibogrid-text);
 
-  /* Loading Spinner */
+  
   --fibogrid-spinner-color: var(--fibogrid-primary);
   --fibogrid-spinner-bg: var(--fibogrid-border);
   --fibogrid-spinner-size: 40px;
   --fibogrid-spinner-width: 4px;
 
-  /* Group Row */
+  
   --fibogrid-group-row-bg: var(--fibogrid-surface);
   --fibogrid-group-row-text: var(--fibogrid-text);
   --fibogrid-group-row-border: var(--fibogrid-border);
 
-  /* Focus Ring */
+  
   --fibogrid-focus-ring-color: var(--fibogrid-primary);
   --fibogrid-focus-ring-width: 2px;
   --fibogrid-focus-ring-offset: 2px;
 
-  /* Row States - Even/Odd */
+  
   --fibogrid-row-bg-even: var(--fibogrid-bg);
   --fibogrid-row-bg-odd: var(--fibogrid-surface);
   --fibogrid-row-bg-hover: var(--fibogrid-surface-hover);
@@ -541,14 +538,14 @@
   --fibogrid-row-bg-selected-hover: var(--fibogrid-surface-active);
   --fibogrid-row-bg-child: var(--fibogrid-surface);
 
-  /* Header States */
+  
   --fibogrid-header-bg: var(--fibogrid-surface);
   --fibogrid-header-bg-hover: var(--fibogrid-surface-hover);
   --fibogrid-header-bg-drag-over: rgba(96, 165, 250, 0.2);
   --fibogrid-header-text: var(--fibogrid-text);
   --fibogrid-header-text-secondary: var(--fibogrid-text-secondary);
 
-  /* Filter Row */
+  
   --fibogrid-filter-row-bg: var(--fibogrid-surface);
   --fibogrid-filter-row-border: var(--fibogrid-border);
   --fibogrid-filter-input-bg: transparent;
@@ -560,19 +557,19 @@
   --fibogrid-filter-active-text: var(--fibogrid-primary);
   --fibogrid-filter-active-border: var(--fibogrid-primary);
 
-  /* Drag & Drop */
+  
   --fibogrid-drag-opacity: 0.5;
   --fibogrid-drag-over-bg: rgba(96, 165, 250, 0.2);
   --fibogrid-drop-target-border: var(--fibogrid-primary);
   --fibogrid-drop-target-border-width: 2px;
 
-  /* Column Resize */
+  
   --fibogrid-resize-handle-bg: transparent;
   --fibogrid-resize-handle-bg-hover: var(--fibogrid-primary);
   --fibogrid-resize-handle-bg-active: var(--fibogrid-primary);
   --fibogrid-resize-handle-width: 2px;
 
-  /* Pagination */
+  
   --fibogrid-pagination-bg: var(--fibogrid-surface);
   --fibogrid-pagination-text: var(--fibogrid-text-secondary);
   --fibogrid-pagination-border: var(--fibogrid-border);
@@ -585,7 +582,7 @@
   --fibogrid-pagination-select-text: var(--fibogrid-text);
   --fibogrid-pagination-select-border: var(--fibogrid-border);
 
-  /* Quick Filter / Active Filters */
+  
   --fibogrid-quick-filter-bg: var(--fibogrid-surface);
   --fibogrid-quick-filter-border: var(--fibogrid-border);
   --fibogrid-active-filter-bg: rgba(96, 165, 250, 0.1);
@@ -594,17 +591,17 @@
   --fibogrid-active-filter-remove-bg: transparent;
   --fibogrid-active-filter-remove-bg-hover: rgba(96, 165, 250, 0.2);
 
-  /* Row Numbers */
+  
   --fibogrid-row-number-bg: var(--fibogrid-surface);
   --fibogrid-row-number-bg-selected: rgba(96, 165, 250, 0.15);
   --fibogrid-row-number-text: var(--fibogrid-text-secondary);
   --fibogrid-row-number-border: var(--fibogrid-border);
 
-  /* Checkbox Column */
+  
   --fibogrid-checkbox-column-bg: var(--fibogrid-surface);
   --fibogrid-checkbox-column-border: var(--fibogrid-border);
 
-  /* Popover / Dropdown Content */
+  
   --fibogrid-popover-bg: var(--fibogrid-dropdown-bg);
   --fibogrid-popover-border: var(--fibogrid-dropdown-border);
   --fibogrid-popover-shadow: var(--fibogrid-dropdown-shadow);
@@ -622,7 +619,7 @@
   --fibogrid-popover-item-border-focus: var(--fibogrid-primary);
   --fibogrid-popover-item-opacity-dragging: 0.5;
 
-  /* Popover Input (Search) */
+  
   --fibogrid-popover-input-bg: var(--fibogrid-input-bg);
   --fibogrid-popover-input-bg-focus: var(--fibogrid-input-bg-focus);
   --fibogrid-popover-input-bg-hover: var(--fibogrid-input-bg);
@@ -635,45 +632,43 @@
   --fibogrid-popover-input-ring-width: var(--fibogrid-focus-ring-width);
   --fibogrid-popover-input-ring-offset: var(--fibogrid-focus-ring-offset);
 
-  /* Popover Icons */
+  
   --fibogrid-popover-icon-color: var(--fibogrid-icon-color);
   --fibogrid-popover-icon-color-hover: var(--fibogrid-icon-color-hover);
   --fibogrid-popover-icon-color-active: var(--fibogrid-icon-color-active);
   --fibogrid-popover-icon-opacity-default: 0;
   --fibogrid-popover-icon-opacity-hover: 1;
 
-  /* Popover Scrollbar */
+  
   --fibogrid-popover-scrollbar-track-bg: transparent;
   --fibogrid-popover-scrollbar-thumb-bg: var(--fibogrid-scrollbar-thumb-bg);
   --fibogrid-popover-scrollbar-thumb-bg-hover: var(--fibogrid-scrollbar-thumb-bg-hover);
 
-  /* Column Menu */
+  
   --fibogrid-column-menu-bg: var(--fibogrid-dropdown-bg);
   --fibogrid-column-menu-item-bg-hover: var(--fibogrid-dropdown-item-bg-hover);
   --fibogrid-column-menu-item-bg-focus: var(--fibogrid-dropdown-item-bg-hover);
   --fibogrid-column-menu-item-bg-active: var(--fibogrid-surface-active);
   --fibogrid-column-menu-icon: var(--fibogrid-icon-color);
 
-  /* Dynamic Dimensions */
+  
   --fibogrid-row-number-width: 50px;
   --fibogrid-checkbox-column-width: 48px;
   --fibogrid-cell-indent-base: 12px;
   --fibogrid-cell-indent-level: 20px;
 
-  /* Virtualization */
+  
   --fibogrid-virtual-container-height: auto;
   --fibogrid-virtual-transform: translateY(0);
 
-  /* Overlay */
+  
   --fibogrid-overlay-top: 0;
   --fibogrid-overlay-left: 0;
   --fibogrid-overlay-right: 0;
   --fibogrid-overlay-bottom: 0;
 }
 
-/* ================================
-   FiboGrid Base Styles
-   ================================ */
+
 
 .fibogrid {
   font-family: var(--fibogrid-font-family);
@@ -741,9 +736,7 @@
   color: var(--fibogrid-text-secondary);
 }
 
-/* ================================
-   Utility Classes for Dynamic Styles
-   ================================ */
+
 
 .fibogrid-cell-full-width {
   width: 100%;
@@ -796,7 +789,7 @@
   background-color: var(--fibogrid-row-bg-even);
 }
 
-/* Checkbox Column Elements */
+
 .fibogrid-checkbox-column {
   width: var(--fibogrid-checkbox-column-width);
   min-width: var(--fibogrid-checkbox-column-width);
@@ -885,7 +878,7 @@
   cursor: not-allowed;
 }
 
-/* Column Panel / Popover */
+
 .fibogrid-column-panel {
   background-color: var(--fibogrid-popover-bg);
   border-left: 1px solid var(--fibogrid-popover-border);
@@ -958,7 +951,7 @@
   border-top: 1px solid var(--fibogrid-popover-border);
 }
 
-/* Popover Content (GridToolbar) */
+
 .fibogrid-popover-content {
   background-color: var(--fibogrid-popover-bg);
   border: 1px solid var(--fibogrid-popover-border);
@@ -986,71 +979,69 @@
   border-top: 1px solid var(--fibogrid-popover-border);
 }
 
-/* ================================
-   Theme Presets
-   ================================ */
 
-/* Uber Theme - Monochromatic Black & White */
+
+
 .fibogrid.fibogrid-theme-uber {
-  /* Background & Surface - Pure white and grays */
+  
   --fibogrid-bg: #ffffff;
   --fibogrid-surface: #f7f7f7;
   --fibogrid-surface-hover: #eeeeee;
   --fibogrid-surface-selected: #000000;
   --fibogrid-surface-active: #1a1a1a;
 
-  /* Text - Pure black and grays */
+  
   --fibogrid-text: #000000;
   --fibogrid-text-secondary: #666666;
   --fibogrid-text-muted: #999999;
   --fibogrid-text-inverse: #ffffff;
 
-  /* Primary - Pure black */
+  
   --fibogrid-primary: #000000;
   --fibogrid-primary-hover: #333333;
   --fibogrid-primary-active: #000000;
   --fibogrid-primary-text: #ffffff;
 
-  /* States */
+  
   --fibogrid-success: #000000;
   --fibogrid-warning: #666666;
   --fibogrid-error: #000000;
   --fibogrid-info: #000000;
 
-  /* Borders - Light grays */
+  
   --fibogrid-border: #e0e0e0;
   --fibogrid-border-strong: #000000;
   --fibogrid-border-hover: #cccccc;
   --fibogrid-border-light: #f0f0f0;
 
-  /* Cell Borders */
+  
   --fibogrid-cell-border-right: #f0f0f0;
   --fibogrid-cell-border-bottom: #f0f0f0;
   --fibogrid-cell-border-hover: #cccccc;
   --fibogrid-cell-border-selected: #000000;
   --fibogrid-cell-border-editing: #000000;
 
-  /* Row Borders */
+  
   --fibogrid-row-border-bottom: #f0f0f0;
   --fibogrid-row-border-bottom-hover: #e0e0e0;
   --fibogrid-row-border-bottom-selected: #000000;
   --fibogrid-row-border-bottom-group: #000000;
 
-  /* Header Borders */
+  
   --fibogrid-header-border-bottom: #000000;
   --fibogrid-header-cell-border-right: #f0f0f0;
   --fibogrid-header-cell-border-right-hover: #cccccc;
   --fibogrid-header-cell-border-right-active: #000000;
 
-  /* Toolbar & Statusbar */
+  
   --fibogrid-toolbar-border-bottom: #000000;
   --fibogrid-statusbar-border-top: #000000;
 
-  /* Container */
+  
   --fibogrid-container-border: #000000;
   --fibogrid-container-border-focus: #000000;
 
-  /* Typography - Helvetica Neue (Uber's font) */
+  
   --fibogrid-font-family: "Helvetica Neue", "Helvetica", "Arial", sans-serif;
   --fibogrid-font-size: 14px;
   --fibogrid-font-size-sm: 12px;
@@ -1061,31 +1052,31 @@
   --fibogrid-font-weight-bold: 700;
   --fibogrid-line-height: 1.5;
 
-  /* Sizing */
+  
   --fibogrid-header-height: 44px;
   --fibogrid-row-height: 40px;
   --fibogrid-toolbar-height: 48px;
   --fibogrid-statusbar-height: 36px;
   --fibogrid-cell-padding: 12px;
 
-  /* Spacing */
+  
   --fibogrid-spacing-xs: 4px;
   --fibogrid-spacing-sm: 8px;
   --fibogrid-spacing-md: 12px;
   --fibogrid-spacing-lg: 16px;
   --fibogrid-spacing-xl: 24px;
 
-  /* Border Radius - Zero (flat design) */
+  
   --fibogrid-radius-sm: 0px;
   --fibogrid-radius-md: 0px;
   --fibogrid-radius-lg: 0px;
 
-  /* Selection */
+  
   --fibogrid-selection-bg: rgba(0, 0, 0, 0.1);
   --fibogrid-selection-border: #000000;
   --fibogrid-selection-hover: rgba(0, 0, 0, 0.15);
 
-  /* Pinned Columns */
+  
   --fibogrid-pinned-bg: #ffffff;
   --fibogrid-pinned-header-bg: #f7f7f7;
   --fibogrid-pinned-cell-bg: #ffffff;
@@ -1097,10 +1088,10 @@
   --fibogrid-pinned-shadow-left: 2px 0 5px rgba(0, 0, 0, 0.1);
   --fibogrid-pinned-shadow-right: -2px 0 5px rgba(0, 0, 0, 0.1);
 
-  /* Toolbar Padding */
+  
   --fibogrid-toolbar-padding: 12px;
 
-  /* Buttons */
+  
   --fibogrid-button-bg: transparent;
   --fibogrid-button-bg-hover: #eeeeee;
   --fibogrid-button-bg-active: #000000;
@@ -1114,7 +1105,7 @@
   --fibogrid-button-border-active: #000000;
   --fibogrid-button-border-disabled: #f0f0f0;
 
-  /* Inputs */
+  
   --fibogrid-input-bg: #ffffff;
   --fibogrid-input-bg-focus: #ffffff;
   --fibogrid-input-bg-disabled: #f7f7f7;
@@ -1126,7 +1117,7 @@
   --fibogrid-input-border-hover: #cccccc;
   --fibogrid-input-border-disabled: #f0f0f0;
 
-  /* Icons */
+  
   --fibogrid-icon-color: #666666;
   --fibogrid-icon-color-hover: #000000;
   --fibogrid-icon-color-active: #000000;
@@ -1138,7 +1129,7 @@
   --fibogrid-filter-icon-color-active: #000000;
   --fibogrid-search-icon-color: #666666;
 
-  /* Scrollbar */
+  
   --fibogrid-scrollbar-width: 12px;
   --fibogrid-scrollbar-height: 12px;
   --fibogrid-scrollbar-track-bg: #ffffff;
@@ -1147,7 +1138,7 @@
   --fibogrid-scrollbar-thumb-border: #ffffff;
   --fibogrid-scrollbar-thumb-radius: 6px;
 
-  /* Checkbox */
+  
   --fibogrid-checkbox-bg: #ffffff;
   --fibogrid-checkbox-bg-checked: #000000;
   --fibogrid-checkbox-bg-hover: #eeeeee;
@@ -1157,13 +1148,13 @@
   --fibogrid-checkbox-checkmark: #ffffff;
   --fibogrid-checkbox-size: 16px;
 
-  /* Tooltip */
+  
   --fibogrid-tooltip-bg: #000000;
   --fibogrid-tooltip-text: #ffffff;
   --fibogrid-tooltip-border: transparent;
   --fibogrid-tooltip-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
 
-  /* Dropdown / Popover */
+  
   --fibogrid-dropdown-bg: #ffffff;
   --fibogrid-dropdown-border: #e0e0e0;
   --fibogrid-dropdown-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
@@ -1172,29 +1163,29 @@
   --fibogrid-dropdown-item-text: #000000;
   --fibogrid-dropdown-item-text-hover: #000000;
 
-  /* Loading Spinner */
+  
   --fibogrid-spinner-color: #000000;
   --fibogrid-spinner-bg: #e0e0e0;
   --fibogrid-spinner-size: 40px;
   --fibogrid-spinner-width: 4px;
 
-  /* Group Row */
+  
   --fibogrid-group-row-bg: #f7f7f7;
   --fibogrid-group-row-text: #000000;
   --fibogrid-group-row-border: #000000;
 
-  /* Focus Ring */
+  
   --fibogrid-focus-ring-color: #000000;
   --fibogrid-focus-ring-width: 2px;
   --fibogrid-focus-ring-offset: 2px;
 
-  /* Overlay & Shadow */
+  
   --fibogrid-overlay: rgba(0, 0, 0, 0.5);
   --fibogrid-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.1);
   --fibogrid-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   --fibogrid-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 
-  /* Row States - Even/Odd */
+  
   --fibogrid-row-bg-even: #ffffff;
   --fibogrid-row-bg-odd: #f7f7f7;
   --fibogrid-row-bg-hover: #eeeeee;
@@ -1202,14 +1193,14 @@
   --fibogrid-row-bg-selected-hover: #1a1a1a;
   --fibogrid-row-bg-child: #f7f7f7;
 
-  /* Header States */
+  
   --fibogrid-header-bg: #f7f7f7;
   --fibogrid-header-bg-hover: #eeeeee;
   --fibogrid-header-bg-drag-over: rgba(0, 0, 0, 0.2);
   --fibogrid-header-text: #000000;
   --fibogrid-header-text-secondary: #666666;
 
-  /* Filter Row */
+  
   --fibogrid-filter-row-bg: #f7f7f7;
   --fibogrid-filter-row-border: #e0e0e0;
   --fibogrid-filter-input-bg: transparent;
@@ -1221,19 +1212,19 @@
   --fibogrid-filter-active-text: #000000;
   --fibogrid-filter-active-border: #000000;
 
-  /* Drag & Drop */
+  
   --fibogrid-drag-opacity: 0.5;
   --fibogrid-drag-over-bg: rgba(0, 0, 0, 0.2);
   --fibogrid-drop-target-border: #000000;
   --fibogrid-drop-target-border-width: 2px;
 
-  /* Column Resize */
+  
   --fibogrid-resize-handle-bg: transparent;
   --fibogrid-resize-handle-bg-hover: #000000;
   --fibogrid-resize-handle-bg-active: #000000;
   --fibogrid-resize-handle-width: 2px;
 
-  /* Pagination */
+  
   --fibogrid-pagination-bg: #f7f7f7;
   --fibogrid-pagination-text: #666666;
   --fibogrid-pagination-border: #e0e0e0;
@@ -1246,7 +1237,7 @@
   --fibogrid-pagination-select-text: #000000;
   --fibogrid-pagination-select-border: #e0e0e0;
 
-  /* Quick Filter / Active Filters */
+  
   --fibogrid-quick-filter-bg: #f7f7f7;
   --fibogrid-quick-filter-border: #e0e0e0;
   --fibogrid-active-filter-bg: rgba(0, 0, 0, 0.1);
@@ -1255,17 +1246,17 @@
   --fibogrid-active-filter-remove-bg: transparent;
   --fibogrid-active-filter-remove-bg-hover: rgba(0, 0, 0, 0.2);
 
-  /* Row Numbers */
+  
   --fibogrid-row-number-bg: #f7f7f7;
   --fibogrid-row-number-bg-selected: rgba(0, 0, 0, 0.15);
   --fibogrid-row-number-text: #666666;
   --fibogrid-row-number-border: #e0e0e0;
 
-  /* Checkbox Column */
+  
   --fibogrid-checkbox-column-bg: #f7f7f7;
   --fibogrid-checkbox-column-border: #e0e0e0;
 
-  /* Popover / Dropdown Content */
+  
   --fibogrid-popover-bg: #ffffff;
   --fibogrid-popover-border: #e0e0e0;
   --fibogrid-popover-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
@@ -1283,7 +1274,7 @@
   --fibogrid-popover-item-border-focus: #000000;
   --fibogrid-popover-item-opacity-dragging: 0.5;
 
-  /* Popover Input (Search) */
+  
   --fibogrid-popover-input-bg: #ffffff;
   --fibogrid-popover-input-bg-focus: #ffffff;
   --fibogrid-popover-input-bg-hover: #ffffff;
@@ -1296,19 +1287,19 @@
   --fibogrid-popover-input-ring-width: 2px;
   --fibogrid-popover-input-ring-offset: 2px;
 
-  /* Popover Icons */
+  
   --fibogrid-popover-icon-color: #666666;
   --fibogrid-popover-icon-color-hover: #000000;
   --fibogrid-popover-icon-color-active: #000000;
   --fibogrid-popover-icon-opacity-default: 0;
   --fibogrid-popover-icon-opacity-hover: 1;
 
-  /* Popover Scrollbar */
+  
   --fibogrid-popover-scrollbar-track-bg: transparent;
   --fibogrid-popover-scrollbar-thumb-bg: #e0e0e0;
   --fibogrid-popover-scrollbar-thumb-bg-hover: #666666;
 
-  /* Column Menu */
+  
   --fibogrid-column-menu-bg: #ffffff;
   --fibogrid-column-menu-item-bg-hover: #eeeeee;
   --fibogrid-column-menu-item-bg-focus: #eeeeee;
@@ -1316,67 +1307,67 @@
   --fibogrid-column-menu-icon: #666666;
 }
 
-/* Material UI Theme - Material Design */
+
 .fibogrid.fibogrid-theme-material {
-  /* Background & Surface - Material colors */
+  
   --fibogrid-bg: #ffffff;
   --fibogrid-surface: #f5f5f5;
   --fibogrid-surface-hover: #eeeeee;
   --fibogrid-surface-selected: #e3f2fd;
   --fibogrid-surface-active: #bbdefb;
 
-  /* Text - Material text colors */
+  
   --fibogrid-text: rgba(0, 0, 0, 0.87);
   --fibogrid-text-secondary: rgba(0, 0, 0, 0.60);
   --fibogrid-text-muted: rgba(0, 0, 0, 0.38);
   --fibogrid-text-inverse: #ffffff;
 
-  /* Primary - Material Blue */
+  
   --fibogrid-primary: #2196f3;
   --fibogrid-primary-hover: #1976d2;
   --fibogrid-primary-active: #0d47a1;
   --fibogrid-primary-text: #ffffff;
 
-  /* States */
+  
   --fibogrid-success: #4caf50;
   --fibogrid-warning: #ff9800;
   --fibogrid-error: #f44336;
   --fibogrid-info: #2196f3;
 
-  /* Borders - Material dividers */
+  
   --fibogrid-border: rgba(0, 0, 0, 0.12);
   --fibogrid-border-strong: rgba(0, 0, 0, 0.24);
   --fibogrid-border-hover: rgba(0, 0, 0, 0.20);
   --fibogrid-border-light: rgba(0, 0, 0, 0.08);
 
-  /* Cell Borders */
+  
   --fibogrid-cell-border-right: rgba(0, 0, 0, 0.12);
   --fibogrid-cell-border-bottom: rgba(0, 0, 0, 0.12);
   --fibogrid-cell-border-hover: rgba(0, 0, 0, 0.20);
   --fibogrid-cell-border-selected: #2196f3;
   --fibogrid-cell-border-editing: #2196f3;
 
-  /* Row Borders */
+  
   --fibogrid-row-border-bottom: rgba(0, 0, 0, 0.12);
   --fibogrid-row-border-bottom-hover: rgba(0, 0, 0, 0.20);
   --fibogrid-row-border-bottom-selected: #2196f3;
   --fibogrid-row-border-bottom-group: rgba(0, 0, 0, 0.24);
 
-  /* Header Borders */
+  
   --fibogrid-header-border-bottom: rgba(0, 0, 0, 0.24);
   --fibogrid-header-cell-border-right: rgba(0, 0, 0, 0.12);
   --fibogrid-header-cell-border-right-hover: rgba(0, 0, 0, 0.20);
   --fibogrid-header-cell-border-right-active: #2196f3;
 
-  /* Toolbar & Statusbar */
+  
   --fibogrid-toolbar-border-bottom: rgba(0, 0, 0, 0.12);
   --fibogrid-statusbar-border-top: rgba(0, 0, 0, 0.12);
 
-  /* Container */
+  
   --fibogrid-container-border: rgba(0, 0, 0, 0.12);
   --fibogrid-container-border-focus: #2196f3;
 
-  /* Typography - Roboto (Material font) */
+  
   --fibogrid-font-family: "Roboto", "Helvetica", "Arial", sans-serif;
   --fibogrid-font-size: 14px;
   --fibogrid-font-size-sm: 12px;
@@ -1387,31 +1378,31 @@
   --fibogrid-font-weight-bold: 700;
   --fibogrid-line-height: 1.5;
 
-  /* Sizing */
+  
   --fibogrid-header-height: 44px;
   --fibogrid-row-height: 40px;
   --fibogrid-toolbar-height: 48px;
   --fibogrid-statusbar-height: 36px;
   --fibogrid-cell-padding: 12px;
 
-  /* Spacing */
+  
   --fibogrid-spacing-xs: 4px;
   --fibogrid-spacing-sm: 8px;
   --fibogrid-spacing-md: 12px;
   --fibogrid-spacing-lg: 16px;
   --fibogrid-spacing-xl: 24px;
 
-  /* Border Radius - Material elevation */
+  
   --fibogrid-radius-sm: 4px;
   --fibogrid-radius-md: 4px;
   --fibogrid-radius-lg: 4px;
 
-  /* Selection */
+  
   --fibogrid-selection-bg: rgba(33, 150, 243, 0.12);
   --fibogrid-selection-border: #2196f3;
   --fibogrid-selection-hover: rgba(33, 150, 243, 0.16);
 
-  /* Pinned Columns */
+  
   --fibogrid-pinned-bg: #ffffff;
   --fibogrid-pinned-header-bg: #f5f5f5;
   --fibogrid-pinned-cell-bg: #ffffff;
@@ -1423,10 +1414,10 @@
   --fibogrid-pinned-shadow-left: 2px 0 5px rgba(0, 0, 0, 0.1);
   --fibogrid-pinned-shadow-right: -2px 0 5px rgba(0, 0, 0, 0.1);
 
-  /* Toolbar Padding */
+  
   --fibogrid-toolbar-padding: 12px;
 
-  /* Buttons */
+  
   --fibogrid-button-bg: transparent;
   --fibogrid-button-bg-hover: rgba(0, 0, 0, 0.04);
   --fibogrid-button-bg-active: rgba(0, 0, 0, 0.08);
@@ -1440,7 +1431,7 @@
   --fibogrid-button-border-active: #2196f3;
   --fibogrid-button-border-disabled: rgba(0, 0, 0, 0.08);
 
-  /* Inputs */
+  
   --fibogrid-input-bg: #ffffff;
   --fibogrid-input-bg-focus: #ffffff;
   --fibogrid-input-bg-disabled: #f5f5f5;
@@ -1452,7 +1443,7 @@
   --fibogrid-input-border-hover: rgba(0, 0, 0, 0.20);
   --fibogrid-input-border-disabled: rgba(0, 0, 0, 0.08);
 
-  /* Icons */
+  
   --fibogrid-icon-color: rgba(0, 0, 0, 0.54);
   --fibogrid-icon-color-hover: #2196f3;
   --fibogrid-icon-color-active: #1976d2;
@@ -1464,7 +1455,7 @@
   --fibogrid-filter-icon-color-active: #2196f3;
   --fibogrid-search-icon-color: rgba(0, 0, 0, 0.54);
 
-  /* Scrollbar */
+  
   --fibogrid-scrollbar-width: 12px;
   --fibogrid-scrollbar-height: 12px;
   --fibogrid-scrollbar-track-bg: #ffffff;
@@ -1473,7 +1464,7 @@
   --fibogrid-scrollbar-thumb-border: #ffffff;
   --fibogrid-scrollbar-thumb-radius: 6px;
 
-  /* Checkbox */
+  
   --fibogrid-checkbox-bg: #ffffff;
   --fibogrid-checkbox-bg-checked: #2196f3;
   --fibogrid-checkbox-bg-hover: rgba(0, 0, 0, 0.04);
@@ -1483,13 +1474,13 @@
   --fibogrid-checkbox-checkmark: #ffffff;
   --fibogrid-checkbox-size: 16px;
 
-  /* Tooltip */
+  
   --fibogrid-tooltip-bg: rgba(97, 97, 97, 0.9);
   --fibogrid-tooltip-text: #ffffff;
   --fibogrid-tooltip-border: transparent;
   --fibogrid-tooltip-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23);
 
-  /* Dropdown / Popover */
+  
   --fibogrid-dropdown-bg: #ffffff;
   --fibogrid-dropdown-border: rgba(0, 0, 0, 0.12);
   --fibogrid-dropdown-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
@@ -1498,29 +1489,29 @@
   --fibogrid-dropdown-item-text: rgba(0, 0, 0, 0.87);
   --fibogrid-dropdown-item-text-hover: rgba(0, 0, 0, 0.87);
 
-  /* Loading Spinner */
+  
   --fibogrid-spinner-color: #2196f3;
   --fibogrid-spinner-bg: rgba(0, 0, 0, 0.12);
   --fibogrid-spinner-size: 40px;
   --fibogrid-spinner-width: 4px;
 
-  /* Group Row */
+  
   --fibogrid-group-row-bg: #f5f5f5;
   --fibogrid-group-row-text: rgba(0, 0, 0, 0.87);
   --fibogrid-group-row-border: rgba(0, 0, 0, 0.24);
 
-  /* Focus Ring */
+  
   --fibogrid-focus-ring-color: #2196f3;
   --fibogrid-focus-ring-width: 2px;
   --fibogrid-focus-ring-offset: 2px;
 
-  /* Overlay & Shadow */
+  
   --fibogrid-overlay: rgba(0, 0, 0, 0.5);
   --fibogrid-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
   --fibogrid-shadow-md: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
   --fibogrid-shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23);
 
-  /* Row States - Even/Odd */
+  
   --fibogrid-row-bg-even: #ffffff;
   --fibogrid-row-bg-odd: #fafafa;
   --fibogrid-row-bg-hover: #eeeeee;
@@ -1528,14 +1519,14 @@
   --fibogrid-row-bg-selected-hover: #bbdefb;
   --fibogrid-row-bg-child: #f5f5f5;
 
-  /* Header States */
+  
   --fibogrid-header-bg: #f5f5f5;
   --fibogrid-header-bg-hover: #eeeeee;
   --fibogrid-header-bg-drag-over: rgba(33, 150, 243, 0.2);
   --fibogrid-header-text: rgba(0, 0, 0, 0.87);
   --fibogrid-header-text-secondary: rgba(0, 0, 0, 0.60);
 
-  /* Filter Row */
+  
   --fibogrid-filter-row-bg: #f5f5f5;
   --fibogrid-filter-row-border: rgba(0, 0, 0, 0.12);
   --fibogrid-filter-input-bg: transparent;
@@ -1547,19 +1538,19 @@
   --fibogrid-filter-active-text: #2196f3;
   --fibogrid-filter-active-border: #2196f3;
 
-  /* Drag & Drop */
+  
   --fibogrid-drag-opacity: 0.5;
   --fibogrid-drag-over-bg: rgba(33, 150, 243, 0.2);
   --fibogrid-drop-target-border: #2196f3;
   --fibogrid-drop-target-border-width: 2px;
 
-  /* Column Resize */
+  
   --fibogrid-resize-handle-bg: transparent;
   --fibogrid-resize-handle-bg-hover: #2196f3;
   --fibogrid-resize-handle-bg-active: #2196f3;
   --fibogrid-resize-handle-width: 2px;
 
-  /* Pagination */
+  
   --fibogrid-pagination-bg: #f5f5f5;
   --fibogrid-pagination-text: rgba(0, 0, 0, 0.60);
   --fibogrid-pagination-border: rgba(0, 0, 0, 0.12);
@@ -1572,7 +1563,7 @@
   --fibogrid-pagination-select-text: rgba(0, 0, 0, 0.87);
   --fibogrid-pagination-select-border: rgba(0, 0, 0, 0.12);
 
-  /* Quick Filter / Active Filters */
+  
   --fibogrid-quick-filter-bg: #f5f5f5;
   --fibogrid-quick-filter-border: rgba(0, 0, 0, 0.12);
   --fibogrid-active-filter-bg: rgba(33, 150, 243, 0.12);
@@ -1581,17 +1572,17 @@
   --fibogrid-active-filter-remove-bg: transparent;
   --fibogrid-active-filter-remove-bg-hover: rgba(33, 150, 243, 0.2);
 
-  /* Row Numbers */
+  
   --fibogrid-row-number-bg: #f5f5f5;
   --fibogrid-row-number-bg-selected: rgba(33, 150, 243, 0.15);
   --fibogrid-row-number-text: rgba(0, 0, 0, 0.60);
   --fibogrid-row-number-border: rgba(0, 0, 0, 0.12);
 
-  /* Checkbox Column */
+  
   --fibogrid-checkbox-column-bg: #f5f5f5;
   --fibogrid-checkbox-column-border: rgba(0, 0, 0, 0.12);
 
-  /* Popover / Dropdown Content */
+  
   --fibogrid-popover-bg: #ffffff;
   --fibogrid-popover-border: rgba(0, 0, 0, 0.12);
   --fibogrid-popover-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
@@ -1609,7 +1600,7 @@
   --fibogrid-popover-item-border-focus: #2196f3;
   --fibogrid-popover-item-opacity-dragging: 0.5;
 
-  /* Popover Input (Search) */
+  
   --fibogrid-popover-input-bg: #ffffff;
   --fibogrid-popover-input-bg-focus: #ffffff;
   --fibogrid-popover-input-bg-hover: #ffffff;
@@ -1622,19 +1613,19 @@
   --fibogrid-popover-input-ring-width: 2px;
   --fibogrid-popover-input-ring-offset: 2px;
 
-  /* Popover Icons */
+  
   --fibogrid-popover-icon-color: rgba(0, 0, 0, 0.54);
   --fibogrid-popover-icon-color-hover: #2196f3;
   --fibogrid-popover-icon-color-active: #1976d2;
   --fibogrid-popover-icon-opacity-default: 0;
   --fibogrid-popover-icon-opacity-hover: 1;
 
-  /* Popover Scrollbar */
+  
   --fibogrid-popover-scrollbar-track-bg: transparent;
   --fibogrid-popover-scrollbar-thumb-bg: rgba(0, 0, 0, 0.12);
   --fibogrid-popover-scrollbar-thumb-bg-hover: rgba(0, 0, 0, 0.38);
 
-  /* Column Menu */
+  
   --fibogrid-column-menu-bg: #ffffff;
   --fibogrid-column-menu-item-bg-hover: rgba(0, 0, 0, 0.04);
   --fibogrid-column-menu-item-bg-focus: rgba(0, 0, 0, 0.04);
@@ -1642,67 +1633,67 @@
   --fibogrid-column-menu-icon: rgba(0, 0, 0, 0.54);
 }
 
-/* Apple Theme - Cupertino (iOS) Style */
+
 .fibogrid.fibogrid-theme-apple {
-  /* Background & Surface - iOS colors */
+  
   --fibogrid-bg: #ffffff;
   --fibogrid-surface: #f2f2f7;
   --fibogrid-surface-hover: #e5e5ea;
   --fibogrid-surface-selected: #d1d1d6;
   --fibogrid-surface-active: #c7c7cc;
 
-  /* Text - iOS text colors */
+  
   --fibogrid-text: #000000;
   --fibogrid-text-secondary: #3c3c43;
   --fibogrid-text-muted: #8e8e93;
   --fibogrid-text-inverse: #ffffff;
 
-  /* Primary - iOS Blue */
+  
   --fibogrid-primary: #007aff;
   --fibogrid-primary-hover: #0051d5;
   --fibogrid-primary-active: #0040aa;
   --fibogrid-primary-text: #ffffff;
 
-  /* States */
+  
   --fibogrid-success: #34c759;
   --fibogrid-warning: #ff9500;
   --fibogrid-error: #ff3b30;
   --fibogrid-info: #007aff;
 
-  /* Borders - iOS separators */
+  
   --fibogrid-border: #c6c6c8;
   --fibogrid-border-strong: #a1a1a6;
   --fibogrid-border-hover: #8e8e93;
   --fibogrid-border-light: #e5e5ea;
 
-  /* Cell Borders */
+  
   --fibogrid-cell-border-right: #e5e5ea;
   --fibogrid-cell-border-bottom: #e5e5ea;
   --fibogrid-cell-border-hover: #c6c6c8;
   --fibogrid-cell-border-selected: #007aff;
   --fibogrid-cell-border-editing: #007aff;
 
-  /* Row Borders */
+  
   --fibogrid-row-border-bottom: #e5e5ea;
   --fibogrid-row-border-bottom-hover: #c6c6c8;
   --fibogrid-row-border-bottom-selected: #007aff;
   --fibogrid-row-border-bottom-group: #a1a1a6;
 
-  /* Header Borders */
+  
   --fibogrid-header-border-bottom: #a1a1a6;
   --fibogrid-header-cell-border-right: #e5e5ea;
   --fibogrid-header-cell-border-right-hover: #c6c6c8;
   --fibogrid-header-cell-border-right-active: #007aff;
 
-  /* Toolbar & Statusbar */
+  
   --fibogrid-toolbar-border-bottom: #c6c6c8;
   --fibogrid-statusbar-border-top: #c6c6c8;
 
-  /* Container */
+  
   --fibogrid-container-border: #c6c6c8;
   --fibogrid-container-border-focus: #007aff;
 
-  /* Typography - San Francisco (iOS font) */
+  
   --fibogrid-font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
   --fibogrid-font-size: 14px;
   --fibogrid-font-size-sm: 12px;
@@ -1713,31 +1704,31 @@
   --fibogrid-font-weight-bold: 700;
   --fibogrid-line-height: 1.5;
 
-  /* Sizing */
+  
   --fibogrid-header-height: 44px;
   --fibogrid-row-height: 40px;
   --fibogrid-toolbar-height: 48px;
   --fibogrid-statusbar-height: 36px;
   --fibogrid-cell-padding: 12px;
 
-  /* Spacing */
+  
   --fibogrid-spacing-xs: 4px;
   --fibogrid-spacing-sm: 8px;
   --fibogrid-spacing-md: 12px;
   --fibogrid-spacing-lg: 16px;
   --fibogrid-spacing-xl: 24px;
 
-  /* Border Radius - iOS rounded corners */
+  
   --fibogrid-radius-sm: 8px;
   --fibogrid-radius-md: 10px;
   --fibogrid-radius-lg: 12px;
 
-  /* Selection */
+  
   --fibogrid-selection-bg: rgba(0, 122, 255, 0.1);
   --fibogrid-selection-border: #007aff;
   --fibogrid-selection-hover: rgba(0, 122, 255, 0.15);
 
-  /* Pinned Columns */
+  
   --fibogrid-pinned-bg: #ffffff;
   --fibogrid-pinned-header-bg: #f2f2f7;
   --fibogrid-pinned-cell-bg: #ffffff;
@@ -1749,10 +1740,10 @@
   --fibogrid-pinned-shadow-left: 2px 0 5px rgba(0, 0, 0, 0.1);
   --fibogrid-pinned-shadow-right: -2px 0 5px rgba(0, 0, 0, 0.1);
 
-  /* Toolbar Padding */
+  
   --fibogrid-toolbar-padding: 12px;
 
-  /* Buttons */
+  
   --fibogrid-button-bg: transparent;
   --fibogrid-button-bg-hover: #e5e5ea;
   --fibogrid-button-bg-active: #c7c7cc;
@@ -1766,7 +1757,7 @@
   --fibogrid-button-border-active: #0051d5;
   --fibogrid-button-border-disabled: #e5e5ea;
 
-  /* Inputs */
+  
   --fibogrid-input-bg: #ffffff;
   --fibogrid-input-bg-focus: #ffffff;
   --fibogrid-input-bg-disabled: #f2f2f7;
@@ -1778,7 +1769,7 @@
   --fibogrid-input-border-hover: #8e8e93;
   --fibogrid-input-border-disabled: #e5e5ea;
 
-  /* Icons */
+  
   --fibogrid-icon-color: #8e8e93;
   --fibogrid-icon-color-hover: #007aff;
   --fibogrid-icon-color-active: #0051d5;
@@ -1790,7 +1781,7 @@
   --fibogrid-filter-icon-color-active: #007aff;
   --fibogrid-search-icon-color: #8e8e93;
 
-  /* Scrollbar */
+  
   --fibogrid-scrollbar-width: 12px;
   --fibogrid-scrollbar-height: 12px;
   --fibogrid-scrollbar-track-bg: #ffffff;
@@ -1799,7 +1790,7 @@
   --fibogrid-scrollbar-thumb-border: #ffffff;
   --fibogrid-scrollbar-thumb-radius: 6px;
 
-  /* Checkbox */
+  
   --fibogrid-checkbox-bg: #ffffff;
   --fibogrid-checkbox-bg-checked: #007aff;
   --fibogrid-checkbox-bg-hover: #e5e5ea;
@@ -1809,13 +1800,13 @@
   --fibogrid-checkbox-checkmark: #ffffff;
   --fibogrid-checkbox-size: 16px;
 
-  /* Tooltip */
+  
   --fibogrid-tooltip-bg: rgba(97, 97, 97, 0.9);
   --fibogrid-tooltip-text: #ffffff;
   --fibogrid-tooltip-border: transparent;
   --fibogrid-tooltip-shadow: 0 10px 15px rgba(0, 0, 0, 0.2);
 
-  /* Dropdown / Popover */
+  
   --fibogrid-dropdown-bg: #ffffff;
   --fibogrid-dropdown-border: #c6c6c8;
   --fibogrid-dropdown-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -1824,29 +1815,29 @@
   --fibogrid-dropdown-item-text: #000000;
   --fibogrid-dropdown-item-text-hover: #000000;
 
-  /* Loading Spinner */
+  
   --fibogrid-spinner-color: #007aff;
   --fibogrid-spinner-bg: #c6c6c8;
   --fibogrid-spinner-size: 40px;
   --fibogrid-spinner-width: 4px;
 
-  /* Group Row */
+  
   --fibogrid-group-row-bg: #f2f2f7;
   --fibogrid-group-row-text: #000000;
   --fibogrid-group-row-border: #a1a1a6;
 
-  /* Focus Ring */
+  
   --fibogrid-focus-ring-color: #007aff;
   --fibogrid-focus-ring-width: 2px;
   --fibogrid-focus-ring-offset: 2px;
 
-  /* Overlay & Shadow */
+  
   --fibogrid-overlay: rgba(0, 0, 0, 0.5);
   --fibogrid-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
   --fibogrid-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
   --fibogrid-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
 
-  /* Row States - Even/Odd */
+  
   --fibogrid-row-bg-even: #ffffff;
   --fibogrid-row-bg-odd: #f2f2f7;
   --fibogrid-row-bg-hover: #e5e5ea;
@@ -1854,14 +1845,14 @@
   --fibogrid-row-bg-selected-hover: #c7c7cc;
   --fibogrid-row-bg-child: #f2f2f7;
 
-  /* Header States */
+  
   --fibogrid-header-bg: #f2f2f7;
   --fibogrid-header-bg-hover: #e5e5ea;
   --fibogrid-header-bg-drag-over: rgba(0, 122, 255, 0.2);
   --fibogrid-header-text: #000000;
   --fibogrid-header-text-secondary: #3c3c43;
 
-  /* Filter Row */
+  
   --fibogrid-filter-row-bg: #f2f2f7;
   --fibogrid-filter-row-border: #c6c6c8;
   --fibogrid-filter-input-bg: transparent;
@@ -1873,19 +1864,19 @@
   --fibogrid-filter-active-text: #007aff;
   --fibogrid-filter-active-border: #007aff;
 
-  /* Drag & Drop */
+  
   --fibogrid-drag-opacity: 0.5;
   --fibogrid-drag-over-bg: rgba(0, 122, 255, 0.2);
   --fibogrid-drop-target-border: #007aff;
   --fibogrid-drop-target-border-width: 2px;
 
-  /* Column Resize */
+  
   --fibogrid-resize-handle-bg: transparent;
   --fibogrid-resize-handle-bg-hover: #007aff;
   --fibogrid-resize-handle-bg-active: #007aff;
   --fibogrid-resize-handle-width: 2px;
 
-  /* Pagination */
+  
   --fibogrid-pagination-bg: #f2f2f7;
   --fibogrid-pagination-text: #3c3c43;
   --fibogrid-pagination-border: #c6c6c8;
@@ -1898,7 +1889,7 @@
   --fibogrid-pagination-select-text: #000000;
   --fibogrid-pagination-select-border: #c6c6c8;
 
-  /* Quick Filter / Active Filters */
+  
   --fibogrid-quick-filter-bg: #f2f2f7;
   --fibogrid-quick-filter-border: #c6c6c8;
   --fibogrid-active-filter-bg: rgba(0, 122, 255, 0.1);
@@ -1907,17 +1898,17 @@
   --fibogrid-active-filter-remove-bg: transparent;
   --fibogrid-active-filter-remove-bg-hover: rgba(0, 122, 255, 0.2);
 
-  /* Row Numbers */
+  
   --fibogrid-row-number-bg: #f2f2f7;
   --fibogrid-row-number-bg-selected: rgba(0, 122, 255, 0.15);
   --fibogrid-row-number-text: #3c3c43;
   --fibogrid-row-number-border: #c6c6c8;
 
-  /* Checkbox Column */
+  
   --fibogrid-checkbox-column-bg: #f2f2f7;
   --fibogrid-checkbox-column-border: #c6c6c8;
 
-  /* Popover / Dropdown Content */
+  
   --fibogrid-popover-bg: #ffffff;
   --fibogrid-popover-border: #c6c6c8;
   --fibogrid-popover-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -1935,7 +1926,7 @@
   --fibogrid-popover-item-border-focus: #007aff;
   --fibogrid-popover-item-opacity-dragging: 0.5;
 
-  /* Popover Input (Search) */
+  
   --fibogrid-popover-input-bg: #ffffff;
   --fibogrid-popover-input-bg-focus: #ffffff;
   --fibogrid-popover-input-bg-hover: #ffffff;
@@ -1948,19 +1939,19 @@
   --fibogrid-popover-input-ring-width: 2px;
   --fibogrid-popover-input-ring-offset: 2px;
 
-  /* Popover Icons */
+  
   --fibogrid-popover-icon-color: #8e8e93;
   --fibogrid-popover-icon-color-hover: #007aff;
   --fibogrid-popover-icon-color-active: #0051d5;
   --fibogrid-popover-icon-opacity-default: 0;
   --fibogrid-popover-icon-opacity-hover: 1;
 
-  /* Popover Scrollbar */
+  
   --fibogrid-popover-scrollbar-track-bg: transparent;
   --fibogrid-popover-scrollbar-thumb-bg: #c6c6c8;
   --fibogrid-popover-scrollbar-thumb-bg-hover: #8e8e93;
 
-  /* Column Menu */
+  
   --fibogrid-column-menu-bg: #ffffff;
   --fibogrid-column-menu-item-bg-hover: #e5e5ea;
   --fibogrid-column-menu-item-bg-focus: #e5e5ea;
@@ -1968,67 +1959,67 @@
   --fibogrid-column-menu-icon: #8e8e93;
 }
 
-/* Excel Theme - Microsoft Excel Style */
+
 .fibogrid.fibogrid-theme-excel {
-  /* Background & Surface - Excel colors */
+  
   --fibogrid-bg: #ffffff;
   --fibogrid-surface: #f2f2f2;
   --fibogrid-surface-hover: #e7e7e7;
   --fibogrid-surface-selected: #d0e7ff;
   --fibogrid-surface-active: #b8d9ff;
 
-  /* Text - Excel text colors */
+  
   --fibogrid-text: #000000;
   --fibogrid-text-secondary: #333333;
   --fibogrid-text-muted: #666666;
   --fibogrid-text-inverse: #ffffff;
 
-  /* Primary - Excel Blue */
+  
   --fibogrid-primary: #0078d4;
   --fibogrid-primary-hover: #106ebe;
   --fibogrid-primary-active: #005a9e;
   --fibogrid-primary-text: #ffffff;
 
-  /* States */
+  
   --fibogrid-success: #107c10;
   --fibogrid-warning: #ffb900;
   --fibogrid-error: #e81123;
   --fibogrid-info: #0078d4;
 
-  /* Borders - Excel grid lines */
+  
   --fibogrid-border: #d0d0d0;
   --fibogrid-border-strong: #a6a6a6;
   --fibogrid-border-hover: #8c8c8c;
   --fibogrid-border-light: #e5e5e5;
 
-  /* Cell Borders - Excel grid */
+  
   --fibogrid-cell-border-right: #d0d0d0;
   --fibogrid-cell-border-bottom: #d0d0d0;
   --fibogrid-cell-border-hover: #8c8c8c;
   --fibogrid-cell-border-selected: #0078d4;
   --fibogrid-cell-border-editing: #0078d4;
 
-  /* Row Borders */
+  
   --fibogrid-row-border-bottom: #d0d0d0;
   --fibogrid-row-border-bottom-hover: #8c8c8c;
   --fibogrid-row-border-bottom-selected: #0078d4;
   --fibogrid-row-border-bottom-group: #a6a6a6;
 
-  /* Header Borders */
+  
   --fibogrid-header-border-bottom: #a6a6a6;
   --fibogrid-header-cell-border-right: #d0d0d0;
   --fibogrid-header-cell-border-right-hover: #8c8c8c;
   --fibogrid-header-cell-border-right-active: #0078d4;
 
-  /* Toolbar & Statusbar */
+  
   --fibogrid-toolbar-border-bottom: #d0d0d0;
   --fibogrid-statusbar-border-top: #d0d0d0;
 
-  /* Container */
+  
   --fibogrid-container-border: #d0d0d0;
   --fibogrid-container-border-focus: #0078d4;
 
-  /* Typography - Segoe UI (Windows font) */
+  
   --fibogrid-font-family: "Segoe UI", "Calibri", "Arial", sans-serif;
   --fibogrid-font-size: 11px;
   --fibogrid-font-size-sm: 10px;
@@ -2039,31 +2030,31 @@
   --fibogrid-font-weight-bold: 700;
   --fibogrid-line-height: 1.2;
 
-  /* Sizing - Excel compact */
+  
   --fibogrid-header-height: 20px;
   --fibogrid-row-height: 20px;
   --fibogrid-toolbar-height: 32px;
   --fibogrid-statusbar-height: 22px;
   --fibogrid-cell-padding: 4px;
 
-  /* Spacing */
+  
   --fibogrid-spacing-xs: 2px;
   --fibogrid-spacing-sm: 4px;
   --fibogrid-spacing-md: 6px;
   --fibogrid-spacing-lg: 8px;
   --fibogrid-spacing-xl: 12px;
 
-  /* Border Radius - Zero (Excel is flat) */
+  
   --fibogrid-radius-sm: 0px;
   --fibogrid-radius-md: 0px;
   --fibogrid-radius-lg: 0px;
 
-  /* Selection */
+  
   --fibogrid-selection-bg: rgba(0, 120, 212, 0.1);
   --fibogrid-selection-border: #0078d4;
   --fibogrid-selection-hover: rgba(0, 120, 212, 0.15);
 
-  /* Pinned Columns */
+  
   --fibogrid-pinned-bg: #ffffff;
   --fibogrid-pinned-header-bg: #f2f2f2;
   --fibogrid-pinned-cell-bg: #ffffff;
@@ -2075,10 +2066,10 @@
   --fibogrid-pinned-shadow-left: 2px 0 3px rgba(0, 0, 0, 0.1);
   --fibogrid-pinned-shadow-right: -2px 0 3px rgba(0, 0, 0, 0.1);
 
-  /* Toolbar Padding */
+  
   --fibogrid-toolbar-padding: 6px;
 
-  /* Buttons */
+  
   --fibogrid-button-bg: transparent;
   --fibogrid-button-bg-hover: #e7e7e7;
   --fibogrid-button-bg-active: #d0d0d0;
@@ -2092,7 +2083,7 @@
   --fibogrid-button-border-active: #0078d4;
   --fibogrid-button-border-disabled: #e5e5e5;
 
-  /* Inputs */
+  
   --fibogrid-input-bg: #ffffff;
   --fibogrid-input-bg-focus: #ffffff;
   --fibogrid-input-bg-disabled: #f2f2f2;
@@ -2104,7 +2095,7 @@
   --fibogrid-input-border-hover: #8c8c8c;
   --fibogrid-input-border-disabled: #e5e5e5;
 
-  /* Icons */
+  
   --fibogrid-icon-color: #666666;
   --fibogrid-icon-color-hover: #0078d4;
   --fibogrid-icon-color-active: #005a9e;
@@ -2116,7 +2107,7 @@
   --fibogrid-filter-icon-color-active: #0078d4;
   --fibogrid-search-icon-color: #666666;
 
-  /* Scrollbar */
+  
   --fibogrid-scrollbar-width: 12px;
   --fibogrid-scrollbar-height: 12px;
   --fibogrid-scrollbar-track-bg: #ffffff;
@@ -2125,7 +2116,7 @@
   --fibogrid-scrollbar-thumb-border: #ffffff;
   --fibogrid-scrollbar-thumb-radius: 0px;
 
-  /* Checkbox */
+  
   --fibogrid-checkbox-bg: #ffffff;
   --fibogrid-checkbox-bg-checked: #0078d4;
   --fibogrid-checkbox-bg-hover: #e7e7e7;
@@ -2135,13 +2126,13 @@
   --fibogrid-checkbox-checkmark: #ffffff;
   --fibogrid-checkbox-size: 14px;
 
-  /* Tooltip */
+  
   --fibogrid-tooltip-bg: #323130;
   --fibogrid-tooltip-text: #ffffff;
   --fibogrid-tooltip-border: transparent;
   --fibogrid-tooltip-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 
-  /* Dropdown / Popover */
+  
   --fibogrid-dropdown-bg: #ffffff;
   --fibogrid-dropdown-border: #d0d0d0;
   --fibogrid-dropdown-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -2150,29 +2141,29 @@
   --fibogrid-dropdown-item-text: #000000;
   --fibogrid-dropdown-item-text-hover: #000000;
 
-  /* Loading Spinner */
+  
   --fibogrid-spinner-color: #0078d4;
   --fibogrid-spinner-bg: #d0d0d0;
   --fibogrid-spinner-size: 32px;
   --fibogrid-spinner-width: 3px;
 
-  /* Group Row */
+  
   --fibogrid-group-row-bg: #f2f2f2;
   --fibogrid-group-row-text: #000000;
   --fibogrid-group-row-border: #a6a6a6;
 
-  /* Focus Ring */
+  
   --fibogrid-focus-ring-color: #0078d4;
   --fibogrid-focus-ring-width: 1px;
   --fibogrid-focus-ring-offset: 1px;
 
-  /* Overlay & Shadow */
+  
   --fibogrid-overlay: rgba(0, 0, 0, 0.4);
   --fibogrid-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.1);
   --fibogrid-shadow-md: 0 2px 4px rgba(0, 0, 0, 0.1);
   --fibogrid-shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.1);
 
-  /* Row States - Even/Odd */
+  
   --fibogrid-row-bg-even: #ffffff;
   --fibogrid-row-bg-odd: #f9f9f9;
   --fibogrid-row-bg-hover: #e7e7e7;
@@ -2180,14 +2171,14 @@
   --fibogrid-row-bg-selected-hover: #b8d9ff;
   --fibogrid-row-bg-child: #f2f2f2;
 
-  /* Header States */
+  
   --fibogrid-header-bg: #f2f2f2;
   --fibogrid-header-bg-hover: #e7e7e7;
   --fibogrid-header-bg-drag-over: rgba(0, 120, 212, 0.2);
   --fibogrid-header-text: #000000;
   --fibogrid-header-text-secondary: #333333;
 
-  /* Filter Row */
+  
   --fibogrid-filter-row-bg: #f2f2f2;
   --fibogrid-filter-row-border: #d0d0d0;
   --fibogrid-filter-input-bg: transparent;
@@ -2199,19 +2190,19 @@
   --fibogrid-filter-active-text: #0078d4;
   --fibogrid-filter-active-border: #0078d4;
 
-  /* Drag & Drop */
+  
   --fibogrid-drag-opacity: 0.5;
   --fibogrid-drag-over-bg: rgba(0, 120, 212, 0.2);
   --fibogrid-drop-target-border: #0078d4;
   --fibogrid-drop-target-border-width: 2px;
 
-  /* Column Resize */
+  
   --fibogrid-resize-handle-bg: transparent;
   --fibogrid-resize-handle-bg-hover: #0078d4;
   --fibogrid-resize-handle-bg-active: #0078d4;
   --fibogrid-resize-handle-width: 2px;
 
-  /* Pagination */
+  
   --fibogrid-pagination-bg: #f2f2f2;
   --fibogrid-pagination-text: #333333;
   --fibogrid-pagination-border: #d0d0d0;
@@ -2224,7 +2215,7 @@
   --fibogrid-pagination-select-text: #000000;
   --fibogrid-pagination-select-border: #d0d0d0;
 
-  /* Quick Filter / Active Filters */
+  
   --fibogrid-quick-filter-bg: #f2f2f2;
   --fibogrid-quick-filter-border: #d0d0d0;
   --fibogrid-active-filter-bg: rgba(0, 120, 212, 0.1);
@@ -2233,17 +2224,17 @@
   --fibogrid-active-filter-remove-bg: transparent;
   --fibogrid-active-filter-remove-bg-hover: rgba(0, 120, 212, 0.2);
 
-  /* Row Numbers */
+  
   --fibogrid-row-number-bg: #f2f2f2;
   --fibogrid-row-number-bg-selected: rgba(0, 120, 212, 0.15);
   --fibogrid-row-number-text: #333333;
   --fibogrid-row-number-border: #d0d0d0;
 
-  /* Checkbox Column */
+  
   --fibogrid-checkbox-column-bg: #f2f2f2;
   --fibogrid-checkbox-column-border: #d0d0d0;
 
-  /* Popover / Dropdown Content */
+  
   --fibogrid-popover-bg: #ffffff;
   --fibogrid-popover-border: #d0d0d0;
   --fibogrid-popover-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -2261,7 +2252,7 @@
   --fibogrid-popover-item-border-focus: #0078d4;
   --fibogrid-popover-item-opacity-dragging: 0.5;
 
-  /* Popover Input (Search) */
+  
   --fibogrid-popover-input-bg: #ffffff;
   --fibogrid-popover-input-bg-focus: #ffffff;
   --fibogrid-popover-input-bg-hover: #ffffff;
@@ -2274,19 +2265,19 @@
   --fibogrid-popover-input-ring-width: 1px;
   --fibogrid-popover-input-ring-offset: 1px;
 
-  /* Popover Icons */
+  
   --fibogrid-popover-icon-color: #666666;
   --fibogrid-popover-icon-color-hover: #0078d4;
   --fibogrid-popover-icon-color-active: #005a9e;
   --fibogrid-popover-icon-opacity-default: 0;
   --fibogrid-popover-icon-opacity-hover: 1;
 
-  /* Popover Scrollbar */
+  
   --fibogrid-popover-scrollbar-track-bg: transparent;
   --fibogrid-popover-scrollbar-thumb-bg: #d0d0d0;
   --fibogrid-popover-scrollbar-thumb-bg-hover: #8c8c8c;
 
-  /* Column Menu */
+  
   --fibogrid-column-menu-bg: #ffffff;
   --fibogrid-column-menu-item-bg-hover: #e7e7e7;
   --fibogrid-column-menu-item-bg-focus: #e7e7e7;
@@ -2294,40 +2285,19 @@
   --fibogrid-column-menu-icon: #666666;
 }
 
-/* Default Theme - Already defined as base, but ensuring it's explicit */
+
 .fibogrid.fibogrid-theme-default {
-  /* Uses all default values from .fibogrid base class */
-  /* This class exists for consistency with other themes */
+  
+  
 }
 
-/* ================================
-   Customization Examples
-   ================================ */
 
-/*
-Custom theme example:
 
-.fibogrid.my-custom-theme {
-  --fibogrid-primary: #8b5cf6;
-  --fibogrid-primary-hover: #7c3aed;
-  --fibogrid-bg: #f8fafc;
-  --fibogrid-border: #cbd5e1;
-}
 
-Custom sizing example:
 
-.fibogrid.my-compact-grid {
-  --fibogrid-row-height: 32px;
-  --fibogrid-cell-padding: 8px;
-  --fibogrid-font-size: 13px;
-}
-*/
 
-/* ================================
-   Semantic Component Classes
-   ================================ */
 
-/* Toolbar */
+
 .fibogrid-toolbar {
   display: flex !important;
   flex-direction: column !important;
@@ -2348,7 +2318,7 @@ Custom sizing example:
   border-bottom: none !important;
 }
 
-/* Status Bar & Pagination Overrides */
+
 .fibogrid-statusbar {
   display: flex !important;
   align-items: center !important;
@@ -2371,7 +2341,7 @@ Custom sizing example:
   color: var(--fibogrid-pagination-text) !important;
 }
 
-/* Badges (Selected counts, active filters) */
+
 .fibogrid-badge {
   display: inline-flex !important;
   align-items: center !important;
@@ -2402,7 +2372,7 @@ Custom sizing example:
   border-radius: 2px !important;
 }
 
-/* Search/Inputs */
+
 .fibogrid-search-container {
   position: relative !important;
   flex: 1 !important;
@@ -2439,7 +2409,7 @@ Custom sizing example:
   pointer-events: none !important;
 }
 
-/* Common Text Classes */
+
 .fibogrid-text-primary {
   color: var(--fibogrid-text) !important;
 }
@@ -2452,7 +2422,7 @@ Custom sizing example:
   color: var(--fibogrid-text-muted) !important;
 }
 
-/* Popover Content Override */
+
 .fibogrid-popover-content {
   background-color: var(--fibogrid-popover-bg) !important;
   border-color: var(--fibogrid-popover-border) !important;
@@ -2483,7 +2453,7 @@ Custom sizing example:
   color: var(--fibogrid-popover-icon-color-hover) !important;
 }
 
-/* Z-Index Utilities */
+
 .fibogrid-z-popover {
   z-index: var(--fibogrid-z-popover) !important;
 }
@@ -2500,7 +2470,7 @@ Custom sizing example:
   z-index: var(--fibogrid-z-panel) !important;
 }
 
-/* Specific Z-Index Utilities */
+
 .fibogrid-z-filter-popover {
   z-index: var(--fibogrid-z-filter-popover) !important;
 }

@@ -158,15 +158,15 @@ export default function Demo() {
         toast({ title: 'Data Refreshed' });
     }, [rowCount]);
     const onValueChangeStock = useCallback((event: CellValueChangedEvent<StockRow>) => {
-        const updated = event.rowNode.data;
-        setRowData(prev => prev.map(row => row.id === updated.id ? updated : row));
-        toast({ title: "Value Updated", description: `Updated ${event.column.headerName} to ${event.newValue}` });
-    }, []);
+        if (gridApi) {
+            gridApi.manager().updateCell(event.rowNode.id, event.column.field, event.newValue).execute();
+            toast({ title: "Value Updated", description: `Updated ${event.column.headerName} to ${event.newValue}` });
+        }
+    }, [gridApi]);
 
     const handleUpAddTest = useCallback(() => {
         if (!gridApi) return;
 
-        // Find an existing ID to update
         const existing = gridApi.getRowData()[0];
         const updateRow: StockRow = {
             ...existing,
@@ -175,7 +175,6 @@ export default function Demo() {
             price: existing.price + 10,
         };
 
-        // Create a new row
         const newRow: StockRow = {
             id: `stock-new-${Date.now()}`,
             ticker: 'UP-ADD',
@@ -191,13 +190,94 @@ export default function Demo() {
         };
 
         gridApi.manager().upAdd([updateRow, newRow]).execute();
-        toast({ title: 'upAdd Executed', description: 'Updated one existing row and added one new row.' });
+        toast({ title: 'upAdd (Mix)', description: 'Updated one existing row (if found) AND added one new row.' });
+    }, [gridApi]);
+
+    const handleUpAddUpdateTest = useCallback(() => {
+        if (!gridApi) return;
+        const rows = gridApi.getDisplayedRows();
+        if (rows.length > 0) {
+            const rowToUpdate = rows[0].data;
+            const updatedRow = { ...rowToUpdate, name: rowToUpdate.name + ' (upAdd Update)', price: rowToUpdate.price + 50 };
+            gridApi.manager().upAdd([updatedRow]).execute();
+            toast({ title: 'upAdd (Update Only)', description: `Updated row ${rowToUpdate.id} using upAdd()` });
+        } else {
+            toast({ title: 'upAdd Update Failed', description: 'No rows to update.' });
+        }
+    }, [gridApi]);
+
+    const handleUpdateTest = useCallback(() => {
+        if (!gridApi) return;
+        const rows = gridApi.getDisplayedRows();
+        if (rows.length > 0) {
+            const rowToUpdate = rows[0].data;
+            const updatedRow = { ...rowToUpdate, name: rowToUpdate.name + ' (Strict Update)', price: rowToUpdate.price + 100 };
+            gridApi.manager().update([updatedRow]).execute();
+            toast({ title: 'Update (Strict)', description: `Updated row ${rowToUpdate.id} via manager.update()` });
+        } else {
+            toast({ title: 'Update Failed', description: 'No rows to update.' });
+        }
     }, [gridApi]);
 
     const handleResetGrid = useCallback(() => {
         if (!gridApi) return;
         gridApi.manager().reset().execute();
         toast({ title: 'Grid Reset', description: 'All data cleared.' });
+    }, [gridApi]);
+
+    const handleReplaceAllTest = useCallback(() => {
+        if (!gridApi) return;
+
+        const newDataSet: StockRow[] = [];
+        for (let i = 0; i < 5; i++) {
+            newDataSet.push({
+                id: `replace-all-${i}-${Date.now()}`,
+                ticker: `REPL-${i}`,
+                name: `Replaced Company ${i}`,
+                price: 100 + i * 10,
+                change: i,
+                changePercent: i * 0.1,
+                volume: 1000 * i,
+                marketCap: 10 * i,
+                sector: 'Replaced',
+                carro: { cor: 'white' },
+                pe: 10
+            });
+        }
+
+        gridApi.manager().replaceAll(newDataSet).execute();
+        toast({ title: 'replaceAll Executed', description: 'Replaced all data with 5 new rows.' });
+    }, [gridApi]);
+
+    const handleResetEdits = useCallback(() => {
+        if (!gridApi) return;
+        gridApi.params().resetEdits().execute();
+        toast({ title: 'Reset Edits', description: 'All cell edits have been cleared.' });
+    }, [gridApi]);
+
+    const handleResetCellTest = useCallback(() => {
+        if (!gridApi) return;
+        const visibleRows = gridApi.getDisplayedRows();
+        if (visibleRows.length > 0) {
+            const rowId = gridApi.getRowData().length > 0 ? gridApi.getRowData()[0].id : null;
+            if (rowId) {
+                gridApi.manager().resetCell(rowId, 'price').execute();
+            } toast({ title: 'Reset Cell Test', description: `Reset 'price' for row ${rowId}` });
+        } else {
+            toast({ title: 'Reset Cell Test', description: 'No rows to test.' });
+        }
+    }, [gridApi]);
+
+    const handleResetRowTest = useCallback(() => {
+        if (!gridApi) return;
+        const visibleRows = gridApi.getDisplayedRows();
+        if (visibleRows.length > 0) {
+            const rowId = visibleRows[0].id;
+            gridApi.manager().resetRow(rowId).execute();
+            toast({ title: 'Reset Row Test', description: `Reset all edits for row ${rowId}` });
+        } else {
+            toast({ title: 'Reset Row Test', description: 'No rows to test.' });
+        }
     }, [gridApi]);
 
     const onRowClickStock = useCallback((event: RowClickedEvent<StockRow> & { clickType?: string | number }) => {
@@ -282,7 +362,13 @@ export default function Demo() {
                             localeKey={localeKey}
                             onLocaleChange={setLocaleKey}
                             onUpAddTest={handleUpAddTest}
+                            onUpAddUpdateTest={handleUpAddUpdateTest}
                             onResetGrid={handleResetGrid}
+                            onUpdateTest={handleUpdateTest}
+                            onReplaceAllTest={handleReplaceAllTest}
+                            onResetEdits={handleResetEdits}
+                            onResetCellTest={handleResetCellTest}
+                            onResetRowTest={handleResetRowTest}
                         />
                         <DemoGrid
                             useServerSide={useServerSide}

@@ -540,6 +540,7 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
       let pendingPageSize: number | null = null;
       let pendingSelection: { ids: string[]; selected: boolean; mode: 'single' | 'multiple' | 'all' | 'none' } | null = null;
       let pendingReset = false;
+      let pendingResetEdits = false;
 
       const builder: GridApiBuilder<T> = {
         setFilterModel: (model, options) => {
@@ -620,6 +621,10 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
           pendingReset = true;
           return builder;
         },
+        resetEdits: () => {
+          pendingResetEdits = true;
+          return builder;
+        },
         execute: () => {
           if (pendingReset) {
             setFilterModel([]);
@@ -627,7 +632,13 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
             setSortModel([]);
             setPaginationState(prev => ({ ...prev, currentPage: 0, pageSize: paginationPageSize }));
             setSelection({ selectedRows: new Set(), lastSelectedIndex: null, anchorIndex: null });
+            setSelection({ selectedRows: new Set(), lastSelectedIndex: null, anchorIndex: null });
+            setOverrides({});
             return;
+          }
+
+          if (pendingResetEdits) {
+            setOverrides({});
           }
 
           if (filterUpdates.length > 0) {
@@ -693,56 +704,41 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
     },
 
     pasteFromClipboard: async () => {
-      try {
-        const text = await navigator.clipboard.readText();
-        if (!text) return;
+      if (navigator.clipboard && navigator.clipboard.readText) {
+        try {
+          const text = await navigator.clipboard.readText();
+          if (!text) return;
 
-        const rows = text.split(/\r\n|\n|\r/).filter(row => row.trim() !== '');
-        if (rows.length === 0) return;
+          const separator = text.includes('\t') ? '\t' : ',';
+          const rows = text.split('\n').filter(r => r.trim() !== '');
+          const newRows: T[] = [];
 
-        const separator = text.includes('\t') ? '\t' : ',';
-        const newRows: T[] = [];
 
-        // Basic CSV/TSV parsing assuming the order matches visible columns
-        // Ideally we would map headers, but for simple paste we often assume data order matches column order
-        // OR we just paste into current focused cell downwards?
-        // User request is general "Ctrl+V". A robust implementation pastes new rows.
+          const visibleCols = columnDefs.filter(c => !c.hide).map(c => c.field);
 
-        const visibleCols = columnDefs.filter(c => !c.hide).map(c => c.field);
-
-        rows.forEach(rowStr => {
-          const values = rowStr.split(separator);
-          const newRow: any = {};
-          // Basic mapping: visible columns order
-          visibleCols.forEach((colField, i) => {
-            if (i < values.length) {
-              setValueAtPath(newRow, colField, values[i]);
-            }
+          rows.forEach(rowStr => {
+            const values = rowStr.split(separator);
+            const newRow: any = {};
+            visibleCols.forEach((colField, i) => {
+              if (i < values.length) {
+                setValueAtPath(newRow, colField, values[i]);
+              }
+            });
+            if (!newRow.id) newRow.id = `pasted-${Date.now()}-${Math.random()}`;
+            newRows.push(newRow as T);
           });
-          // Assign a temp ID if needed
-          if (getRowId) {
-            // If we can't generate ID, this might be tricky.
-            // We'll trust the user has a way or we auto-generate if possible, or just fail safely.
-            // For now, let's assume we can generate a random ID if not provided?
-            // Or rely on the data having ID?
-            // Actually, usually paste adds new data.
-            if (!newRow.id) newRow.id = `pasted-${Date.now()}-${Math.random()}`;
-          } else {
-            if (!newRow.id) newRow.id = `pasted-${Date.now()}-${Math.random()}`;
+
+          if (newRows.length > 0) {
+            setInternalRowData(prev => {
+              historyRef.current.push([...prev]);
+              return [...prev, ...newRows];
+            });
           }
-
-          newRows.push(newRow as T);
-        });
-
-        if (newRows.length > 0) {
-          // Save history before adding
-          setInternalRowData(prev => {
-            historyRef.current.push([...prev]);
-            return [...prev, ...newRows];
-          });
+        } catch (err) {
+          console.warn('Failed to read from clipboard. Context might be insecure.', err);
         }
-      } catch (err) {
-        console.error('Failed to paste from clipboard:', err);
+      } else {
+        console.warn('Clipboard API not available (readText).');
       }
     },
 
@@ -753,6 +749,9 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
       let pendingUpdates: Map<string, T> = new Map();
       let pendingCellUpdates: Map<string, Record<string, any>> = new Map();
       let pendingReset = false;
+      let pendingResetEdits = false;
+      let pendingCellResets: Map<string, Set<string>> = new Map();
+      let pendingRowResets: Set<string> = new Set();
 
       const builder: GridManagerBuilder<T> = {
         add: (rows: T[]) => {
@@ -771,12 +770,21 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
           pendingUpAdds.push(...rows);
           return builder;
         },
+        replaceAll: (rows: T[]) => {
+          if (!rows || !Array.isArray(rows)) {
+            console.warn('Grid Manager: replaceAll() requires an array of rows.');
+            return builder;
+          }
+          builder.reset();
+          builder.add(rows);
+          return builder;
+        },
         remove: (rowIds: string[]) => {
           if (!rowIds || !Array.isArray(rowIds) || rowIds.length === 0) {
             console.warn('Grid Manager: remove() requires a non-empty array of rowIds.');
             return builder;
           }
-          rowIds.forEach(id => pendingRemoves.add(id));
+          rowIds.forEach(id => pendingRemoves.add(String(id)));
           return builder;
         },
         update: (rows: T[]) => {
@@ -786,7 +794,7 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
           }
           rows.forEach(row => {
             const id = getRowId ? getRowId(row) : (row as any).id;
-            if (id) pendingUpdates.set(id, row);
+            if (id) pendingUpdates.set(String(id), row);
             else console.warn('Grid Manager: update() failed for row without ID:', row);
           });
           return builder;
@@ -796,132 +804,136 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
             console.warn('Grid Manager: updateCell() requires rowId and field.');
             return builder;
           }
-          const current = pendingCellUpdates.get(rowId) || {};
+          const sRowId = String(rowId);
+          const current = pendingCellUpdates.get(sRowId) || {};
           current[field] = value;
-          pendingCellUpdates.set(rowId, current);
+          pendingCellUpdates.set(sRowId, current);
+          return builder;
+        },
+        resetCell: (rowId: string, field: string) => {
+          if (!rowId || !field) return builder;
+          const sRowId = String(rowId);
+          const fields = pendingCellResets.get(sRowId) || new Set();
+          fields.add(field);
+          pendingCellResets.set(sRowId, fields);
+          return builder;
+        },
+        resetRow: (rowId: string) => {
+          if (!rowId) return builder;
+          pendingRowResets.add(String(rowId));
           return builder;
         },
         reset: () => {
           pendingReset = true;
-          // Clear other pending operations to start fresh if needed, though they might adhere to order usually
-          pendingAdds = [];
-          pendingUpAdds = [];
-          pendingRemoves.clear();
-          pendingUpdates.clear();
-          pendingCellUpdates.clear();
+          return builder;
+        },
+        resetEdits: () => {
+          pendingResetEdits = true;
           return builder;
         },
         execute: () => {
+          if (pendingResetEdits) {
+            setOverrides({});
+          }
+
+          if (pendingRowResets.size > 0 || pendingCellResets.size > 0) {
+            setOverrides(prev => {
+              const nextOverrides = { ...prev };
+
+              pendingRowResets.forEach(rowId => {
+                delete nextOverrides[rowId];
+              });
+
+              pendingCellResets.forEach((fields, rowId) => {
+                if (nextOverrides[rowId]) {
+                  const rowOverrides = { ...nextOverrides[rowId] };
+                  fields.forEach(field => delete rowOverrides[field]);
+                  if (Object.keys(rowOverrides).length === 0) {
+                    delete nextOverrides[rowId];
+                  } else {
+                    nextOverrides[rowId] = rowOverrides;
+                  }
+                }
+              });
+
+              return nextOverrides;
+            });
+          }
+
+          if (pendingCellUpdates.size > 0) {
+            setOverrides(prev => {
+              const nextOverrides = { ...prev };
+              pendingCellUpdates.forEach((updates, rowId) => {
+                nextOverrides[rowId] = { ...(nextOverrides[rowId] || {}), ...updates };
+              });
+              return nextOverrides;
+            });
+          }
+
           setInternalRowData(prev => {
             if (pendingReset) {
-              historyRef.current = []; // Optional: Clear history on reset? Or keep it? Usually reset wipes everything.
-              // If we want to support undo of reset, we should push prev to history.
-              historyRef.current.push([...prev]);
-              // But wait, if we are doing other ops AFTER reset in the same chain, we should apply them to empty.
+              historyRef.current = [];
               let next: T[] = [];
 
-              // Re-apply adds/upAdds/updates if they were added AFTER reset call? 
-              // The builder clears them on reset() call. So if user does .reset().add(), add is preserved.
-              // If user does .add().reset(), add is cleared. Correct.
-
-              // Process upAdds on empty (effectively adds)
               if (pendingUpAdds.length > 0) {
                 next = [...next, ...pendingUpAdds];
               }
 
-              // Process Adds
+              if (pendingAdds.length > 0) {
+                next = [...next, ...pendingAdds];
+              }
+
+              return next;
+            } else {
+              if (pendingAdds.length > 0 || pendingRemoves.size > 0 || pendingUpdates.size > 0 || pendingUpAdds.length > 0) {
+                historyRef.current.push([...prev]);
+              }
+
+              let next = [...prev];
+
+              if (pendingUpAdds.length > 0) {
+                pendingUpAdds.forEach(upRow => {
+                  const id = getRowId ? getRowId(upRow) : (upRow as any).id;
+                  if (id !== undefined && id !== null) {
+                    const exists = next.some(r => {
+                      const rId = getRowId ? getRowId(r) : (r as any).id;
+                      return String(rId) === String(id);
+                    });
+                    if (exists) {
+                      pendingUpdates.set(String(id), upRow);
+                    } else {
+                      pendingAdds.push(upRow);
+                    }
+                  } else {
+                    pendingAdds.push(upRow);
+                  }
+                });
+              }
+
+              if (pendingUpdates.size > 0) {
+                next = next.map(row => {
+                  const id = getRowId ? getRowId(row) : (row as any).id;
+                  const sId = String(id);
+                  if (pendingUpdates.has(sId)) {
+                    return { ...row, ...pendingUpdates.get(sId) };
+                  }
+                  return row;
+                });
+              }
+
+              if (pendingRemoves.size > 0) {
+                next = next.filter(row => {
+                  const id = getRowId ? getRowId(row) : (row as any).id;
+                  return !pendingRemoves.has(String(id));
+                });
+              }
+
               if (pendingAdds.length > 0) {
                 next = [...next, ...pendingAdds];
               }
 
               return next;
             }
-
-            // Save history before modifying
-            historyRef.current.push([...prev]);
-
-            let next = [...prev];
-            if (pendingRemoves.size > 0) {
-              next = next.filter(row => {
-                const id = getRowId ? getRowId(row) : (row as any).id;
-                return !pendingRemoves.has(id);
-              });
-            }
-
-            // Handle upAdds: Update existing or Add new
-            if (pendingUpAdds.length > 0) {
-              const upAddUpdates = new Map<string, T>();
-              const upAddNew: T[] = [];
-
-              pendingUpAdds.forEach(row => {
-                const id = getRowId ? getRowId(row) : (row as any).id;
-                if (!id) {
-                  // No ID, assume new? Or warn?
-                  // If we can't identify, we can't update.
-                  // Let's treat as add if no ID, but usually ID is required for grid.
-                  upAddNew.push(row);
-                } else {
-                  // Check if exists in current 'next' (which might have been filtered by removes)
-                  const exists = next.some(r => {
-                    const rId = getRowId ? getRowId(r) : (r as any).id;
-                    return rId === id;
-                  });
-
-                  if (exists) {
-                    upAddUpdates.set(id, row);
-                  } else {
-                    upAddNew.push(row);
-                  }
-                }
-              });
-
-              // Apply updates from upAdd
-              if (upAddUpdates.size > 0) {
-                next = next.map(row => {
-                  const id = getRowId ? getRowId(row) : (row as any).id;
-                  if (upAddUpdates.has(id)) {
-                    // Merge or replace? Requirements say "update", usually implies merge or replace.
-                    // update() method maps merge logic usually.
-                    // Let's assume merge for safety, or replace if strict.
-                    // The existing update() logic does merge: { ...newRow, ...pendingUpdates.get(id) }
-                    // Let's do the same.
-                    return { ...row, ...upAddUpdates.get(id) };
-                  }
-                  return row;
-                });
-              }
-
-              // Append new from upAdd
-              if (upAddNew.length > 0) {
-                next = [...next, ...upAddNew];
-              }
-            }
-
-            if (pendingUpdates.size > 0 || pendingCellUpdates.size > 0) {
-              next = next.map(row => {
-                const id = getRowId ? getRowId(row) : (row as any).id;
-                let newRow = row;
-
-                if (pendingUpdates.has(id)) {
-                  newRow = { ...newRow, ...pendingUpdates.get(id) };
-                }
-
-                if (pendingCellUpdates.has(id)) {
-                  const updates = pendingCellUpdates.get(id);
-                  Object.entries(updates!).forEach(([field, value]) => {
-                    newRow = setValueAtPath(newRow, field, value);
-                  });
-                }
-
-                return newRow;
-              });
-            }
-
-            if (pendingAdds.length > 0) {
-              next = [...next, ...pendingAdds];
-            }
-
-            return next;
           });
         }
       };

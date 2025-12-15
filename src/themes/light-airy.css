@@ -1,6 +1,4 @@
-/* FiboGrid - Light Airy Theme
- * Bright and spacious with soft colors
- */
+
 
 .fibogrid.theme-light-airy {
   --fibogrid-primary: #06b6d4;
@@ -19,30 +17,30 @@
   
   --fibogrid-border: #99f6e4;
   
-  /* Cell Borders - Light Airy */
+  
   --fibogrid-cell-border-right: #ccfbf1;
   --fibogrid-cell-border-bottom: #ccfbf1;
   --fibogrid-cell-border-hover: #99f6e4;
   --fibogrid-cell-border-selected: #06b6d4;
   --fibogrid-cell-border-editing: #06b6d4;
   
-  /* Row Borders */
+  
   --fibogrid-row-border-bottom: #ccfbf1;
   --fibogrid-row-border-bottom-hover: #99f6e4;
   --fibogrid-row-border-bottom-selected: #06b6d4;
   --fibogrid-row-border-bottom-group: #99f6e4;
   
-  /* Header Borders */
+  
   --fibogrid-header-border-bottom: #99f6e4;
   --fibogrid-header-cell-border-right: #ccfbf1;
   --fibogrid-header-cell-border-right-hover: #99f6e4;
   --fibogrid-header-cell-border-right-active: #06b6d4;
   
-  /* Toolbar & Statusbar */
+  
   --fibogrid-toolbar-border-bottom: #ccfbf1;
   --fibogrid-statusbar-border-top: #ccfbf1;
   
-  /* Container */
+  
   --fibogrid-container-border: #99f6e4;
   --fibogrid-container-border-focus: #06b6d4;
   

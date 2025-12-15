@@ -48,7 +48,6 @@ export function useKeyboardNavigation<T>({
       const col = visibleColumns[colIndex];
       if (row && col) {
         setFocusedCell({ rowId: row.id, field: col.field });
-        // Optional: scroll into view logic here if needed
       }
     },
     [displayedRows, visibleColumns]
@@ -57,7 +56,7 @@ export function useKeyboardNavigation<T>({
   const focusCell = useCallback((rowId: string, field: string) => {
     setFocusedCell({ rowId, field });
     if (containerRef.current) {
-        containerRef.current.focus({ preventScroll: true });
+      containerRef.current.focus({ preventScroll: true });
     }
   }, [containerRef]);
 
@@ -71,13 +70,13 @@ export function useKeyboardNavigation<T>({
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent | KeyboardEvent) => {
       if (isEditing) {
-          return;
+        return;
       }
 
       const currentState = {
-          rowIndex: focusedCell ? getRowIndex(focusedCell.rowId) : -1,
-          colIndex: focusedCell ? getColIndex(focusedCell.field) : -1,
-          focusedCell
+        rowIndex: focusedCell ? getRowIndex(focusedCell.rowId) : -1,
+        colIndex: focusedCell ? getColIndex(focusedCell.field) : -1,
+        focusedCell
       };
 
       const match = activeShortcuts.find(s => isShortcutMatch(e, s));
@@ -85,17 +84,16 @@ export function useKeyboardNavigation<T>({
       if (match) {
         if (match.preventDefault) e.preventDefault();
         match.action({
-            event: e,
-            api,
-            focusRow: (idx) => {
-                 const row = displayedRows[idx];
-                 if (row && visibleColumns.length > 0) {
-                     // Focus first cell of row if focusing row
-                     focusCell(row.id, visibleColumns[0].field);
-                 }
-            },
-            focusCell: (rIndex, cIndex) => navigateToCell(rIndex, cIndex),
-            currentState
+          event: e,
+          api,
+          focusRow: (idx) => {
+            const row = displayedRows[idx];
+            if (row && visibleColumns.length > 0) {
+              focusCell(row.id, visibleColumns[0].field);
+            }
+          },
+          focusCell: (rIndex, cIndex) => navigateToCell(rIndex, cIndex),
+          currentState
         });
       }
     },
@@ -112,7 +110,7 @@ export function useKeyboardNavigation<T>({
       focusCell
     ]
   );
-  
+
   const isCellFocused = useCallback(
     (rowId: string, field: string) =>
       focusedCell?.rowId === rowId && focusedCell?.field === field,
@@ -124,6 +122,6 @@ export function useKeyboardNavigation<T>({
     focusCell,
     isCellFocused,
     setFocusedCell,
-    handleKeyDown 
+    handleKeyDown
   };
 }

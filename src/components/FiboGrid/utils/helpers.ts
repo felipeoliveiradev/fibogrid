@@ -77,7 +77,7 @@ export function processColumns<T>(
       computedWidth = col.width || 150;
     }
 
-    // Apply strict max/min constraints final check
+
     if (col.minWidth && computedWidth < col.minWidth) computedWidth = col.minWidth;
     if (col.maxWidth && computedWidth > col.maxWidth) computedWidth = col.maxWidth;
 
@@ -148,14 +148,13 @@ export function fastComparator(a: unknown, b: unknown): number {
   if (a == null) return -1;
   if (b == null) return 1;
 
-
   if (typeof a === 'number' && typeof b === 'number') {
     return a - b;
   }
 
-
   return String(a).localeCompare(String(b));
 }
+
 
 export function defaultComparator(a: any, b: any): number {
   if (a == null && b == null) return 0;
@@ -382,7 +381,15 @@ export async function copyToClipboard<T>(
     text += values.join('\t') + '\n';
   }
 
-  await navigator.clipboard.writeText(text);
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch (e) {
+      console.warn('Failed to write to clipboard', e);
+    }
+  } else {
+    console.warn('Clipboard API not available (writeText).');
+  }
 }
 
 export function calculateAggregate(values: any[], aggFunc: string | ((values: any[]) => any)): any {

@@ -31,12 +31,12 @@ export const Localization = () => {
                 title="Switching Locales"
                 description="Pass the locale object to the grid. In this example, we use the Portuguese (BR) locale."
                 code={`import { FiboGrid } from 'fibogrid';
-import { ptBR } from 'fibogrid/locales'; // Import locale
+import { ptBR } from 'fibogrid/locales'; 
 
 <FiboGrid
   rowData={data}
   columnDefs={columns}
-  lang={ptBR} // Apply locale
+  lang={ptBR} 
 />`}
                 preview={
                     <FiboGrid
@@ -66,9 +66,9 @@ const myCustomLocale: FiboGridLocale = {
     toolbar: {
         searchPlaceholder: "Search records...",
         columns: "Cols",
-        // ... all other interface properties
+        
     },
-    // ... pagination, statusBar, filter, overlay, columnMenu keys
+    
 };`} />
                 </CardContent>
             </Card>

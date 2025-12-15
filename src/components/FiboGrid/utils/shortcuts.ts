@@ -6,7 +6,7 @@ export const isShortcutMatch = (event: React.KeyboardEvent | KeyboardEvent, shor
   return keys.some(keyCombo => {
     const parts = keyCombo.toLowerCase().split('+');
     const mainKey = parts[parts.length - 1];
-    
+
     const needsCtrl = parts.includes('ctrl') || parts.includes('control');
     const needsMeta = parts.includes('meta') || parts.includes('cmd') || parts.includes('command');
     const needsShift = parts.includes('shift');
@@ -17,9 +17,7 @@ export const isShortcutMatch = (event: React.KeyboardEvent | KeyboardEvent, shor
     if (needsShift && !event.shiftKey) return false;
     if (needsAlt && !event.altKey) return false;
 
-    // Special handling for meta/ctrl equivalence if desired, but strict checking is better for keys like 'ctrl+c' vs 'meta+c'
-    // However, usually on Mac 'Meta+C' is copy, on Windows 'Ctrl+C'.
-    // We can define the shortcut with multiple keys to handle this platform difference: keys: ['Meta+c', 'Ctrl+c']
+
 
     return event.key.toLowerCase() === mainKey;
   });
@@ -82,17 +80,17 @@ export const defaultShortcuts: ShortcutDef[] = [
     description: 'Move to next cell',
     preventDefault: true,
     action: ({ event, currentState, focusCell, api }) => {
-      if (event.shiftKey) return; // Handled by tabBackward
+      if (event.shiftKey) return;
       const { rowIndex, colIndex } = currentState;
-       const visibleColumns = api.getColumnDefs().filter(c => !c.hide);
-      
+      const visibleColumns = api.getColumnDefs().filter(c => !c.hide);
+
       if (colIndex < visibleColumns.length - 1) {
         focusCell(rowIndex, colIndex + 1);
       } else {
-         const totalRows = api.getDisplayedRows().length;
-         if (rowIndex < totalRows - 1) {
-             focusCell(rowIndex + 1, 0);
-         }
+        const totalRows = api.getDisplayedRows().length;
+        if (rowIndex < totalRows - 1) {
+          focusCell(rowIndex + 1, 0);
+        }
       }
     }
   },
@@ -102,63 +100,61 @@ export const defaultShortcuts: ShortcutDef[] = [
     description: 'Move to previous cell',
     preventDefault: true,
     action: ({ currentState, focusCell, api }) => {
-       const { rowIndex, colIndex } = currentState;
-       const visibleColumns = api.getColumnDefs().filter(c => !c.hide);
-       
-       if (colIndex > 0) {
-           focusCell(rowIndex, colIndex - 1);
-       } else if (rowIndex > 0) {
-           focusCell(rowIndex - 1, visibleColumns.length - 1);
-       }
+      const { rowIndex, colIndex } = currentState;
+      const visibleColumns = api.getColumnDefs().filter(c => !c.hide);
+
+      if (colIndex > 0) {
+        focusCell(rowIndex, colIndex - 1);
+      } else if (rowIndex > 0) {
+        focusCell(rowIndex - 1, visibleColumns.length - 1);
+      }
     }
   },
   {
-      id: 'enterEdit',
-      keys: ['Enter', 'F2'],
-      description: 'Start editing cell',
-      preventDefault: true,
-      action: ({ currentState, api }) => {
-          if (currentState.focusedCell) {
-             api.startEditingCell(currentState.focusedCell.rowId, currentState.focusedCell.field);
-          }
+    id: 'enterEdit',
+    keys: ['Enter', 'F2'],
+    description: 'Start editing cell',
+    preventDefault: true,
+    action: ({ currentState, api }) => {
+      if (currentState.focusedCell) {
+        api.startEditingCell(currentState.focusedCell.rowId, currentState.focusedCell.field);
       }
+    }
   },
   {
-      id: 'selectAll',
-      keys: ['Ctrl+a', 'Meta+a'],
-      description: 'Select all rows',
-      preventDefault: true,
-      action: ({ api }) => api.selectAll()
+    id: 'selectAll',
+    keys: ['Ctrl+a', 'Meta+a'],
+    description: 'Select all rows',
+    preventDefault: true,
+    action: ({ api }) => api.selectAll()
   },
   {
-      id: 'copy',
-      keys: ['Ctrl+c', 'Meta+c'],
-      description: 'Copy selected rows to clipboard',
-      preventDefault: true,
-      action: ({ api }) => api.copyToClipboard(false)
+    id: 'copy',
+    keys: ['Ctrl+c', 'Meta+c'],
+    description: 'Copy selected rows to clipboard',
+    preventDefault: true,
+    action: ({ api }) => api.copyToClipboard(false)
   },
   {
-      id: 'paste',
-      keys: ['Ctrl+v', 'Meta+v'],
-      description: 'Paste from clipboard',
-      preventDefault: true,
-       action: ({ api }) => {
-          // api.pasteFromClipboard() will be implemented
-           if ((api as any).pasteFromClipboard) {
-               (api as any).pasteFromClipboard();
-           }
+    id: 'paste',
+    keys: ['Ctrl+v', 'Meta+v'],
+    description: 'Paste from clipboard',
+    preventDefault: true,
+    action: ({ api }) => {
+      if (api.pasteFromClipboard) {
+        api.pasteFromClipboard();
       }
+    }
   },
-   {
-      id: 'undo',
-      keys: ['Ctrl+z', 'Meta+z'],
-      description: 'Undo last action',
-      preventDefault: true,
-      action: ({ api }) => {
-           // api.undo() will be implemented
-           if ((api as any).undo) {
-               (api as any).undo();
-           }
+  {
+    id: 'undo',
+    keys: ['Ctrl+z', 'Meta+z'],
+    description: 'Undo last action',
+    preventDefault: true,
+    action: ({ api }) => {
+      if (api.undo) {
+        api.undo();
       }
+    }
   }
 ];
