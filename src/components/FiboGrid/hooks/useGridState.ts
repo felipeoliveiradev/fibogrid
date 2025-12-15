@@ -11,6 +11,7 @@ import {
   GridApi,
   FiboGridProps,
   GridApiBuilder,
+  GridManagerBuilder,
   ServerSideDataSourceRequest,
 } from '../types';
 import { useServerSideData } from './useServerSideData';
@@ -701,7 +702,7 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
 
         const separator = text.includes('\t') ? '\t' : ',';
         const newRows: T[] = [];
-        
+
         // Basic CSV/TSV parsing assuming the order matches visible columns
         // Ideally we would map headers, but for simple paste we often assume data order matches column order
         // OR we just paste into current focused cell downwards?
@@ -710,35 +711,35 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
         const visibleCols = columnDefs.filter(c => !c.hide).map(c => c.field);
 
         rows.forEach(rowStr => {
-           const values = rowStr.split(separator);
-           const newRow: any = {};
-           // Basic mapping: visible columns order
-           visibleCols.forEach((colField, i) => {
-              if (i < values.length) {
-                 setValueAtPath(newRow, colField, values[i]);
-              }
-           });
-           // Assign a temp ID if needed
-           if (getRowId) {
-             // If we can't generate ID, this might be tricky.
-             // We'll trust the user has a way or we auto-generate if possible, or just fail safely.
-             // For now, let's assume we can generate a random ID if not provided?
-             // Or rely on the data having ID?
-             // Actually, usually paste adds new data.
-             if (!newRow.id) newRow.id = `pasted-${Date.now()}-${Math.random()}`;
-           } else {
-             if (!newRow.id) newRow.id = `pasted-${Date.now()}-${Math.random()}`;
-           }
+          const values = rowStr.split(separator);
+          const newRow: any = {};
+          // Basic mapping: visible columns order
+          visibleCols.forEach((colField, i) => {
+            if (i < values.length) {
+              setValueAtPath(newRow, colField, values[i]);
+            }
+          });
+          // Assign a temp ID if needed
+          if (getRowId) {
+            // If we can't generate ID, this might be tricky.
+            // We'll trust the user has a way or we auto-generate if possible, or just fail safely.
+            // For now, let's assume we can generate a random ID if not provided?
+            // Or rely on the data having ID?
+            // Actually, usually paste adds new data.
+            if (!newRow.id) newRow.id = `pasted-${Date.now()}-${Math.random()}`;
+          } else {
+            if (!newRow.id) newRow.id = `pasted-${Date.now()}-${Math.random()}`;
+          }
 
-            newRows.push(newRow as T);
+          newRows.push(newRow as T);
         });
-        
+
         if (newRows.length > 0) {
-            // Save history before adding
-             setInternalRowData(prev => {
-                historyRef.current.push([...prev]);
-                return [...prev, ...newRows];
-             });
+          // Save history before adding
+          setInternalRowData(prev => {
+            historyRef.current.push([...prev]);
+            return [...prev, ...newRows];
+          });
         }
       } catch (err) {
         console.error('Failed to paste from clipboard:', err);
@@ -747,11 +748,13 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
 
     manager: () => {
       let pendingAdds: T[] = [];
+      let pendingUpAdds: T[] = [];
       let pendingRemoves: Set<string> = new Set();
       let pendingUpdates: Map<string, T> = new Map();
       let pendingCellUpdates: Map<string, Record<string, any>> = new Map();
+      let pendingReset = false;
 
-      const builder: any = {
+      const builder: GridManagerBuilder<T> = {
         add: (rows: T[]) => {
           if (!rows || !Array.isArray(rows) || rows.length === 0) {
             console.warn('Grid Manager: add() requires a non-empty array of rows.');
@@ -760,10 +763,18 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
           pendingAdds.push(...rows);
           return builder;
         },
+        upAdd: (rows: T[]) => {
+          if (!rows || !Array.isArray(rows) || rows.length === 0) {
+            console.warn('Grid Manager: upAdd() requires a non-empty array of rows.');
+            return builder;
+          }
+          pendingUpAdds.push(...rows);
+          return builder;
+        },
         remove: (rowIds: string[]) => {
           if (!rowIds || !Array.isArray(rowIds) || rowIds.length === 0) {
-             console.warn('Grid Manager: remove() requires a non-empty array of rowIds.');
-             return builder;
+            console.warn('Grid Manager: remove() requires a non-empty array of rowIds.');
+            return builder;
           }
           rowIds.forEach(id => pendingRemoves.add(id));
           return builder;
@@ -790,8 +801,42 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
           pendingCellUpdates.set(rowId, current);
           return builder;
         },
+        reset: () => {
+          pendingReset = true;
+          // Clear other pending operations to start fresh if needed, though they might adhere to order usually
+          pendingAdds = [];
+          pendingUpAdds = [];
+          pendingRemoves.clear();
+          pendingUpdates.clear();
+          pendingCellUpdates.clear();
+          return builder;
+        },
         execute: () => {
           setInternalRowData(prev => {
+            if (pendingReset) {
+              historyRef.current = []; // Optional: Clear history on reset? Or keep it? Usually reset wipes everything.
+              // If we want to support undo of reset, we should push prev to history.
+              historyRef.current.push([...prev]);
+              // But wait, if we are doing other ops AFTER reset in the same chain, we should apply them to empty.
+              let next: T[] = [];
+
+              // Re-apply adds/upAdds/updates if they were added AFTER reset call? 
+              // The builder clears them on reset() call. So if user does .reset().add(), add is preserved.
+              // If user does .add().reset(), add is cleared. Correct.
+
+              // Process upAdds on empty (effectively adds)
+              if (pendingUpAdds.length > 0) {
+                next = [...next, ...pendingUpAdds];
+              }
+
+              // Process Adds
+              if (pendingAdds.length > 0) {
+                next = [...next, ...pendingAdds];
+              }
+
+              return next;
+            }
+
             // Save history before modifying
             historyRef.current.push([...prev]);
 
@@ -803,22 +848,71 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
               });
             }
 
+            // Handle upAdds: Update existing or Add new
+            if (pendingUpAdds.length > 0) {
+              const upAddUpdates = new Map<string, T>();
+              const upAddNew: T[] = [];
+
+              pendingUpAdds.forEach(row => {
+                const id = getRowId ? getRowId(row) : (row as any).id;
+                if (!id) {
+                  // No ID, assume new? Or warn?
+                  // If we can't identify, we can't update.
+                  // Let's treat as add if no ID, but usually ID is required for grid.
+                  upAddNew.push(row);
+                } else {
+                  // Check if exists in current 'next' (which might have been filtered by removes)
+                  const exists = next.some(r => {
+                    const rId = getRowId ? getRowId(r) : (r as any).id;
+                    return rId === id;
+                  });
+
+                  if (exists) {
+                    upAddUpdates.set(id, row);
+                  } else {
+                    upAddNew.push(row);
+                  }
+                }
+              });
+
+              // Apply updates from upAdd
+              if (upAddUpdates.size > 0) {
+                next = next.map(row => {
+                  const id = getRowId ? getRowId(row) : (row as any).id;
+                  if (upAddUpdates.has(id)) {
+                    // Merge or replace? Requirements say "update", usually implies merge or replace.
+                    // update() method maps merge logic usually.
+                    // Let's assume merge for safety, or replace if strict.
+                    // The existing update() logic does merge: { ...newRow, ...pendingUpdates.get(id) }
+                    // Let's do the same.
+                    return { ...row, ...upAddUpdates.get(id) };
+                  }
+                  return row;
+                });
+              }
+
+              // Append new from upAdd
+              if (upAddNew.length > 0) {
+                next = [...next, ...upAddNew];
+              }
+            }
+
             if (pendingUpdates.size > 0 || pendingCellUpdates.size > 0) {
               next = next.map(row => {
-               const id = getRowId ? getRowId(row) : (row as any).id;
-               let newRow = row;
-               
-               if (pendingUpdates.has(id)) {
-                 newRow = { ...newRow, ...pendingUpdates.get(id) };
-               }
-               
+                const id = getRowId ? getRowId(row) : (row as any).id;
+                let newRow = row;
+
+                if (pendingUpdates.has(id)) {
+                  newRow = { ...newRow, ...pendingUpdates.get(id) };
+                }
+
                 if (pendingCellUpdates.has(id)) {
                   const updates = pendingCellUpdates.get(id);
                   Object.entries(updates!).forEach(([field, value]) => {
                     newRow = setValueAtPath(newRow, field, value);
                   });
                 }
-                
+
                 return newRow;
               });
             }

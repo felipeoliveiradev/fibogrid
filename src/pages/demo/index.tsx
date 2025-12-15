@@ -163,6 +163,43 @@ export default function Demo() {
         toast({ title: "Value Updated", description: `Updated ${event.column.headerName} to ${event.newValue}` });
     }, []);
 
+    const handleUpAddTest = useCallback(() => {
+        if (!gridApi) return;
+
+        // Find an existing ID to update
+        const existing = gridApi.getRowData()[0];
+        const updateRow: StockRow = {
+            ...existing,
+            ticker: existing.ticker + '-UPD',
+            name: existing.name + ' (Updated)',
+            price: existing.price + 10,
+        };
+
+        // Create a new row
+        const newRow: StockRow = {
+            id: `stock-new-${Date.now()}`,
+            ticker: 'UP-ADD',
+            name: 'UpAdd Test Row',
+            price: 500,
+            change: 5,
+            changePercent: 1.0,
+            volume: 50000,
+            marketCap: 100,
+            sector: 'Test',
+            carro: { cor: 'azul' },
+            pe: 15
+        };
+
+        gridApi.manager().upAdd([updateRow, newRow]).execute();
+        toast({ title: 'upAdd Executed', description: 'Updated one existing row and added one new row.' });
+    }, [gridApi]);
+
+    const handleResetGrid = useCallback(() => {
+        if (!gridApi) return;
+        gridApi.manager().reset().execute();
+        toast({ title: 'Grid Reset', description: 'All data cleared.' });
+    }, [gridApi]);
+
     const onRowClickStock = useCallback((event: RowClickedEvent<StockRow> & { clickType?: string | number }) => {
         console.log('Row Clicked:', event);
         if (event.clickType === 'triple' || event.clickType === 3) {
@@ -244,6 +281,8 @@ export default function Demo() {
                             isRealTimeEnabled={isRealTimeEnabled}
                             localeKey={localeKey}
                             onLocaleChange={setLocaleKey}
+                            onUpAddTest={handleUpAddTest}
+                            onResetGrid={handleResetGrid}
                         />
                         <DemoGrid
                             useServerSide={useServerSide}

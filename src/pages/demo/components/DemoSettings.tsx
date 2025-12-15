@@ -26,6 +26,8 @@ interface DemoSettingsProps {
     onLocaleChange: (key: 'en' | 'pt') => void;
     configs?: FiboGridConfigs;
     onConfigChange?: (section: string, key: string, value: boolean) => void;
+    onUpAddTest?: () => void;
+    onResetGrid?: () => void;
 }
 
 export function DemoSettings(props: DemoSettingsProps) {
@@ -140,6 +142,25 @@ export function DemoSettings(props: DemoSettingsProps) {
                     <div className="flex items-center justify-between">
                         <span className="text-sm font-body">Server-side Pagination</span>
                         <Switch checked={props.useServerSide} onCheckedChange={props.onUseServerSideChange} />
+                    </div>
+                </CardContent>
+            </Card>
+
+            <Card className="paper-aged border-primary/10">
+                <CardHeader className="pb-3">
+                    <CardTitle className="text-sm flex items-center gap-2 font-display">
+                        <Layers className="h-4 w-4 text-primary" />
+                        Manager API
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="flex flex-col gap-2">
+                        <Button variant="outline" size="sm" onClick={props.onUpAddTest} className="w-full border-primary/30 hover:border-primary font-body">
+                            Test upAdd
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={props.onResetGrid} className="w-full border-primary/30 hover:border-primary font-body">
+                            Reset Grid
+                        </Button>
                     </div>
                 </CardContent>
             </Card>

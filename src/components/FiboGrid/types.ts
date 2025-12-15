@@ -280,9 +280,11 @@ export interface GridApiBuilder<T = any> {
 
 export interface GridManagerBuilder<T = any> {
   add: (rows: T[]) => GridManagerBuilder<T>;
+  upAdd: (rows: T[]) => GridManagerBuilder<T>;
   remove: (rowIds: string[]) => GridManagerBuilder<T>;
   update: (rows: T[]) => GridManagerBuilder<T>;
   updateCell: (rowId: string, field: string, value: any) => GridManagerBuilder<T>;
+  reset: () => GridManagerBuilder<T>;
   execute: () => void;
 }
 
