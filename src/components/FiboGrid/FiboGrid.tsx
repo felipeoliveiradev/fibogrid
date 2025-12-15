@@ -84,6 +84,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     onRowClickFallback,
     lang = enUS,
     configs,
+    shortcuts = true,
   } = props;
 
   const effectiveShowToolbar = configs?.header?.show ?? showToolbar;
@@ -331,7 +332,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
   const rangeSelectionHook = useRangeSelection();
   const {
     isCellSelected,
-    handleCellMouseDown,
+    handleCellMouseDown: handleRangeMouseDown,
     handleCellMouseEnter,
     isSelecting,
   } = rangeCellSelection ? rangeSelectionHook : {
@@ -354,14 +355,23 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     focusedCell,
     focusCell,
     isCellFocused,
+    handleKeyDown,
   } = useKeyboardNavigation({
     containerRef,
     displayedRows,
     columns,
     api,
-    onStartEdit: (rowId, field) => api.startEditingCell(rowId, field),
-    onStopEdit: (cancel) => api.stopEditing(cancel),
+    onStartEdit: (rowId, field) => {
+      // Fetch value
+      const rowNode = api.getRowNode(rowId);
+      const value = rowNode ? (rowNode.data as any)[field] : null; 
+      setEditingCell({ rowId, field, value, originalValue: value });
+    },
+    onStopEdit: () => {
+      setEditingCell(null);
+    },
     isEditing: !!editingCell,
+    shortcuts,
   });
 
   const handleSort = useCallback(
@@ -477,6 +487,17 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     }
   }, [setFilterModel]);
 
+  const handleCellMouseDown = useCallback((rowIndex: number, colIndex: number, e: React.MouseEvent) => {
+    const row = displayedRows[rowIndex];
+    const column = columns[colIndex];
+    if (row && column) {
+      // Focus logic
+      focusCell(row.id, column.field);
+    }
+    // Range selection logic
+    handleRangeMouseDown(rowIndex, colIndex, e);
+  }, [displayedRows, columns, focusCell, handleRangeMouseDown]);
+
   const handleRowClick = useCallback(
     (rowId: string, e: React.MouseEvent) => {
       if (isRowDragging || isDraggingRows) return;
@@ -584,6 +605,9 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     }
   }, [displayedRows, addChildToRow]);
 
+  const effectiveShowFilterRow = configs?.header?.filterRow ?? true;
+  const currentFilterRowHeight = effectiveShowFilterRow ? 36 : 0;
+
   const gridContent = (
     <div
       ref={containerRef}
@@ -598,6 +622,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
       )}
       style={{ height: height || '100%', minHeight: 400 }}
       tabIndex={0}
+      onKeyDown={handleKeyDown}
       onMouseDown={() => {
         setContextMenuTarget(null);
       }}
@@ -657,7 +682,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                 onHideColumn={handleHideColumn}
                 onAutoSize={handleAutoSize}
                 onAutoSizeAll={handleAutoSizeAll}
-                showFilterRow={configs?.header?.filterRow ?? true}
+                showFilterRow={effectiveShowFilterRow}
                 className={className}
                 locale={lang}
               />
@@ -910,7 +935,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
           customComponent={loadingOverlayComponent}
           headerHeight={headerHeight}
           toolbarHeight={showToolbar ? toolbarHeight : 0}
-          filterRowHeight={36}
+          filterRowHeight={currentFilterRowHeight}
         />
       )}
       {!isLoading && displayedRows.length === 0 && (
@@ -919,7 +944,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
           customComponent={noRowsOverlayComponent}
           headerHeight={headerHeight}
           toolbarHeight={showToolbar ? toolbarHeight : 0}
-          filterRowHeight={36}
+          filterRowHeight={currentFilterRowHeight}
         />
       )}
 

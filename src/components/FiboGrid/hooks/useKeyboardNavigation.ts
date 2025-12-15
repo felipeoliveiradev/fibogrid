@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
-import { RowNode, ProcessedColumn, GridApi } from '../types';
+import { useCallback, useState, useMemo } from 'react';
+import { RowNode, ProcessedColumn, GridApi, ShortcutDef } from '../types';
+import { defaultShortcuts, isShortcutMatch } from '../utils/shortcuts';
 
 interface CellPosition {
   rowId: string;
@@ -14,6 +15,7 @@ interface UseKeyboardNavigationProps<T> {
   onStartEdit?: (rowId: string, field: string) => void;
   onStopEdit?: (cancel: boolean) => void;
   isEditing: boolean;
+  shortcuts?: boolean | ShortcutDef<T>[];
 }
 
 export function useKeyboardNavigation<T>({
@@ -24,6 +26,7 @@ export function useKeyboardNavigation<T>({
   onStartEdit,
   onStopEdit,
   isEditing,
+  shortcuts = true,
 }: UseKeyboardNavigationProps<T>) {
   const [focusedCell, setFocusedCell] = useState<CellPosition | null>(null);
 
@@ -45,131 +48,55 @@ export function useKeyboardNavigation<T>({
       const col = visibleColumns[colIndex];
       if (row && col) {
         setFocusedCell({ rowId: row.id, field: col.field });
+        // Optional: scroll into view logic here if needed
       }
     },
     [displayedRows, visibleColumns]
   );
 
+  const focusCell = useCallback((rowId: string, field: string) => {
+    setFocusedCell({ rowId, field });
+    if (containerRef.current) {
+        containerRef.current.focus({ preventScroll: true });
+    }
+  }, [containerRef]);
+
+  const activeShortcuts = useMemo(() => {
+    if (shortcuts === false) return [];
+    if (shortcuts === true) return defaultShortcuts;
+    if (Array.isArray(shortcuts)) return shortcuts;
+    return defaultShortcuts;
+  }, [shortcuts]);
+
   const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      if (!focusedCell) return;
-
-      const rowIndex = getRowIndex(focusedCell.rowId);
-      const colIndex = getColIndex(focusedCell.field);
-
-      if (rowIndex === -1 || colIndex === -1) return;
-
-
-
+    (e: React.KeyboardEvent | KeyboardEvent) => {
       if (isEditing) {
-        return;
+          return;
       }
 
-      switch (e.key) {
-        case 'ArrowUp':
-          e.preventDefault();
-          if (rowIndex > 0) {
-            navigateToCell(rowIndex - 1, colIndex);
-          }
-          break;
+      const currentState = {
+          rowIndex: focusedCell ? getRowIndex(focusedCell.rowId) : -1,
+          colIndex: focusedCell ? getColIndex(focusedCell.field) : -1,
+          focusedCell
+      };
 
-        case 'ArrowDown':
-          e.preventDefault();
-          if (rowIndex < displayedRows.length - 1) {
-            navigateToCell(rowIndex + 1, colIndex);
-          }
-          break;
+      const match = activeShortcuts.find(s => isShortcutMatch(e, s));
 
-        case 'ArrowLeft':
-          e.preventDefault();
-          if (colIndex > 0) {
-            navigateToCell(rowIndex, colIndex - 1);
-          }
-          break;
-
-        case 'ArrowRight':
-          e.preventDefault();
-          if (colIndex < visibleColumns.length - 1) {
-            navigateToCell(rowIndex, colIndex + 1);
-          }
-          break;
-
-        case 'Tab':
-          e.preventDefault();
-          if (e.shiftKey) {
-            if (colIndex > 0) {
-              navigateToCell(rowIndex, colIndex - 1);
-            } else if (rowIndex > 0) {
-              navigateToCell(rowIndex - 1, visibleColumns.length - 1);
-            }
-          } else {
-            if (colIndex < visibleColumns.length - 1) {
-              navigateToCell(rowIndex, colIndex + 1);
-            } else if (rowIndex < displayedRows.length - 1) {
-              navigateToCell(rowIndex + 1, 0);
-            }
-          }
-          break;
-
-        case 'Home':
-          e.preventDefault();
-          if (e.ctrlKey) {
-            navigateToCell(0, 0);
-          } else {
-            navigateToCell(rowIndex, 0);
-          }
-          break;
-
-        case 'End':
-          e.preventDefault();
-          if (e.ctrlKey) {
-            navigateToCell(displayedRows.length - 1, visibleColumns.length - 1);
-          } else {
-            navigateToCell(rowIndex, visibleColumns.length - 1);
-          }
-          break;
-
-        case 'PageUp':
-          e.preventDefault();
-          navigateToCell(Math.max(0, rowIndex - 10), colIndex);
-          break;
-
-        case 'PageDown':
-          e.preventDefault();
-          navigateToCell(
-            Math.min(displayedRows.length - 1, rowIndex + 10),
-            colIndex
-          );
-          break;
-
-        case 'Enter':
-        case 'F2':
-          e.preventDefault();
-          const col = visibleColumns[colIndex];
-          if (col.editable) {
-            onStartEdit?.(focusedCell.rowId, focusedCell.field);
-          }
-          break;
-
-        case ' ':
-          e.preventDefault();
-
-          api.selectRow(focusedCell.rowId);
-          break;
-
-        case 'a':
-          if (e.ctrlKey || e.metaKey) {
-            e.preventDefault();
-            api.selectAll();
-          }
-          break;
-
-        case 'c':
-          if (e.ctrlKey || e.metaKey) {
-            e.preventDefault();
-            api.copyToClipboard(false);
-          }
-          break;
+      if (match) {
+        if (match.preventDefault) e.preventDefault();
+        match.action({
+            event: e,
+            api,
+            focusRow: (idx) => {
+                 const row = displayedRows[idx];
+                 if (row && visibleColumns.length > 0) {
+                     // Focus first cell of row if focusing row
+                     focusCell(row.id, visibleColumns[0].field);
+                 }
+            },
+            focusCell: (rIndex, cIndex) => navigateToCell(rIndex, cIndex),
+            currentState
+        });
       }
     },
     [
@@ -177,29 +104,15 @@ export function useKeyboardNavigation<T>({
       getRowIndex,
       getColIndex,
       isEditing,
+      activeShortcuts,
+      api,
+      navigateToCell,
       displayedRows,
       visibleColumns,
-      navigateToCell,
-      onStartEdit,
-      onStopEdit,
-      api,
+      focusCell
     ]
   );
-
-
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    container.addEventListener('keydown', handleKeyDown);
-    return () => container.removeEventListener('keydown', handleKeyDown);
-  }, [containerRef, handleKeyDown]);
-
-  const focusCell = useCallback((rowId: string, field: string) => {
-    setFocusedCell({ rowId, field });
-    containerRef.current?.focus();
-  }, [containerRef]);
-
+  
   const isCellFocused = useCallback(
     (rowId: string, field: string) =>
       focusedCell?.rowId === rowId && focusedCell?.field === field,
@@ -211,5 +124,6 @@ export function useKeyboardNavigation<T>({
     focusCell,
     isCellFocused,
     setFocusedCell,
+    handleKeyDown 
   };
 }

@@ -122,8 +122,14 @@ export default function Demo() {
     }, []);
     const handleAddRow = useCallback(() => {
         const s: StockRow = { id: `stock-${Date.now()}`, ticker: 'NEW', name: 'New Company', price: 100, change: 0, changePercent: 0, volume: 1000000, marketCap: 50, sector: 'Technology', carro: { cor: 'vermelho' }, pe: 25 };
-        setRowData(prev => [s, ...prev]);
-    }, []);
+        if (gridApi) {
+            gridApi.manager().add([s]).execute();
+            toast({ title: 'Added via Manager API', description: 'Row added using gridApi.manager().add()' });
+        } else {
+            setRowData(prev => [s, ...prev]);
+        }
+    }, [gridApi]);
+
     const handleDeleteSelected = useCallback(() => {
         if (!gridApi) return;
         const selected = gridApi.getSelectedRows();
@@ -131,9 +137,9 @@ export default function Demo() {
             toast({ title: 'No Selection', variant: 'destructive' });
             return;
         }
-        const ids = new Set(selected.map((r: RowNode<StockRow>) => r.data.id));
-        setRowData(prev => prev.filter(row => !ids.has(row.id)));
-        toast({ title: 'Deleted', description: `${ids.size} row(s) removed.` });
+        const ids = selected.map((r: RowNode<StockRow>) => r.data.id);
+        gridApi.manager().remove(ids).execute();
+        toast({ title: 'Deleted via Manager API', description: `${ids.length} row(s) removed using gridApi.manager().remove().` });
     }, [gridApi]);
     const handleExport = useCallback(async () => {
         if (!gridApi) return;

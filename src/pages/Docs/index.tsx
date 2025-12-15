@@ -18,6 +18,7 @@ import { Filtering } from './sections/Filtering';
 import { ServerSide } from './sections/ServerSide';
 import { VisualCustomization } from './sections/VisualCustomization';
 import { Localization } from './sections/Localization';
+import { ApiManager } from './sections/ApiManager';
 
 // FiboGrid Logo Component
 const FiboLogo = ({ className = "h-8 w-8" }: { className?: string }) => (
@@ -113,6 +114,8 @@ export default function Docs() {
                 <Advanced activeSection={activeSection} />
 
                 <Styling activeSection={activeSection} />
+
+                {activeSection === 'api-manager' && <ApiManager />}
 
               </div>
             </ScrollArea>

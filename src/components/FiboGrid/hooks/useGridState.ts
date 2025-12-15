@@ -44,6 +44,14 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
     serverSideDataSource,
   } = props;
 
+  const [internalRowData, setInternalRowData] = useState<T[]>(rowData || []);
+
+  const prevRowDataRef = useRef(rowData);
+  if (rowData !== prevRowDataRef.current) {
+    prevRowDataRef.current = rowData;
+    setInternalRowData(rowData || []);
+  }
+
   const [sortModel, setSortModel] = useState<SortModel[]>([]);
   const [filterModel, setFilterModel] = useState<FilterModel[]>([]);
   const [selection, setSelection] = useState<SelectionState>({
@@ -61,7 +69,7 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
   const [editingCell, setEditingCell] = useState<EditingCell | null>(null);
   const [overrides, setOverrides] = useState<Record<string, Record<string, any>>>({});
   const [columnOrder, setColumnOrder] = useState<string[]>(() =>
-    columnDefs.map((c) => c.field)
+    (columnDefs || []).map((c) => c.field)
   );
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>({});
   const [hiddenColumns, setHiddenColumns] = useState<Set<string>>(new Set());
@@ -76,6 +84,7 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
 
   const rowsRef = useRef<RowNode<T>[]>([]);
   const displayedRowsRef = useRef<RowNode<T>[]>([]);
+  const historyRef = useRef<T[][]>([]);
 
   const { processedColumns, hasCustomRowNumber, hasCustomCheckbox } = useMemo(() => {
     let hasRowNumber = false;
@@ -172,7 +181,7 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
   );
 
   const rows = useMemo(() => {
-    const sourceData = paginationMode === 'server' ? serverSideState.data : rowData;
+    const sourceData = paginationMode === 'server' ? serverSideState.data : internalRowData;
     const len = sourceData.length;
     const result: RowNode<T>[] = new Array(len);
     for (let i = 0; i < len; i++) {
@@ -181,7 +190,6 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
 
       let data = raw;
       if (overrides[rowId]) {
-        // Apply overrides, handling nested paths correctly
         Object.entries(overrides[rowId]).forEach(([field, value]) => {
           data = setValueAtPath(data, field, value);
         });
@@ -197,14 +205,13 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
       };
     }
     return result;
-  }, [rowData, serverSideState.data, paginationMode, getRowId, overrides]);
+  }, [internalRowData, serverSideState.data, paginationMode, getRowId, overrides]);
 
   rowsRef.current = rows;
 
   const filteredRows = useMemo(() => {
 
     if (paginationMode === 'server') {
-      // Even in server mode, apply client-side filters if they exist (useInternalFilter: true)
       if (clientFilterModel.length > 0) {
         return filterRows(rows, clientFilterModel, columns, '');
       }
@@ -622,7 +629,6 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
             return;
           }
 
-          // Apply Batch Updates
           if (filterUpdates.length > 0) {
             setFilterModel(prev => {
               let current = prev;
@@ -672,11 +678,162 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
               });
             }
           }
+        },
+      };
+      return builder;
+    },
+
+    undo: () => {
+      setInternalRowData((current) => {
+        if (historyRef.current.length === 0) return current;
+        const previous = historyRef.current.pop();
+        return previous || current;
+      });
+    },
+
+    pasteFromClipboard: async () => {
+      try {
+        const text = await navigator.clipboard.readText();
+        if (!text) return;
+
+        const rows = text.split(/\r\n|\n|\r/).filter(row => row.trim() !== '');
+        if (rows.length === 0) return;
+
+        const separator = text.includes('\t') ? '\t' : ',';
+        const newRows: T[] = [];
+        
+        // Basic CSV/TSV parsing assuming the order matches visible columns
+        // Ideally we would map headers, but for simple paste we often assume data order matches column order
+        // OR we just paste into current focused cell downwards?
+        // User request is general "Ctrl+V". A robust implementation pastes new rows.
+
+        const visibleCols = columnDefs.filter(c => !c.hide).map(c => c.field);
+
+        rows.forEach(rowStr => {
+           const values = rowStr.split(separator);
+           const newRow: any = {};
+           // Basic mapping: visible columns order
+           visibleCols.forEach((colField, i) => {
+              if (i < values.length) {
+                 setValueAtPath(newRow, colField, values[i]);
+              }
+           });
+           // Assign a temp ID if needed
+           if (getRowId) {
+             // If we can't generate ID, this might be tricky.
+             // We'll trust the user has a way or we auto-generate if possible, or just fail safely.
+             // For now, let's assume we can generate a random ID if not provided?
+             // Or rely on the data having ID?
+             // Actually, usually paste adds new data.
+             if (!newRow.id) newRow.id = `pasted-${Date.now()}-${Math.random()}`;
+           } else {
+             if (!newRow.id) newRow.id = `pasted-${Date.now()}-${Math.random()}`;
+           }
+
+            newRows.push(newRow as T);
+        });
+        
+        if (newRows.length > 0) {
+            // Save history before adding
+             setInternalRowData(prev => {
+                historyRef.current.push([...prev]);
+                return [...prev, ...newRows];
+             });
+        }
+      } catch (err) {
+        console.error('Failed to paste from clipboard:', err);
+      }
+    },
+
+    manager: () => {
+      let pendingAdds: T[] = [];
+      let pendingRemoves: Set<string> = new Set();
+      let pendingUpdates: Map<string, T> = new Map();
+      let pendingCellUpdates: Map<string, Record<string, any>> = new Map();
+
+      const builder: any = {
+        add: (rows: T[]) => {
+          if (!rows || !Array.isArray(rows) || rows.length === 0) {
+            console.warn('Grid Manager: add() requires a non-empty array of rows.');
+            return builder;
+          }
+          pendingAdds.push(...rows);
+          return builder;
+        },
+        remove: (rowIds: string[]) => {
+          if (!rowIds || !Array.isArray(rowIds) || rowIds.length === 0) {
+             console.warn('Grid Manager: remove() requires a non-empty array of rowIds.');
+             return builder;
+          }
+          rowIds.forEach(id => pendingRemoves.add(id));
+          return builder;
+        },
+        update: (rows: T[]) => {
+          if (!rows || !Array.isArray(rows) || rows.length === 0) {
+            console.warn('Grid Manager: update() requires a non-empty array of rows.');
+            return builder;
+          }
+          rows.forEach(row => {
+            const id = getRowId ? getRowId(row) : (row as any).id;
+            if (id) pendingUpdates.set(id, row);
+            else console.warn('Grid Manager: update() failed for row without ID:', row);
+          });
+          return builder;
+        },
+        updateCell: (rowId: string, field: string, value: any) => {
+          if (!rowId || !field) {
+            console.warn('Grid Manager: updateCell() requires rowId and field.');
+            return builder;
+          }
+          const current = pendingCellUpdates.get(rowId) || {};
+          current[field] = value;
+          pendingCellUpdates.set(rowId, current);
+          return builder;
+        },
+        execute: () => {
+          setInternalRowData(prev => {
+            // Save history before modifying
+            historyRef.current.push([...prev]);
+
+            let next = [...prev];
+            if (pendingRemoves.size > 0) {
+              next = next.filter(row => {
+                const id = getRowId ? getRowId(row) : (row as any).id;
+                return !pendingRemoves.has(id);
+              });
+            }
+
+            if (pendingUpdates.size > 0 || pendingCellUpdates.size > 0) {
+              next = next.map(row => {
+               const id = getRowId ? getRowId(row) : (row as any).id;
+               let newRow = row;
+               
+               if (pendingUpdates.has(id)) {
+                 newRow = { ...newRow, ...pendingUpdates.get(id) };
+               }
+               
+                if (pendingCellUpdates.has(id)) {
+                  const updates = pendingCellUpdates.get(id);
+                  Object.entries(updates!).forEach(([field, value]) => {
+                    newRow = setValueAtPath(newRow, field, value);
+                  });
+                }
+                
+                return newRow;
+              });
+            }
+
+            if (pendingAdds.length > 0) {
+              next = [...next, ...pendingAdds];
+            }
+
+            return next;
+          });
         }
       };
       return builder;
     },
-  }), [rowData, columnDefs, columns, sortModel, filterModel, selection, selectAll, deselectAll, selectRow, paginationPageSize, setSelection]);
+  }), [internalRowData, columnDefs, columns, sortModel, filterModel, selection, selectAll, deselectAll, selectRow, paginationPageSize, setSelection]);
 
   const setColumnPinned = useCallback((field: string, pinned: 'left' | 'right' | null) => {
     setPinnedColumns((prev) => ({ ...prev, [field]: pinned }));

@@ -27,7 +27,9 @@ export const sections = [
     { id: 'theming', title: 'Theming', icon: Palette },
     { id: 'linked-grids', title: 'Linked Grids', icon: Link2 },
     { id: 'performance', title: 'Performance', icon: Zap },
-    { id: 'api', title: 'Grid API', icon: Terminal },
+    { id: 'linked-grids', title: 'Linked Grids', icon: Link2 },
+    { id: 'performance', title: 'Performance', icon: Zap },
+    { id: 'api-manager', title: 'Manager API', icon: Terminal },
 ];
 
 interface DocsSidebarProps {

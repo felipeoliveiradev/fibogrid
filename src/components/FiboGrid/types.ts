@@ -100,6 +100,26 @@ export interface RowNode<T = any> {
   highlighted?: boolean;
 }
 
+export interface KeyboardEventParams<T = any> {
+  event: React.KeyboardEvent | KeyboardEvent;
+  api: GridApi<T>;
+  focusRow: (index: number) => void;
+  focusCell: (rowIndex: number, colIndex: number) => void;
+  currentState: {
+    rowIndex: number;
+    colIndex: number;
+    focusedCell: { rowId: string; field: string } | null;
+  };
+}
+
+export interface ShortcutDef<T = any> {
+  id: string;
+  keys: string | string[]; // 'ArrowUp', 'Ctrl+c', 'Meta+c'
+  action: (params: KeyboardEventParams<T>) => void;
+  description?: string;
+  preventDefault?: boolean;
+}
+
 export interface SortModel {
   field: string;
   direction: SortDirection;
@@ -223,9 +243,12 @@ export interface GridApi<T = any> {
 
   exportToCsv: (params?: ExportParams) => void;
   copyToClipboard: (includeHeaders?: boolean) => Promise<void>;
+  undo: () => void;
+  pasteFromClipboard: () => Promise<void>;
 
 
   params: () => GridApiBuilder<T>;
+  manager: () => GridManagerBuilder<T>;
   refreshCells: () => void;
   redrawRows: () => void;
   refresh: () => void;
@@ -252,6 +275,14 @@ export interface GridApiBuilder<T = any> {
   deselectAll: () => GridApiBuilder<T>;
   updateRowData: (updates: { add?: T[]; update?: T[]; remove?: T[] }) => GridApiBuilder<T>;
   resetState: () => GridApiBuilder<T>;
+  execute: () => void;
+}
+
+export interface GridManagerBuilder<T = any> {
+  add: (rows: T[]) => GridManagerBuilder<T>;
+  remove: (rowIds: string[]) => GridManagerBuilder<T>;
+  update: (rows: T[]) => GridManagerBuilder<T>;
+  updateCell: (rowId: string, field: string, value: any) => GridManagerBuilder<T>;
   execute: () => void;
 }
 
@@ -482,6 +513,12 @@ export interface FiboGridProps<T = any> extends GridEvents<T> {
    * Defaults to en-US
    */
   lang?: import('./locales/types').FiboGridLocale;
+  /**
+   * Keyboard shortcuts customization.
+   * - boolean: Enable/disable all defaults
+   * - ShortcutDef[]: Whitelist specific shortcuts
+   */
+  shortcuts?: boolean | ShortcutDef<T>[];
 }
 
 
