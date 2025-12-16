@@ -210,11 +210,12 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
   const bodyHeight = effectiveContainerHeight - headerHeight - toolbarHeight - statusBarHeight - paginationHeight;
 
   const totalContentWidth = useMemo(() => {
-    const checkboxWidth = rowSelection ? 48 : 0;
+    const showCheckbox = !hasCustomCheckbox && configs?.center?.checkboxSelection !== false && !!rowSelection;
+    const checkboxWidth = showCheckbox ? 48 : 0;
     const rowNumberWidth = effectiveShowRowNumbers ? 50 : 0;
-    const columnsWidth = columns.reduce((sum, col) => sum + col.computedWidth, 0);
+    const columnsWidth = columns.filter(c => !c.hide).reduce((sum, col) => sum + col.computedWidth, 0);
     return checkboxWidth + rowNumberWidth + columnsWidth;
-  }, [columns, rowSelection, effectiveShowRowNumbers]);
+  }, [columns, rowSelection, effectiveShowRowNumbers, hasCustomCheckbox, configs?.center?.checkboxSelection]);
 
   const virtualizationHeight = Math.max(bodyHeight, 400);
 

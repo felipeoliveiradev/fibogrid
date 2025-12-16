@@ -281,7 +281,7 @@ export default function Demo() {
     }, [gridApi]);
 
     const onRowClickStock = useCallback((event: RowClickedEvent<StockRow> & { clickType?: string | number }) => {
-        console.log('Row Clicked:', event);
+        console.log('Row Clicked:', event, event.api.getSelectedNodes());
         if (event.clickType === 'triple' || event.clickType === 3) {
             toast({ title: 'Triple Click!', description: `You triple-clicked on ${event.rowNode.data.ticker}` });
         } else {

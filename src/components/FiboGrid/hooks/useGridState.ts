@@ -321,58 +321,67 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
     totalPages: paginationInfo.totalPages,
   };
 
+  const selectionRef = useRef(selection);
+  selectionRef.current = selection;
+
   const selectRow = useCallback(
     (rowId: string, selected: boolean, shift = false, ctrl = false) => {
       if (!rowSelection) return;
 
-      setSelection((prev) => {
-        const newSelected = new Set(prev.selectedRows);
-        const rowIndex = displayedRowsRef.current.findIndex((r) => r.id === rowId);
+      const prev = selectionRef.current;
+      const newSelected = new Set(prev.selectedRows);
+      const rowIndex = displayedRowsRef.current.findIndex((r) => r.id === rowId);
 
-        if (rowSelection === 'single') {
-          newSelected.clear();
-          if (selected) newSelected.add(rowId);
-        } else {
-          if (shift && prev.anchorIndex !== null) {
-            const start = Math.min(prev.anchorIndex, rowIndex);
-            const end = Math.max(prev.anchorIndex, rowIndex);
-            for (let i = start; i <= end; i++) {
-              if (displayedRowsRef.current[i]) {
-                newSelected.add(displayedRowsRef.current[i].id);
-              }
-            }
-          } else {
-            if (newSelected.has(rowId)) {
-              newSelected.delete(rowId);
-            } else {
-              newSelected.add(rowId);
+      if (rowSelection === 'single') {
+        newSelected.clear();
+        if (selected) newSelected.add(rowId);
+      } else {
+        if (shift && prev.anchorIndex !== null) {
+          const start = Math.min(prev.anchorIndex, rowIndex);
+          const end = Math.max(prev.anchorIndex, rowIndex);
+          for (let i = start; i <= end; i++) {
+            if (displayedRowsRef.current[i]) {
+              newSelected.add(displayedRowsRef.current[i].id);
             }
           }
+        } else {
+          if (newSelected.has(rowId)) {
+            newSelected.delete(rowId);
+          } else {
+            newSelected.add(rowId);
+          }
         }
+      }
 
-        return {
-          selectedRows: newSelected,
-          lastSelectedIndex: rowIndex,
-          anchorIndex: shift ? prev.anchorIndex : rowIndex,
-        };
-      });
+      const nextSelection = {
+        selectedRows: newSelected,
+        lastSelectedIndex: rowIndex,
+        anchorIndex: shift ? prev.anchorIndex : rowIndex,
+      };
+
+      selectionRef.current = nextSelection;
+      setSelection(nextSelection);
     },
     [rowSelection]
   );
 
   const selectAll = useCallback(() => {
     if (rowSelection !== 'multiple') return;
-    setSelection((prev) => ({
-      ...prev,
+    const nextSelection = {
+      ...selectionRef.current,
       selectedRows: new Set(displayedRowsRef.current.map((r) => r.id)),
-    }));
+    };
+    selectionRef.current = nextSelection;
+    setSelection(nextSelection);
   }, [rowSelection]);
 
   const deselectAll = useCallback(() => {
-    setSelection((prev) => ({
-      ...prev,
-      selectedRows: new Set(),
-    }));
+    const nextSelection = {
+      ...selectionRef.current,
+      selectedRows: new Set<string>(),
+    };
+    selectionRef.current = nextSelection;
+    setSelection(nextSelection);
   }, []);
 
   const api = useMemo((): GridApi<T> => ({
@@ -385,20 +394,21 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
     getDisplayedRowAtIndex: (index) => displayedRowsRef.current[index] || null,
     getDisplayedRows: () => displayedRowsRef.current,
 
-    getSelectedRows: () => displayedRowsRef.current.filter((r) => selection.selectedRows.has(r.id)),
-    getSelectedNodes: () => displayedRowsRef.current.filter((r) => selection.selectedRows.has(r.id)),
+    getSelectedRows: () => displayedRowsRef.current.filter((r) => selectionRef.current.selectedRows.has(r.id)),
+    getSelectedNodes: () => displayedRowsRef.current.filter((r) => selectionRef.current.selectedRows.has(r.id)),
     selectAll,
     deselectAll,
     selectRow: (id, selected = true) => selectRow(id, selected),
     selectRows: (rowIds, selected = true) => {
-      setSelection((prev) => {
-        const newSelected = new Set(prev.selectedRows);
-        rowIds.forEach((id) => {
-          if (selected) newSelected.add(id);
-          else newSelected.delete(id);
-        });
-        return { ...prev, selectedRows: newSelected };
+      const prev = selectionRef.current;
+      const newSelected = new Set(prev.selectedRows);
+      rowIds.forEach((id) => {
+        if (selected) newSelected.add(id);
+        else newSelected.delete(id);
       });
+      const nextSelection = { ...prev, selectedRows: newSelected };
+      selectionRef.current = nextSelection;
+      setSelection(nextSelection);
     },
 
     getColumnDefs: () => columnDefs,
