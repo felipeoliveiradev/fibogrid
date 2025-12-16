@@ -27,6 +27,8 @@ export default function Demo() {
     const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
     const [useServerSide, setUseServerSide] = useState(false);
     const [localeKey, setLocaleKey] = useState<'en' | 'pt'>('en');
+    const [lastRowClickTime, setLastRowClickTime] = useState(0);
+    const GRID_ID = 'demo-stocks-grid';
 
 
     const currentLocale = enUS;
@@ -282,6 +284,7 @@ export default function Demo() {
 
     const onRowClickStock = useCallback((event: RowClickedEvent<StockRow> & { clickType?: string | number }) => {
         console.log('Row Clicked:', event, event.api.getSelectedNodes());
+        setLastRowClickTime(Date.now()); // Update trigger
         if (event.clickType === 'triple' || event.clickType === 3) {
             toast({ title: 'Triple Click!', description: `You triple-clicked on ${event.rowNode.data.ticker}` });
         } else {
@@ -369,8 +372,11 @@ export default function Demo() {
                             onResetEdits={handleResetEdits}
                             onResetCellTest={handleResetCellTest}
                             onResetRowTest={handleResetRowTest}
+                            gridId={GRID_ID}
+                            lastUpdate={lastRowClickTime}
                         />
                         <DemoGrid
+                            gridId={GRID_ID}
                             useServerSide={useServerSide}
                             visibleRowData={visibleRowData}
                             columns={columns}

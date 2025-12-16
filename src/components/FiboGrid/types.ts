@@ -269,6 +269,7 @@ export interface GridApiBuilder<T = any> {
   removeAllSort: () => GridApiBuilder<T>;
   setPage: (page: number) => GridApiBuilder<T>;
   setPageSize: (size: number) => GridApiBuilder<T>;
+  setPagination: (state: Partial<PaginationState>) => GridApiBuilder<T>;
   selectRow: (id: string, selected?: boolean) => GridApiBuilder<T>;
   selectRows: (ids: string[], selected?: boolean) => GridApiBuilder<T>;
   selectAll: () => GridApiBuilder<T>;
@@ -276,6 +277,9 @@ export interface GridApiBuilder<T = any> {
   updateRowData: (updates: { add?: T[]; update?: T[]; remove?: T[] }) => GridApiBuilder<T>;
   resetState: () => GridApiBuilder<T>;
   resetEdits: () => GridApiBuilder<T>;
+  resetCell: (rowId: string, field: string) => GridApiBuilder<T>;
+  resetRow: (rowId: string) => GridApiBuilder<T>;
+  gridManager: (callback: (manager: GridManagerBuilder<T>) => GridManagerBuilder<T>) => GridApiBuilder<T>;
   execute: () => void;
 }
 

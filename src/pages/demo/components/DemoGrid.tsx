@@ -17,6 +17,7 @@ interface DemoGridProps {
     onRowClickStock: (event: RowClickedEvent<StockRow>) => void;
     lang?: FiboGridLocale;
     configs?: FiboGridConfigs;
+    gridId?: string;
 }
 
 export function DemoGrid(props: DemoGridProps) {
@@ -45,6 +46,7 @@ export function DemoGrid(props: DemoGridProps) {
                 </div>
             )}
             <FiboGrid
+                gridId={props.gridId}
                 rowData={props.useServerSide ? [] : props.visibleRowData}
                 columnDefs={columnDefs}
                 getRowId={props.getRowId}

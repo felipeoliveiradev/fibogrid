@@ -382,10 +382,26 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
     };
     selectionRef.current = nextSelection;
     setSelection(nextSelection);
-  }, []);
+  }, [setSelection]);
+
+  // Synchronize refs for stable API access
+  const sortModelRef = useRef(sortModel);
+  sortModelRef.current = sortModel;
+
+  const filterModelRef = useRef(filterModel);
+  filterModelRef.current = filterModel;
+
+  const paginationStateRef = useRef(paginationState);
+  paginationStateRef.current = paginationState;
+
+  const quickFilterRef = useRef(internalQuickFilter);
+  quickFilterRef.current = internalQuickFilter;
+
+  const overridesRef = useRef(overrides);
+  overridesRef.current = overrides;
 
   const api = useMemo((): GridApi<T> => ({
-    getRowData: () => rowData,
+    getRowData: () => internalRowData, // State access is fine if we accept API update on data change, or use prevRowDataRef
     setRowData: () => { },
     updateRowData: () => { },
     getRowNode: (id) => rowsRef.current.find((r) => r.id === id) || null,
@@ -464,26 +480,25 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
     },
 
     setSortModel: (model) => setSortModel(model),
-    getSortModel: () => sortModel,
+    getSortModel: () => sortModelRef.current,
     setFilterModel: (model, options) => {
       if (options?.behavior === 'merge') {
-        setFilterModel(prev => {
-          const newModel = [...prev];
-          model.forEach(newFilter => {
-            const existingIndex = newModel.findIndex(f => f.field === newFilter.field);
-            if (existingIndex >= 0) {
-              newModel[existingIndex] = newFilter;
-            } else {
-              newModel.push(newFilter);
-            }
-          });
-          return newModel;
+        const currentModel = filterModelRef.current;
+        const newModel = [...currentModel];
+        model.forEach(newFilter => {
+          const existingIndex = newModel.findIndex(f => f.field === newFilter.field);
+          if (existingIndex >= 0) {
+            newModel[existingIndex] = newFilter;
+          } else {
+            newModel.push(newFilter);
+          }
         });
+        setFilterModel(newModel);
       } else {
         setFilterModel(model);
       }
     },
-    getFilterModel: () => filterModel,
+    getFilterModel: () => filterModelRef.current,
     setQuickFilter: (text) => setInternalQuickFilter(text),
 
     startEditingCell: (rowId, field) => {
@@ -512,7 +527,7 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
 
     exportToCsv: (params) => {
       const rowsToExport = params?.onlySelected
-        ? displayedRowsRef.current.filter((r) => selection.selectedRows.has(r.id))
+        ? displayedRowsRef.current.filter((r) => selectionRef.current.selectedRows.has(r.id))
         : displayedRowsRef.current;
       exportToCsv(rowsToExport, columns, {
         fileName: params?.fileName,
@@ -521,10 +536,10 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
     },
     copyToClipboard: async (includeHeaders = true) => {
       const selectedRows = displayedRowsRef.current.filter((r) =>
-        selection.selectedRows.has(r.id)
+        selectionRef.current.selectedRows.has(r.id)
       );
       const rowsToCopy = selectedRows.length > 0 ? selectedRows : displayedRowsRef.current;
-      await copyToClipboard(rowsToCopy, columns, includeHeaders);
+      await copyToClipboard(rowsToCopy, columns, includeHeaders); // columns depends on columns state
     },
 
     refreshCells: () => { },
@@ -551,6 +566,13 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
       let pendingSelection: { ids: string[]; selected: boolean; mode: 'single' | 'multiple' | 'all' | 'none' } | null = null;
       let pendingReset = false;
       let pendingResetEdits = false;
+      let pendingResetCells: { rowId: string, field: string }[] = [];
+      let pendingResetRows: string[] = [];
+      let pendingUpAdds: any[] = [];
+      let pendingReplaceAll: any[] = [];
+      const pendingUpdates = new Map<string, any>();
+      const pendingRemoves = new Set<string>();
+      let pendingAdds: any[] = [];
 
       const builder: GridApiBuilder<T> = {
         setFilterModel: (model, options) => {
@@ -599,6 +621,11 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
           sortUpdates.push(() => []);
           return builder;
         },
+        setPagination: (state) => {
+          if (state.currentPage !== undefined) pendingPage = state.currentPage;
+          if (state.pageSize !== undefined) pendingPageSize = state.pageSize;
+          return builder;
+        },
         setPage: (page) => {
           pendingPage = page;
           return builder;
@@ -607,12 +634,12 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
           pendingPageSize = size;
           return builder;
         },
-        selectRow: (id, selected = true) => {
-          pendingSelection = { ids: [id], selected, mode: 'single' };
-          return builder;
-        },
         selectRows: (ids, selected = true) => {
           pendingSelection = { ids, selected, mode: 'multiple' };
+          return builder;
+        },
+        selectRow: (id, selected = true) => {
+          pendingSelection = { ids: [id], selected, mode: 'single' };
           return builder;
         },
         selectAll: () => {
@@ -635,15 +662,79 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
           pendingResetEdits = true;
           return builder;
         },
+        resetCell: (rowId, field) => {
+          pendingResetCells.push({ rowId, field });
+          return builder;
+        },
+        resetRow: (rowId) => {
+          pendingResetRows.push(rowId);
+          return builder;
+        },
+        gridManager: (callback) => {
+          const managerBuilder: GridManagerBuilder<T> = {
+            add: (rows) => {
+              pendingAdds.push(...rows);
+              return managerBuilder;
+            },
+            remove: (rowIds) => {
+              rowIds.forEach(id => pendingRemoves.add(String(id)));
+              return managerBuilder;
+            },
+            update: (rows) => {
+              rows.forEach(row => {
+                const id = getRowId ? getRowId(row) : (row as any).id;
+                if (id !== undefined && id !== null) {
+                  pendingUpdates.set(String(id), row);
+                }
+              });
+              return managerBuilder;
+            },
+            upAdd: (rows) => {
+              pendingUpAdds.push(...rows);
+              return managerBuilder;
+            },
+            replaceAll: (rows) => {
+              pendingReplaceAll = rows;
+              return managerBuilder;
+            },
+            updateCell: (rowId, field, value) => {
+              // For now, rudimentary support by assuming row exists in data
+              const existing = pendingUpdates.get(rowId) || {};
+              pendingUpdates.set(rowId, { ...existing, [field]: value });
+              return managerBuilder;
+            },
+            resetCell: (rowId, field) => {
+              pendingResetCells.push({ rowId, field });
+              return managerBuilder;
+            },
+            resetRow: (rowId) => {
+              pendingResetRows.push(rowId);
+              return managerBuilder;
+            },
+            reset: () => {
+              pendingReset = true;
+              return managerBuilder;
+            },
+            resetEdits: () => {
+              pendingResetEdits = true;
+              return managerBuilder;
+            },
+            execute: () => {
+              builder.execute();
+            }
+          };
+          callback(managerBuilder);
+          return builder;
+        },
+
         execute: () => {
           if (pendingReset) {
             setFilterModel([]);
-            setInternalQuickFilter('');
             setSortModel([]);
-            setPaginationState(prev => ({ ...prev, currentPage: 0, pageSize: paginationPageSize }));
-            setSelection({ selectedRows: new Set(), lastSelectedIndex: null, anchorIndex: null });
-            setSelection({ selectedRows: new Set(), lastSelectedIndex: null, anchorIndex: null });
-            setOverrides({});
+            setInternalQuickFilter('');
+            setPaginationState(prev => ({ ...prev, currentPage: 0, pageSize: paginationStateRef.current.pageSize })); // Use ref for pageSize
+            setSelection(prev => ({ ...prev, selectedRows: new Set(), lastSelectedIndex: null, anchorIndex: null }));
+            setOverrides({}); // Reset edits too
             return;
           }
 
@@ -651,13 +742,38 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
             setOverrides({});
           }
 
+          if (pendingResetCells.length > 0) {
+            setOverrides(prev => {
+              const next = { ...prev };
+              pendingResetCells.forEach(({ rowId, field }) => {
+                if (next[rowId]) {
+                  delete next[rowId][field];
+                  if (Object.keys(next[rowId]).length === 0) {
+                    delete next[rowId];
+                  }
+                }
+              });
+              return next;
+            });
+          }
+
+          if (pendingResetRows.length > 0) {
+            setOverrides(prev => {
+              const next = { ...prev };
+              pendingResetRows.forEach(rowId => {
+                delete next[rowId];
+              });
+              return next;
+            });
+          }
+
           if (filterUpdates.length > 0) {
             setFilterModel(prev => {
-              let current = prev;
-              for (const update of filterUpdates) {
-                current = update(current);
-              }
-              return current;
+              let next = prev;
+              filterUpdates.forEach(update => {
+                next = update(next);
+              });
+              return next;
             });
           }
 
@@ -667,40 +783,110 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
 
           if (sortUpdates.length > 0) {
             setSortModel(prev => {
-              let current = prev;
-              for (const update of sortUpdates) {
-                current = update(current);
-              }
-              return current;
+              let next = prev;
+              sortUpdates.forEach(update => {
+                next = update(next);
+              });
+              return next;
             });
           }
 
-          if (pendingPageSize !== null) {
-            setPaginationState(prev => ({ ...prev, pageSize: pendingPageSize!, currentPage: 0 }));
-          } else if (pendingPage !== null) {
+          if (pendingPage !== null || pendingPageSize !== null) {
             setPaginationState(prev => ({
               ...prev,
-              currentPage: Math.max(0, Math.min(pendingPage!, prev.totalPages - 1))
+              currentPage: pendingPage ?? prev.currentPage,
+              pageSize: pendingPageSize ?? prev.pageSize
             }));
           }
 
           if (pendingSelection) {
-            const { ids, selected, mode } = pendingSelection;
-            if (mode === 'all') selectAll();
-            else if (mode === 'none') deselectAll();
-            else if (mode === 'single') selectRow(ids[0], selected);
-            else if (mode === 'multiple') {
-              setSelection((prev) => {
+            const { mode, ids, selected } = pendingSelection;
+            if (mode === 'all') {
+              selectAll();
+            } else if (mode === 'none') {
+              deselectAll();
+            } else {
+              if (mode === 'single') {
+                // Force single selection logic manually if needed or just use selectRow
+                // But selectRow expects ID. pendingSelection provided [id].
+                selectRow(ids[0], selected);
+              } else {
+                // selectRows implementation
+                // api.selectRows(ids, selected); // Can't access API here easily without recursion?
+                // Use SetSelection direct
+                const prev = selectionRef.current;
                 const newSelected = new Set(prev.selectedRows);
                 ids.forEach((id) => {
                   if (selected) newSelected.add(id);
                   else newSelected.delete(id);
                 });
-                return { ...prev, selectedRows: newSelected };
-              });
+                const nextSelection = { ...prev, selectedRows: newSelected };
+                selectionRef.current = nextSelection;
+                setSelection(nextSelection);
+              }
             }
           }
-        },
+
+          // Manager updates
+          if (pendingReplaceAll.length > 0) {
+            setInternalRowData(pendingReplaceAll);
+            // Clear pending updates/adds/removes as replaceAll overrides them?
+            // Or apply them after? Usually replaceAll is exclusive.
+            setOverrides({}); // Reset edits on replace all? Usually yes.
+            return;
+          }
+
+          setInternalRowData(prev => {
+            if (pendingUpdates.size === 0 && pendingRemoves.size === 0 && pendingAdds.length === 0 && pendingUpAdds.length === 0) {
+              return prev;
+            }
+
+            let next = [...prev];
+
+            if (pendingUpAdds.length > 0) {
+              pendingUpAdds.forEach(upRow => {
+                const id = getRowId ? getRowId(upRow) : (upRow as any).id;
+                if (id !== undefined && id !== null) {
+                  const exists = next.some(r => {
+                    const rId = getRowId ? getRowId(r) : (r as any).id;
+                    return String(rId) === String(id);
+                  });
+                  if (exists) {
+                    pendingUpdates.set(String(id), upRow);
+                  } else {
+                    pendingAdds.push(upRow);
+                  }
+                } else {
+                  pendingAdds.push(upRow);
+                }
+              });
+            }
+
+            if (pendingUpdates.size > 0) {
+              next = next.map(row => {
+                const id = getRowId ? getRowId(row) : (row as any).id;
+                const sId = String(id);
+                if (pendingUpdates.has(sId)) {
+                  return { ...row, ...pendingUpdates.get(sId) };
+                }
+                return row;
+              });
+            }
+
+            if (pendingRemoves.size > 0) {
+              next = next.filter(row => {
+                const id = getRowId ? getRowId(row) : (row as any).id;
+                return !pendingRemoves.has(String(id));
+              });
+            }
+
+            if (pendingAdds.length > 0) {
+              next = [...next, ...pendingAdds];
+            }
+
+            return next;
+          });
+        }
       };
       return builder;
     },

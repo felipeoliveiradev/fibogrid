@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Layers, Settings } from 'lucide-react';
+import { SelectedRowInfo } from './SelectedRowInfo';
+
 
 interface DemoSettingsProps {
     rowCount: number;
@@ -34,6 +36,8 @@ interface DemoSettingsProps {
     onResetRowTest?: () => void;
     onUpdateTest?: () => void;
     onUpAddUpdateTest?: () => void;
+    gridId?: string;
+    lastUpdate?: number;
 }
 
 export function DemoSettings(props: DemoSettingsProps) {
@@ -51,6 +55,10 @@ export function DemoSettings(props: DemoSettingsProps) {
 
     return (
         <div className="space-y-4">
+            {props.gridId && props.lastUpdate && (
+                <SelectedRowInfo gridId={props.gridId} lastUpdate={props.lastUpdate} />
+            )}
+
             <Card className="paper-aged border-primary/10">
                 <CardHeader className="pb-3">
                     <CardTitle className="text-sm flex items-center gap-2 font-display">
