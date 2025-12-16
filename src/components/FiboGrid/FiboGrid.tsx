@@ -122,6 +122,8 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     return () => observer.disconnect();
   }, []);
 
+  const { registerGrid: registerGlobal, unregisterGrid: unregisterGlobal, notify: notifyGlobal } = useGridRegistry();
+
   const {
     displayedRows,
     allRows,
@@ -147,7 +149,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     hasCustomCheckbox,
     quickFilter,
     setQuickFilter,
-  } = useGridState(props, containerWidth);
+  } = useGridState(props, containerWidth, notifyGlobal);
 
   const isLoading = loading || serverSideLoading;
 
@@ -183,7 +185,6 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
   }, [groupByFields, splitByField, groupedDisplayRows, displayedRows]);
 
   const gridContext = useGridContext<T>();
-  const { registerGrid: registerGlobal, unregisterGrid: unregisterGlobal } = useGridRegistry();
 
   useEffect(() => {
     if (gridContext && gridId) {

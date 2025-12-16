@@ -27,7 +27,7 @@ export default function Demo() {
     const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
     const [useServerSide, setUseServerSide] = useState(false);
     const [localeKey, setLocaleKey] = useState<'en' | 'pt'>('en');
-    const [lastRowClickTime, setLastRowClickTime] = useState(0);
+
     const GRID_ID = 'demo-stocks-grid';
 
 
@@ -282,13 +282,17 @@ export default function Demo() {
         }
     }, [gridApi]);
 
-    const onRowClickStock = useCallback((event: RowClickedEvent<StockRow> & { clickType?: string | number }) => {
-        console.log('Row Clicked:', event, event.api.getSelectedNodes());
-        setLastRowClickTime(Date.now()); // Update trigger
-        if (event.clickType === 'triple' || event.clickType === 3) {
+    const onRowClickStock = useCallback((event: RowClickedEvent<StockRow>) => {
+        // Selection is now handled automatically by the grid and hook
+        console.log('Row Clicked:', event.rowNode.data);
+        if ((event as any).clickType === 'triple' || (event as any).clickType === 3) {
             toast({ title: 'Triple Click!', description: `You triple-clicked on ${event.rowNode.data.ticker}` });
         } else {
-            toast({ title: 'Row Clicked', description: `Clicked on ${event.rowNode.data.ticker} (Type: ${event.clickType})` });
+            // Using a type assertion or checking if clickType exists on event (it might be in custom event)
+            const clickType = (event as any).clickType;
+            if (clickType) {
+                toast({ title: 'Row Clicked', description: `Clicked on ${event.rowNode.data.ticker} (Type: ${clickType})` });
+            }
         }
     }, []);
     const [configs, setConfigs] = useState<FiboGridConfigs>({
@@ -373,7 +377,6 @@ export default function Demo() {
                             onResetCellTest={handleResetCellTest}
                             onResetRowTest={handleResetRowTest}
                             gridId={GRID_ID}
-                            lastUpdate={lastRowClickTime}
                         />
                         <DemoGrid
                             gridId={GRID_ID}

@@ -1,35 +1,22 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useGridRegistry } from 'fibogrid';
+import { useGridSelection } from 'fibogrid';
 import { Info } from 'lucide-react';
-import { useEffect, useState } from 'react';
 
 interface SelectedRowInfoProps {
     gridId: string;
-    lastUpdate: number;
+    // lastUpdate is no longer needed!
+    lastUpdate?: number;
 }
 
 export function SelectedRowInfo({ gridId }: SelectedRowInfoProps) {
-    const { getGridApi } = useGridRegistry();
-
-    // We are relying on the parent to re-render this component when selection changes (via lastUpdate prop change)
-    // implicitly, even if we don't use the prop in the calculation, React will re-run this function.
-    // However, to be cleaner/safer given we are reading mutable external state (the grid API),
-    // we just read it directly.
-    const api = getGridApi(gridId);
-    let selectedData = null;
-
-    if (api) {
-        const rows = api.getSelectedRows();
-        if (rows && rows.length > 0) {
-            selectedData = rows[0].data;
-        }
-    }
+    const selectedRows = useGridSelection(gridId);
+    console.log(selectedRows);
+    const selectedData = selectedRows.length > 0 ? selectedRows[0] : null;
 
     if (!selectedData) {
         return null;
     }
 
-    // Filter out complex objects/arrays for simple display
     const displayEntries = Object.entries(selectedData).filter(([_, value]) => {
         return typeof value !== 'object' || value === null;
     });

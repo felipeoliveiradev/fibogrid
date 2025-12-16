@@ -37,7 +37,6 @@ interface DemoSettingsProps {
     onUpdateTest?: () => void;
     onUpAddUpdateTest?: () => void;
     gridId?: string;
-    lastUpdate?: number;
 }
 
 export function DemoSettings(props: DemoSettingsProps) {
@@ -52,11 +51,13 @@ export function DemoSettings(props: DemoSettingsProps) {
             />
         </div>
     );
-
+    console.log(props.gridId);
     return (
         <div className="space-y-4">
-            {props.gridId && props.lastUpdate && (
-                <SelectedRowInfo gridId={props.gridId} lastUpdate={props.lastUpdate} />
+            {props.gridId && (
+                <div className="mb-6">
+                    <SelectedRowInfo gridId={props.gridId} />
+                </div>
             )}
 
             <Card className="paper-aged border-primary/10">
