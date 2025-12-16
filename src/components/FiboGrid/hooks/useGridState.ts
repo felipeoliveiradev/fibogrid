@@ -31,6 +31,8 @@ import {
   CheckboxHeaderRenderer
 } from '../components/SpecialRenderers';
 
+const globalEventListeners = new Map<string, Map<string, Set<(event: any) => void>>>();
+
 export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number) {
   const {
     rowData,
@@ -321,26 +323,30 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
     totalPages: paginationInfo.totalPages,
   };
 
-  // Event Listener System
-  const eventListenersRef = useRef<Map<string, Set<(event: any) => void>>>(new Map());
+  const gridIdForEvents = props.gridId || 'default';
+
+  if (!globalEventListeners.has(gridIdForEvents)) {
+    globalEventListeners.set(gridIdForEvents, new Map());
+  }
+  const eventListenersMap = globalEventListeners.get(gridIdForEvents)!;
 
   const addEventListener = useCallback((eventType: string, listener: (event: any) => void) => {
-    if (!eventListenersRef.current.has(eventType)) {
-      eventListenersRef.current.set(eventType, new Set());
+    if (!eventListenersMap.has(eventType)) {
+      eventListenersMap.set(eventType, new Set());
     }
-    eventListenersRef.current.get(eventType)?.add(listener);
-  }, []);
+    eventListenersMap.get(eventType)?.add(listener);
+  }, [eventListenersMap]);
 
   const removeEventListener = useCallback((eventType: string, listener: (event: any) => void) => {
-    eventListenersRef.current.get(eventType)?.delete(listener);
-  }, []);
+    eventListenersMap.get(eventType)?.delete(listener);
+  }, [eventListenersMap]);
 
   const fireEvent = useCallback((eventType: string, eventData: any) => {
-    const listeners = eventListenersRef.current.get(eventType);
+    const listeners = eventListenersMap.get(eventType);
     if (listeners) {
       listeners.forEach(listener => listener(eventData));
     }
-  }, []);
+  }, [eventListenersMap]);
 
   const selectionRef = useRef(selection);
   selectionRef.current = selection;

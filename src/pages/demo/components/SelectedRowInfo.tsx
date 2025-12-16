@@ -1,27 +1,27 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useGridRegistry, useGridEvent } from '@/components/FiboGrid/context/GridRegistryContext';
 import { Info } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, memo, useCallback } from 'react';
 
 interface SelectedRowInfoProps {
     gridId: string;
 }
 
-export function SelectedRowInfo({ gridId }: SelectedRowInfoProps) {
+export const SelectedRowInfo = memo(function SelectedRowInfo({ gridId }: SelectedRowInfoProps) {
     const { getGridApi } = useGridRegistry();
     const [selectedData, setSelectedData] = useState<any | null>(null);
 
     // Helper to update state from API
-    const updateFromApi = (api: any) => {
+    const updateFromApi = useCallback((api: any) => {
         const rows = api.getSelectedRows();
         setSelectedData(rows && rows.length > 0 ? rows[0].data : null);
-    };
+    }, []);
 
     // Initial check on mount (in case grid is already ready and selected)
     useEffect(() => {
         const api = getGridApi(gridId);
         if (api) updateFromApi(api);
-    }, [gridId, getGridApi]);
+    }, [gridId, getGridApi, updateFromApi]);
 
     // Subscribe to selection changes
     useGridEvent(gridId, 'selectionChanged', ({ api }) => {
@@ -65,4 +65,4 @@ export function SelectedRowInfo({ gridId }: SelectedRowInfoProps) {
             </CardContent>
         </Card>
     );
-}
+});

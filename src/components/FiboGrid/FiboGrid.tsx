@@ -185,19 +185,22 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
   const gridContext = useGridContext<T>();
   const { registerGrid: registerGlobal, unregisterGrid: unregisterGlobal } = useGridRegistry();
 
+  const apiRef = useRef(api);
+  apiRef.current = api;
+
   useEffect(() => {
     if (gridContext && gridId) {
-      gridContext.registerGrid(gridId, api);
+      gridContext.registerGrid(gridId, apiRef.current);
       return () => gridContext.unregisterGrid(gridId);
     }
-  }, [gridContext, gridId, api]);
+  }, [gridContext, gridId]);
 
   useEffect(() => {
     if (gridId && registerGlobal && unregisterGlobal) {
-      registerGlobal(gridId, api);
+      registerGlobal(gridId, apiRef.current);
       return () => unregisterGlobal(gridId);
     }
-  }, [gridId, api, registerGlobal, unregisterGlobal]);
+  }, [gridId, registerGlobal, unregisterGlobal]);
 
   useEffect(() => {
     onGridReady?.({ api });

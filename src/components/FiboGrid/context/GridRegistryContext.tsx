@@ -1,59 +1,104 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode, useRef } from 'react';
+import React, { createContext, useContext, useCallback, ReactNode, useRef, useLayoutEffect } from 'react';
 import { GridApi } from '../types';
 
 interface GridRegistryContextValue<T = any> {
     registerGrid: (id: string, api: GridApi<T>) => void;
     unregisterGrid: (id: string) => void;
     getGridApi: (id: string) => GridApi<T> | undefined;
-    subscribeToGrid: (id: string, callback: (api: GridApi<T>) => void) => () => void;
+    subscribeToGridEvent: (gridId: string, eventName: string, callback: (event: any) => void) => () => void;
 }
 
-const GridRegistryContext = createContext<GridRegistryContextValue | null>(null);
+const GridRegistryContext = createContext<GridRegistryContextValue<any> | null>(null);
 
 export function GridRegistryProvider({ children }: { children: ReactNode }) {
     const gridsRef = useRef<Map<string, GridApi<any>>>(new Map());
-    const listenersRef = useRef<Map<string, Set<(api: GridApi<any>) => void>>>(new Map());
-    const eventListenersRef = useRef<Map<string, Set<() => void>>>(new Map());
+    const eventSubscriptionsRef = useRef<Map<string, Map<string, Set<(event: any) => void>>>>(new Map());
 
-    const subscribeToGrid = useCallback((id: string, callback: (api: GridApi<any>) => void) => {
-        if (!listenersRef.current.has(id)) {
-            listenersRef.current.set(id, new Set());
+    const subscribeToGridEvent = useCallback((gridId: string, eventName: string, callback: (event: any) => void) => {
+        if (!eventSubscriptionsRef.current.has(gridId)) {
+            eventSubscriptionsRef.current.set(gridId, new Map());
         }
-        listenersRef.current.get(id)?.add(callback);
 
-        // If grid already exists, call immediately
-        const existing = gridsRef.current.get(id);
-        if (existing) {
-            callback(existing);
+        const gridEvents = eventSubscriptionsRef.current.get(gridId)!;
+        if (!gridEvents.has(eventName)) {
+            gridEvents.set(eventName, new Set());
+        }
+
+        const callbacks = gridEvents.get(eventName)!;
+        callbacks.add(callback);
+
+        const api = gridsRef.current.get(gridId);
+        if (api && callbacks.size === 1) {
+            const listener = (e: any) => {
+                const currentCallbacks = eventSubscriptionsRef.current.get(gridId)?.get(eventName);
+                currentCallbacks?.forEach(cb => cb(e));
+            };
+            api.addEventListener(eventName, listener);
+            gridEvents.set(`__listener__${eventName}`, listener as any);
         }
 
         return () => {
-            listenersRef.current.get(id)?.delete(callback);
+            callbacks.delete(callback);
+
+            if (callbacks.size === 0) {
+                const api = gridsRef.current.get(gridId);
+                const listener = gridEvents.get(`__listener__${eventName}`) as any;
+                if (api && listener) {
+                    api.removeEventListener(eventName, listener);
+                    gridEvents.delete(`__listener__${eventName}`);
+                }
+                gridEvents.delete(eventName);
+            }
         };
     }, []);
 
     const registerGrid = useCallback((id: string, api: GridApi<any>) => {
         gridsRef.current.set(id, api);
 
-        // Notify listeners waiting for this grid
-        listenersRef.current.get(id)?.forEach(cb => cb(api));
+        const gridEvents = eventSubscriptionsRef.current.get(id);
+        if (gridEvents) {
+            gridEvents.forEach((callbacks, eventName) => {
+                if (eventName.startsWith('__listener__')) return;
+
+                const listener = (e: any) => {
+                    callbacks.forEach(cb => cb(e));
+                };
+                api.addEventListener(eventName, listener);
+                gridEvents.set(`__listener__${eventName}`, listener as any);
+            });
+        }
     }, []);
 
     const unregisterGrid = useCallback((id: string) => {
+        const api = gridsRef.current.get(id);
+        const gridEvents = eventSubscriptionsRef.current.get(id);
+
+        if (api && gridEvents) {
+            gridEvents.forEach((value, key) => {
+                if (key.startsWith('__listener__')) {
+                    const eventName = key.replace('__listener__', '');
+                    api.removeEventListener(eventName, value as any);
+                }
+            });
+        }
+
         gridsRef.current.delete(id);
+        eventSubscriptionsRef.current.delete(id);
     }, []);
 
     const getGridApi = useCallback((id: string) => {
         return gridsRef.current.get(id);
     }, []);
 
+    const contextValue = React.useMemo(() => ({
+        registerGrid,
+        unregisterGrid,
+        getGridApi,
+        subscribeToGridEvent,
+    }), [registerGrid, unregisterGrid, getGridApi, subscribeToGridEvent]);
+
     return (
-        <GridRegistryContext.Provider value={{
-            registerGrid,
-            unregisterGrid,
-            getGridApi,
-            subscribeToGrid,
-        }}>
+        <GridRegistryContext.Provider value={contextValue}>
             {children}
         </GridRegistryContext.Provider>
     );
@@ -67,11 +112,11 @@ export function useGridRegistry<T = any>() {
             registerGrid: () => { },
             unregisterGrid: () => { },
             getGridApi: () => undefined,
-            subscribeToGrid: () => () => { },
-        } as any;
+            subscribeToGridEvent: () => () => { },
+        };
     }
 
-    return context as GridRegistryContextValue<T> & { subscribeToGrid: (id: string, cb: (api: GridApi<T>) => void) => () => void };
+    return context as GridRegistryContextValue<T>;
 }
 
 export function useGridEvent<T = any>(
@@ -79,28 +124,16 @@ export function useGridEvent<T = any>(
     eventName: string,
     handler: (event: any) => void
 ) {
-    const { subscribeToGrid } = useGridRegistry();
+    const { subscribeToGridEvent } = useGridRegistry();
     const handlerRef = useRef(handler);
     handlerRef.current = handler;
 
-    React.useEffect(() => {
-        let cleanupFn: (() => void) | undefined;
+    const stableCallback = useCallback((event: any) => {
+        handlerRef.current(event);
+    }, []);
 
-        const unsubscribeFromGrid = subscribeToGrid(gridId, (api) => {
-            // Found the api! Now subscribe to the event
-            const eventListener = (e: any) => handlerRef.current(e);
-
-            api.addEventListener(eventName, eventListener);
-
-            // Cleanup just for the event listener on the api
-            cleanupFn = () => {
-                api.removeEventListener(eventName, eventListener);
-            };
-        });
-
-        return () => {
-            unsubscribeFromGrid();
-            if (cleanupFn) cleanupFn();
-        };
-    }, [gridId, eventName, subscribeToGrid]);
+    useLayoutEffect(() => {
+        const unsubscribe = subscribeToGridEvent(gridId, eventName, stableCallback);
+        return unsubscribe;
+    }, [gridId, eventName, subscribeToGridEvent, stableCallback]);
 }
