@@ -189,6 +189,8 @@ export interface EditingCell {
 }
 
 export interface GridApi<T = any> {
+  addEventListener: (eventType: string, listener: (event: any) => void) => void;
+  removeEventListener: (eventType: string, listener: (event: any) => void) => void;
 
   setRowData: (data: T[]) => void;
   getRowData: () => T[];

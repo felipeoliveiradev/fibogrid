@@ -51,14 +51,10 @@ export function DemoSettings(props: DemoSettingsProps) {
             />
         </div>
     );
-    console.log(props.gridId);
+
     return (
         <div className="space-y-4">
-            {props.gridId && (
-                <div className="mb-6">
-                    <SelectedRowInfo gridId={props.gridId} />
-                </div>
-            )}
+            {props.gridId && <SelectedRowInfo gridId={props.gridId} />}
 
             <Card className="paper-aged border-primary/10">
                 <CardHeader className="pb-3">
@@ -221,7 +217,7 @@ export function DemoSettings(props: DemoSettingsProps) {
                     </div>
                 </CardContent>
             </Card>
-        </div>
+        </div >
     );
 }
 

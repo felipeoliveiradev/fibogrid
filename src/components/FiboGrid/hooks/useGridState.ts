@@ -31,7 +31,7 @@ import {
   CheckboxHeaderRenderer
 } from '../components/SpecialRenderers';
 
-export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number, notify?: (id: string) => void) {
+export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number) {
   const {
     rowData,
     columnDefs,
@@ -43,7 +43,6 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number,
     quickFilterText,
     paginationMode = 'client',
     serverSideDataSource,
-    gridId,
   } = props;
 
   const [internalRowData, setInternalRowData] = useState<T[]>(rowData || []);
@@ -322,6 +321,27 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number,
     totalPages: paginationInfo.totalPages,
   };
 
+  // Event Listener System
+  const eventListenersRef = useRef<Map<string, Set<(event: any) => void>>>(new Map());
+
+  const addEventListener = useCallback((eventType: string, listener: (event: any) => void) => {
+    if (!eventListenersRef.current.has(eventType)) {
+      eventListenersRef.current.set(eventType, new Set());
+    }
+    eventListenersRef.current.get(eventType)?.add(listener);
+  }, []);
+
+  const removeEventListener = useCallback((eventType: string, listener: (event: any) => void) => {
+    eventListenersRef.current.get(eventType)?.delete(listener);
+  }, []);
+
+  const fireEvent = useCallback((eventType: string, eventData: any) => {
+    const listeners = eventListenersRef.current.get(eventType);
+    if (listeners) {
+      listeners.forEach(listener => listener(eventData));
+    }
+  }, []);
+
   const selectionRef = useRef(selection);
   selectionRef.current = selection;
 
@@ -362,9 +382,11 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number,
 
       selectionRef.current = nextSelection;
       setSelection(nextSelection);
-      if (gridId && notify) notify(gridId);
+
+      // Fire selectionChanged event
+      fireEvent('selectionChanged', { api: api!, selectedRows: Array.from(newSelected).map(id => rowsRef.current.find(r => r.id === id)!) });
     },
-    [rowSelection, gridId, notify]
+    [rowSelection, fireEvent]
   );
 
   const selectAll = useCallback(() => {
@@ -375,8 +397,10 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number,
     };
     selectionRef.current = nextSelection;
     setSelection(nextSelection);
-    if (gridId && notify) notify(gridId);
-  }, [rowSelection, gridId, notify]);
+
+    // Fire selectionChanged event
+    fireEvent('selectionChanged', { api: api!, selectedRows: displayedRowsRef.current });
+  }, [rowSelection, fireEvent]);
 
   const deselectAll = useCallback(() => {
     const nextSelection = {
@@ -385,8 +409,10 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number,
     };
     selectionRef.current = nextSelection;
     setSelection(nextSelection);
-    if (gridId && notify) notify(gridId);
-  }, [setSelection, gridId, notify]);
+
+    // Fire selectionChanged event
+    fireEvent('selectionChanged', { api: api!, selectedRows: [] });
+  }, [setSelection, fireEvent]);
 
   // Synchronize refs for stable API access
   const sortModelRef = useRef(sortModel);
@@ -404,7 +430,12 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number,
   const overridesRef = useRef(overrides);
   overridesRef.current = overrides;
 
+
+
+
   const api = useMemo((): GridApi<T> => ({
+    addEventListener,
+    removeEventListener,
     getRowData: () => internalRowData, // State access is fine if we accept API update on data change, or use prevRowDataRef
     setRowData: () => { },
     updateRowData: () => { },
@@ -429,7 +460,6 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number,
       const nextSelection = { ...prev, selectedRows: newSelected };
       selectionRef.current = nextSelection;
       setSelection(nextSelection);
-      if (gridId && notify) notify(gridId);
     },
 
     getColumnDefs: () => columnDefs,
@@ -739,7 +769,6 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number,
             setInternalQuickFilter('');
             setPaginationState(prev => ({ ...prev, currentPage: 0, pageSize: paginationStateRef.current.pageSize })); // Use ref for pageSize
             setSelection(prev => ({ ...prev, selectedRows: new Set(), lastSelectedIndex: null, anchorIndex: null }));
-            if (gridId && notify) notify(gridId);
             setOverrides({}); // Reset edits too
             return;
           }
@@ -829,7 +858,6 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number,
                 const nextSelection = { ...prev, selectedRows: newSelected };
                 selectionRef.current = nextSelection;
                 setSelection(nextSelection);
-                if (gridId && notify) notify(gridId);
               }
             }
           }
@@ -1142,7 +1170,7 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number,
       };
       return builder;
     },
-  }), [internalRowData, columnDefs, columns, selectAll, deselectAll, selectRow, paginationPageSize, setSelection]);
+  }), [internalRowData, columnDefs, columns, sortModel, filterModel, selection, selectAll, deselectAll, selectRow, paginationPageSize, setSelection]);
 
   const setColumnPinned = useCallback((field: string, pinned: 'left' | 'right' | null) => {
     setPinnedColumns((prev) => ({ ...prev, [field]: pinned }));

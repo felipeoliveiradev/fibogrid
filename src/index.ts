@@ -4,7 +4,7 @@ export { FiboGrid } from './components/FiboGrid';
 export * from './components/FiboGrid/types';
 export * from './components/FiboGrid/utils/helpers';
 export { GridProvider, useGridContext } from './components/FiboGrid/context/GridContext';
-export { GridRegistryProvider, useGridRegistry, useGridSelection } from './components/FiboGrid/context/GridRegistryContext';
+export { GridRegistryProvider, useGridRegistry } from './components/FiboGrid/context/GridRegistryContext';
 export * from './components/FiboGrid/utils/grouping';
 export { exportToExcel } from './components/FiboGrid/utils/excelExport';
 

@@ -1,22 +1,38 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useGridSelection } from 'fibogrid';
+import { useGridRegistry, useGridEvent } from '@/components/FiboGrid/context/GridRegistryContext';
 import { Info } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 interface SelectedRowInfoProps {
     gridId: string;
-    // lastUpdate is no longer needed!
-    lastUpdate?: number;
 }
 
 export function SelectedRowInfo({ gridId }: SelectedRowInfoProps) {
-    const selectedRows = useGridSelection(gridId);
-    console.log(selectedRows);
-    const selectedData = selectedRows.length > 0 ? selectedRows[0] : null;
+    const { getGridApi } = useGridRegistry();
+    const [selectedData, setSelectedData] = useState<any | null>(null);
+
+    // Helper to update state from API
+    const updateFromApi = (api: any) => {
+        const rows = api.getSelectedRows();
+        setSelectedData(rows && rows.length > 0 ? rows[0].data : null);
+    };
+
+    // Initial check on mount (in case grid is already ready and selected)
+    useEffect(() => {
+        const api = getGridApi(gridId);
+        if (api) updateFromApi(api);
+    }, [gridId, getGridApi]);
+
+    // Subscribe to selection changes
+    useGridEvent(gridId, 'selectionChanged', ({ api }) => {
+        updateFromApi(api);
+    });
 
     if (!selectedData) {
         return null;
     }
 
+    // Filter out complex objects/arrays for simple display
     const displayEntries = Object.entries(selectedData).filter(([_, value]) => {
         return typeof value !== 'object' || value === null;
     });
