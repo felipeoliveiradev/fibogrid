@@ -13,8 +13,10 @@ import {
   GridApiBuilder,
   GridManagerBuilder,
   ServerSideDataSourceRequest,
+  DispatchAction,
 } from '../types';
 import { useServerSideData } from './useServerSideData';
+import { GridRefreshBuilderImpl } from '../utils/GridRefreshBuilder';
 import {
   createRowNode,
   processColumns,
@@ -24,17 +26,21 @@ import {
   copyToClipboard,
   getValueFromPath,
   setValueAtPath,
+  deepMerge,
 } from '../utils/helpers';
 import {
   RowNumberRenderer,
   CheckboxCellRenderer,
   CheckboxHeaderRenderer
 } from '../components/SpecialRenderers';
+import { EventBuilder } from '../utils/EventBuilder';
+import { useGridRegistry } from '../context/GridRegistryContext';
 
 const globalEventListeners = new Map<string, Map<string, Set<(event: any) => void>>>();
 
 export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number) {
   const {
+    gridId = 'default-grid',
     rowData,
     columnDefs,
     getRowId,
@@ -46,6 +52,8 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
     paginationMode = 'client',
     serverSideDataSource,
   } = props;
+
+  const registry = useGridRegistry<T>();
 
   const [internalRowData, setInternalRowData] = useState<T[]>(rowData || []);
 
@@ -69,6 +77,7 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
     totalRows: 0,
     totalPages: 0,
   });
+
   const [editingCell, setEditingCell] = useState<EditingCell | null>(null);
   const [overrides, setOverrides] = useState<Record<string, Record<string, any>>>({});
   const [columnOrder, setColumnOrder] = useState<string[]>(() =>
@@ -132,6 +141,43 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
 
     return { processedColumns: processed, hasCustomRowNumber: hasRowNumber, hasCustomCheckbox: hasCheckbox };
   }, [columnDefs, columnOrder, columnWidths, hiddenColumns, pinnedColumns, containerWidth, defaultColDef]);
+
+
+
+  const gridIdForEvents = props.gridId || 'default';
+
+  if (!globalEventListeners.has(gridIdForEvents)) {
+    globalEventListeners.set(gridIdForEvents, new Map());
+  }
+  const eventListenersMap = globalEventListeners.get(gridIdForEvents)!;
+
+  const addEventListener = useCallback((eventType: string, listener: (event: any) => void) => {
+    if (!eventListenersMap.has(eventType)) {
+      eventListenersMap.set(eventType, new Set());
+    }
+    eventListenersMap.get(eventType)?.add(listener);
+  }, [eventListenersMap]);
+
+  const removeEventListener = useCallback((eventType: string, listener: (event: any) => void) => {
+    eventListenersMap.get(eventType)?.delete(listener);
+  }, [eventListenersMap]);
+
+  const fireEvent = useCallback((eventType: string, eventData: any) => {
+    const listeners = eventListenersMap.get(eventType);
+    if (listeners && listeners.size > 0) {
+      listeners.forEach(listener => listener(eventData));
+    }
+  }, [eventListenersMap]);
+
+  const hasListeners = useCallback((eventType: string) => {
+    const listeners = eventListenersMap.get(eventType);
+    return listeners !== undefined && listeners.size > 0;
+  }, [eventListenersMap]);
+
+
+
+
+
 
   const columns = useMemo(() => {
     const sortByPriority = (a: ProcessedColumn<T>, b: ProcessedColumn<T>) => {
@@ -202,13 +248,13 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
         id: rowId,
         data,
         rowIndex: i,
-        selected: false,
+        selected: selection.selectedRows.has(rowId),
         expanded: false,
         level: 0,
       };
     }
     return result;
-  }, [internalRowData, serverSideState.data, paginationMode, getRowId, overrides]);
+  }, [internalRowData, serverSideState.data, paginationMode, getRowId, overrides, selection.selectedRows]);
 
   rowsRef.current = rows;
 
@@ -323,30 +369,7 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
     totalPages: paginationInfo.totalPages,
   };
 
-  const gridIdForEvents = props.gridId || 'default';
 
-  if (!globalEventListeners.has(gridIdForEvents)) {
-    globalEventListeners.set(gridIdForEvents, new Map());
-  }
-  const eventListenersMap = globalEventListeners.get(gridIdForEvents)!;
-
-  const addEventListener = useCallback((eventType: string, listener: (event: any) => void) => {
-    if (!eventListenersMap.has(eventType)) {
-      eventListenersMap.set(eventType, new Set());
-    }
-    eventListenersMap.get(eventType)?.add(listener);
-  }, [eventListenersMap]);
-
-  const removeEventListener = useCallback((eventType: string, listener: (event: any) => void) => {
-    eventListenersMap.get(eventType)?.delete(listener);
-  }, [eventListenersMap]);
-
-  const fireEvent = useCallback((eventType: string, eventData: any) => {
-    const listeners = eventListenersMap.get(eventType);
-    if (listeners) {
-      listeners.forEach(listener => listener(eventData));
-    }
-  }, [eventListenersMap]);
 
   const selectionRef = useRef(selection);
   selectionRef.current = selection;
@@ -360,8 +383,14 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
       const rowIndex = displayedRowsRef.current.findIndex((r) => r.id === rowId);
 
       if (rowSelection === 'single') {
-        newSelected.clear();
-        if (selected) newSelected.add(rowId);
+        if (selected) {
+          if (prev.selectedRows.has(rowId) && prev.selectedRows.size === 1) return;
+          newSelected.clear();
+          newSelected.add(rowId);
+        } else {
+          if (!prev.selectedRows.has(rowId)) return;
+          newSelected.clear();
+        }
       } else {
         if (shift && prev.anchorIndex !== null) {
           const start = Math.min(prev.anchorIndex, rowIndex);
@@ -372,12 +401,25 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
             }
           }
         } else {
-          if (newSelected.has(rowId)) {
-            newSelected.delete(rowId);
-          } else {
+          if (selected) {
+            if (newSelected.has(rowId)) return;
             newSelected.add(rowId);
+          } else {
+            if (!newSelected.has(rowId)) return;
+            newSelected.delete(rowId);
           }
         }
+      }
+
+      if (newSelected.size === prev.selectedRows.size) {
+        let hasDiff = false;
+        for (const id of newSelected) {
+          if (!prev.selectedRows.has(id)) {
+            hasDiff = true;
+            break;
+          }
+        }
+        if (!hasDiff) return;
       }
 
       const nextSelection = {
@@ -389,7 +431,6 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
       selectionRef.current = nextSelection;
       setSelection(nextSelection);
 
-      // Fire selectionChanged event
       fireEvent('selectionChanged', { api: api!, selectedRows: Array.from(newSelected).map(id => rowsRef.current.find(r => r.id === id)!) });
     },
     [rowSelection, fireEvent]
@@ -397,9 +438,24 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
 
   const selectAll = useCallback(() => {
     if (rowSelection !== 'multiple') return;
+
+    const allIds = displayedRowsRef.current.map((r) => r.id);
+    const prev = selectionRef.current;
+
+    if (prev.selectedRows.size === allIds.length) {
+      let allMatch = true;
+      for (const id of allIds) {
+        if (!prev.selectedRows.has(id)) {
+          allMatch = false;
+          break;
+        }
+      }
+      if (allMatch) return;
+    }
+
     const nextSelection = {
       ...selectionRef.current,
-      selectedRows: new Set(displayedRowsRef.current.map((r) => r.id)),
+      selectedRows: new Set(allIds),
     };
     selectionRef.current = nextSelection;
     setSelection(nextSelection);
@@ -409,6 +465,9 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
   }, [rowSelection, fireEvent]);
 
   const deselectAll = useCallback(() => {
+    const prev = selectionRef.current;
+    if (prev.selectedRows.size === 0) return; // Already empty
+
     const nextSelection = {
       ...selectionRef.current,
       selectedRows: new Set<string>(),
@@ -442,7 +501,8 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
   const api = useMemo((): GridApi<T> => ({
     addEventListener,
     removeEventListener,
-    getRowData: () => internalRowData, // State access is fine if we accept API update on data change, or use prevRowDataRef
+    events: () => new EventBuilder<T>(addEventListener, removeEventListener),
+    getRowData: () => paginationMode === 'server' ? serverSideState.data : internalRowData,
     setRowData: () => { },
     updateRowData: () => { },
     getRowNode: (id) => rowsRef.current.find((r) => r.id === id) || null,
@@ -557,6 +617,20 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
             next[current.rowId] = { ...(next[current.rowId] || {}), [current.field]: current.value };
             return next;
           });
+
+          // Fire cellValueChanged for UI edits
+          const rowNode = displayedRowsRef.current.find(r => r.id === current.rowId);
+          const column = columns.find(c => c.field === current.field);
+          if (rowNode && column) {
+            fireEvent('cellValueChanged', {
+              rowNode,
+              column,
+              field: current.field,
+              oldValue: current.originalValue,
+              newValue: current.value,
+              api
+            });
+          }
         }
         return null;
       });
@@ -586,15 +660,46 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
     refreshCells: () => { },
     redrawRows: () => { },
     refresh: () => {
-      if (paginationMode === 'server') {
-        serverSideState.refresh();
-      } else {
-        setFilterModel([]);
-        setSortModel([]);
-        setInternalQuickFilter('');
-        setPaginationState(prev => ({ ...prev, currentPage: 0 }));
-        setSelection(prev => ({ ...prev, selectedRows: new Set(), lastSelectedIndex: null, anchorIndex: null }));
-      }
+      const refreshFn = () => {
+        if (paginationMode === 'server') {
+          serverSideState.refresh();
+        } else {
+          setFilterModel([]);
+          setSortModel([]);
+          setInternalQuickFilter('');
+          setPaginationState(prev => ({ ...prev, currentPage: 0 }));
+          setSelection(prev => ({ ...prev, selectedRows: new Set(), lastSelectedIndex: null, anchorIndex: null }));
+        }
+      };
+
+      return new GridRefreshBuilderImpl<T>(
+        gridId,
+        api!,
+        (action, data) => {
+          const dispatchAction: DispatchAction = typeof action === 'string'
+            ? { type: action, source: gridId, timestamp: Date.now(), data }
+            : action;
+          registry?.dispatchAction(gridId, dispatchAction);
+        },
+        refreshFn,
+        () => api!.manager(),
+        () => api!.params()
+      );
+    },
+
+    dispatch: (action, data) => {
+      const dispatchAction: DispatchAction = typeof action === 'string'
+        ? { type: action, source: gridId, timestamp: Date.now(), data }
+        : action;
+      registry?.dispatchAction(gridId, dispatchAction);
+    },
+
+    getDependents: () => {
+      return registry?.getDependents(gridId) || [];
+    },
+
+    getParents: () => {
+      return registry?.getParents(gridId) || [];
     },
 
     params: () => {
@@ -904,11 +1009,35 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
             }
 
             if (pendingUpdates.size > 0) {
+              // Fire cellValueChanged for API updates
+              pendingUpdates.forEach((newRowData, sId) => {
+                const oldRowNode = rowsRef.current.find(r => String(r.id) === sId);
+                if (oldRowNode) {
+                  const oldData = oldRowNode.data as any;
+                  Object.keys(newRowData).forEach(key => {
+                    if (oldData[key] !== (newRowData as any)[key]) {
+                      const column = columns.find(c => c.field === key);
+                      if (column) {
+                        fireEvent('cellValueChanged', {
+                          rowNode: oldRowNode,
+                          column,
+                          field: key,
+                          oldValue: oldData[key],
+                          newValue: (newRowData as any)[key],
+                          api
+                        });
+                      }
+                    }
+                  });
+                }
+              });
+
               next = next.map(row => {
                 const id = getRowId ? getRowId(row) : (row as any).id;
                 const sId = String(id);
                 if (pendingUpdates.has(sId)) {
-                  return { ...row, ...pendingUpdates.get(sId) };
+                  // Use deepMerge to preserve nested properties that are not in the update
+                  return deepMerge(row, pendingUpdates.get(sId));
                 }
                 return row;
               });
@@ -1172,11 +1301,148 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
               return next;
             }
           });
+
+          const hasDataChanges = pendingReset || pendingAdds.length > 0 || pendingRemoves.size > 0 ||
+            pendingUpdates.size > 0 || pendingUpAdds.length > 0;
+
+          if (hasDataChanges) {
+            const operation = pendingReset ? 'replaceAll' :
+              (pendingAdds.length > 0 || pendingUpAdds.length > 0) ? 'add' :
+                pendingRemoves.size > 0 ? 'remove' : 'update';
+
+            const count = pendingReset ? (pendingUpAdds.length + pendingAdds.length) :
+              (pendingAdds.length + pendingUpAdds.length + pendingRemoves.size + pendingUpdates.size);
+
+            api.dispatch('dataChanged', {
+              operation,
+              count,
+              addedCount: pendingAdds.length + pendingUpAdds.length,
+              removedCount: pendingRemoves.size,
+              updatedCount: pendingUpdates.size,
+            });
+          }
         }
       };
       return builder;
     },
-  }), [internalRowData, columnDefs, columns, sortModel, filterModel, selection, selectAll, deselectAll, selectRow, paginationPageSize, setSelection]);
+  }), [internalRowData, columnDefs, columns, selectAll, deselectAll, selectRow, paginationPageSize, setSelection]);
+
+  // Fire Sort Changed Event
+  const prevSortModel = useRef(sortModel);
+  useEffect(() => {
+    if (prevSortModel.current !== sortModel && api) {
+      if (hasListeners('sortChanged')) {
+        const oldSortModel = prevSortModel.current;
+        prevSortModel.current = sortModel;
+        fireEvent('sortChanged', { api, sortModel, oldSortModel });
+      } else {
+        prevSortModel.current = sortModel;
+      }
+    }
+  }, [sortModel, fireEvent, api, hasListeners]);
+
+  // Fire Filter Changed Event
+  const prevFilterModel = useRef(filterModel);
+  useEffect(() => {
+    if (prevFilterModel.current !== filterModel && api) {
+      const oldFilterModel = prevFilterModel.current;
+
+      // Check for removed filters always (simple check) or guard? 
+      // Filter removed is a separate event. Logic complicates if we skip.
+      // Let's guard the main event fire but logic for removed might need to run?
+      // Actually if no one listens to filterChanged OR filterRemoved we can skip.
+
+      const hasFilterChangedListeners = hasListeners('filterChanged');
+      const hasFilterRemovedListeners = hasListeners('filterRemoved');
+
+      if (hasFilterChangedListeners || hasFilterRemovedListeners) {
+        // Re-implementing logic with checks
+        if (hasFilterRemovedListeners) {
+          if (oldFilterModel.length > filterModel.length) {
+            // Find removed
+            oldFilterModel.forEach(oldF => {
+              const stillExists = filterModel.find(f => f.field === oldF.field);
+              if (!stillExists) {
+                fireEvent('filterRemoved', { api, filterModel: oldF });
+              }
+            });
+          }
+        }
+
+        if (hasFilterChangedListeners) {
+          fireEvent('filterChanged', { api, filterModel, oldFilterModel });
+        }
+      } else {
+        prevFilterModel.current = filterModel;
+        return;
+      }
+
+      prevFilterModel.current = filterModel;
+    }
+  }, [filterModel, fireEvent, api, hasListeners]);
+
+  // Fire Pagination Changed Event
+  const prevPaginationState = useRef(finalPaginationState);
+  useEffect(() => {
+    if (Object.keys(finalPaginationState).length > 0 && api) {
+      const prev = prevPaginationState.current;
+      const curr = finalPaginationState;
+
+      const hasChanged =
+        prev.currentPage !== curr.currentPage ||
+        prev.pageSize !== curr.pageSize ||
+        prev.totalPages !== curr.totalPages ||
+        prev.totalRows !== curr.totalRows;
+
+      if (hasChanged) {
+        if (hasListeners('paginationChanged')) {
+          // ... calculations
+          const isFirstPage = curr.currentPage === 0;
+          const isLastPage = curr.currentPage >= (curr.totalPages - 1);
+          const nextPage = !isLastPage ? curr.currentPage + 1 : null;
+          const prevPage = !isFirstPage ? curr.currentPage - 1 : null;
+
+          // Calculate old values for diffing
+          const prevIsFirstPage = prev.currentPage === 0;
+          const prevIsLastPage = prev.currentPage >= (prev.totalPages - 1);
+          const oldNextPage = !prevIsLastPage ? prev.currentPage + 1 : null;
+          const oldPrevPage = !prevIsFirstPage ? prev.currentPage - 1 : null;
+
+          const fromPageSizeChange = prev.pageSize !== curr.pageSize;
+
+          fireEvent('paginationChanged', {
+            api,
+            currentPage: curr.currentPage,
+            oldCurrentPage: prev.currentPage,
+            pageSize: curr.pageSize,
+            oldPageSize: prev.pageSize,
+            totalPages: curr.totalPages,
+            totalRows: curr.totalRows,
+            isFirstPage,
+            isLastPage,
+            nextPage,
+            oldNextPage,
+            prevPage,
+            oldPrevPage,
+            fromPageSizeChange
+          });
+        }
+        prevPaginationState.current = finalPaginationState;
+      }
+    }
+  }, [finalPaginationState, fireEvent, api, hasListeners]);
+
+  // Fire Quick Filter Changed Event
+  const prevQuickFilterRef = useRef(internalQuickFilter);
+  useEffect(() => {
+    if (prevQuickFilterRef.current !== internalQuickFilter && api) {
+      if (hasListeners('quickFilterChanged')) {
+        const oldQuickFilterValue = prevQuickFilterRef.current;
+        fireEvent('quickFilterChanged', { api, quickFilterValue: internalQuickFilter, oldQuickFilterValue });
+      }
+      prevQuickFilterRef.current = internalQuickFilter;
+    }
+  }, [internalQuickFilter, fireEvent, api, hasListeners]);
 
   const setColumnPinned = useCallback((field: string, pinned: 'left' | 'right' | null) => {
     setPinnedColumns((prev) => ({ ...prev, [field]: pinned }));
@@ -1208,5 +1474,6 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
     hasCustomCheckbox,
     quickFilter: internalQuickFilter,
     setQuickFilter: setInternalQuickFilter,
+    fireEvent,
   };
 }

@@ -7,6 +7,7 @@ export { GridProvider, useGridContext } from './components/FiboGrid/context/Grid
 export { GridRegistryProvider, useGridRegistry, useGridEvent } from './components/FiboGrid/context/GridRegistryContext';
 export * from './components/FiboGrid/utils/grouping';
 export { exportToExcel } from './components/FiboGrid/utils/excelExport';
+export { EventBuilder } from './components/FiboGrid/utils/EventBuilder';
 
 // Hooks
 export { useGridState } from './components/FiboGrid/hooks/useGridState';
@@ -14,12 +15,8 @@ export { useVirtualization } from './components/FiboGrid/hooks/useVirtualization
 export { useColumnResize } from './components/FiboGrid/hooks/useColumnResize';
 export { useColumnDrag } from './components/FiboGrid/hooks/useColumnDrag';
 export { useRowDrag } from './components/FiboGrid/hooks/useRowDrag';
-export { useRangeSelection } from './components/FiboGrid/hooks/useRangeSelection';
-export { useKeyboardNavigation } from './components/FiboGrid/hooks/useKeyboardNavigation';
-export { useGrouping } from './components/FiboGrid/hooks/useGrouping';
-export { useCellSelection } from './components/FiboGrid/hooks/useCellSelection';
-export { useUndoRedo } from './components/FiboGrid/hooks/useUndoRedo';
-export { useFillHandle } from './components/FiboGrid/hooks/useFillHandle';
+export { useGridEvents } from './components/FiboGrid/hooks/useGridEvents';
+export { useFiboGrid } from './components/FiboGrid/hooks/useFiboGrid';
 
 // Additional Components
 export { GridToolbar } from './components/FiboGrid/components/GridToolbar';

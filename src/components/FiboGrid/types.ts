@@ -1,3 +1,5 @@
+import { GridRegistryContextValue } from './context/GridRegistryContext';
+
 export type SortDirection = 'asc' | 'desc' | null;
 
 export type FilterType = 'text' | 'number' | 'date' | 'select' | 'boolean';
@@ -100,6 +102,33 @@ export interface RowNode<T = any> {
   highlighted?: boolean;
 }
 
+export interface DispatchAction {
+  type: string;
+  source: string;
+  timestamp: number;
+  data?: any;
+}
+
+export interface GridDependsConfig<T = any> {
+  on: string | string[];
+  receive?: {
+    dataChanged?: (parentApi: GridApi<T>, action: DispatchAction) => void;
+    selectionChanged?: (parentApi: GridApi<T>, action: DispatchAction) => void;
+    filterChanged?: (parentApi: GridApi<T>, action: DispatchAction) => void;
+    sortChanged?: (parentApi: GridApi<T>, action: DispatchAction) => void;
+    paginationChanged?: (parentApi: GridApi<T>, action: DispatchAction) => void;
+    refresh?: (parentApi: GridApi<T>, action: DispatchAction) => void;
+    custom?: Record<string, (parentApi: GridApi<T>, action: DispatchAction) => void>;
+  };
+  autoRefresh?: boolean | string[];
+}
+
+export interface GridDispatchConfig {
+  on?: string[];
+  filter?: (action: DispatchAction, targetGridId: string) => boolean;
+}
+
+
 export interface KeyboardEventParams<T = any> {
   event: React.KeyboardEvent | KeyboardEvent;
   api: GridApi<T>;
@@ -188,9 +217,79 @@ export interface EditingCell {
   originalValue: any;
 }
 
+export interface EventSubscription {
+  listen: (handler: (data: any) => void) => () => void;
+  once: (handler: (data: any) => void) => () => void;
+  off: (handler?: (data: any) => void) => void;
+}
+
+export interface SelectionChangedSubscription extends EventSubscription {
+  getRowData: () => EventSubscription;
+  getAllData: () => EventSubscription;
+  getIds: () => EventSubscription;
+  getCount: () => EventSubscription;
+  getFirstRow: () => EventSubscription;
+}
+
+// Fluent API for Diffs
+export interface DiffSubscription<T> extends EventSubscription {
+  old: () => EventSubscription;
+  actual: () => EventSubscription;
+  all: () => EventSubscription;
+  visual: () => DiffSubscription<T>;
+}
+
+export interface SortChangedSubscription extends EventSubscription {
+  getSortModel: () => DiffSubscription<SortModel[]>;
+  getFirstSort: () => DiffSubscription<SortModel | null>;
+}
+
+export interface FilterChangedSubscription extends EventSubscription {
+  getFilterModel: () => DiffSubscription<FilterModel[]>;
+  getFilterCount: () => DiffSubscription<number>;
+}
+
+export interface RowClickedSubscription extends EventSubscription {
+  getRowData: () => EventSubscription;
+  getRowId: () => EventSubscription;
+}
+
+export interface CellValueChangedSubscription extends EventSubscription {
+  getNewValue: () => EventSubscription;
+  getOldValue: () => EventSubscription;
+  getField: () => EventSubscription;
+}
+
+export interface PaginationChangedSubscription extends EventSubscription {
+  getCurrentPage: () => DiffSubscription<number>;
+  getPageSize: () => DiffSubscription<number>;
+  getTotalPages: () => DiffSubscription<number>;
+  getIsFirstPage: () => EventSubscription;
+  getIsLastPage: () => EventSubscription;
+  getNextPage: () => DiffSubscription<number | null>;
+  getPrevPage: () => DiffSubscription<number | null>;
+}
+
+export interface EventBuilder<T = any> {
+  onSelectionChanged(): SelectionChangedSubscription;
+  onSortChanged(): SortChangedSubscription;
+  onFilterChanged(): FilterChangedSubscription;
+  onRowClicked(): RowClickedSubscription;
+  onCellValueChanged(): CellValueChangedSubscription;
+  onPaginationChanged(): PaginationChangedSubscription;
+  onColumnResized(): EventSubscription;
+  onColumnMoved(): EventSubscription;
+  onRowDataUpdated(): EventSubscription;
+  onCellEditingStarted(): EventSubscription;
+  onCellEditingStopped(): EventSubscription;
+  onQuickFilterChanged(): EventSubscription;
+  onFilterRemoved(): EventSubscription;
+}
+
 export interface GridApi<T = any> {
   addEventListener: (eventType: string, listener: (event: any) => void) => void;
   removeEventListener: (eventType: string, listener: (event: any) => void) => void;
+  events: () => EventBuilder<T>;
 
   setRowData: (data: T[]) => void;
   getRowData: () => T[];
@@ -253,8 +352,20 @@ export interface GridApi<T = any> {
   manager: () => GridManagerBuilder<T>;
   refreshCells: () => void;
   redrawRows: () => void;
-  refresh: () => void;
+  refresh: () => GridRefreshBuilder<T>;
+
+  dispatch: (action: string | DispatchAction, data?: any) => void;
+  getDependents: () => string[];
+  getParents: () => string[];
 }
+
+export interface GridRefreshBuilder<T = any> {
+  withDispatch: (action?: string) => GridRefreshBuilder<T>;
+  manager: () => GridManagerBuilder<T>;
+  params: () => GridApiBuilder<T>;
+  execute: () => void;
+}
+
 
 export interface SetFilterOptions {
   behavior?: 'replace' | 'merge';
@@ -340,6 +451,19 @@ export interface GridEvents<T = any> {
   onColumnVisible?: (event: ColumnVisibleEvent<T>) => void;
   onGridReady?: (event: GridReadyEvent<T>) => void;
   onPaginationChanged?: (event: PaginationChangedEvent) => void;
+  onGlobalFilterChange?: (event: GlobalFilterChangedEvent<T>) => void;
+  onFilterRemoved?: (event: FilterRemovedEvent<T>) => void;
+}
+
+export interface GlobalFilterChangedEvent<T = any> {
+  quickFilterValue: string;
+  oldQuickFilterValue?: string;
+  api: GridApi<T>;
+}
+
+export interface FilterRemovedEvent<T = any> {
+  filter: FilterModel;
+  api: GridApi<T>;
 }
 
 export interface RowSelectedEvent<T = any> {
@@ -350,6 +474,7 @@ export interface RowSelectedEvent<T = any> {
 
 export interface SelectionChangedEvent<T = any> {
   selectedRows: RowNode<T>[];
+  oldSelectedRows?: RowNode<T>[];
   api: GridApi<T>;
 }
 
@@ -388,15 +513,18 @@ export interface RowDragEvent<T = any> {
 
 export interface SortChangedEvent {
   sortModel: SortModel[];
+  oldSortModel?: SortModel[];
 }
 
 export interface FilterChangedEvent {
   filterModel: FilterModel[];
+  oldFilterModel?: FilterModel[];
 }
 
 export interface ColumnResizedEvent<T = any> {
   column: ProcessedColumn<T>;
   newWidth: number;
+  oldWidth?: number;
 }
 
 export interface ColumnMovedEvent<T = any> {
@@ -416,9 +544,18 @@ export interface GridReadyEvent<T = any> {
 
 export interface PaginationChangedEvent {
   currentPage: number;
+  oldCurrentPage?: number;
   pageSize: number;
+  oldPageSize?: number;
   totalPages: number;
   totalRows: number;
+  isFirstPage: boolean;
+  isLastPage: boolean;
+  nextPage: number | null;
+  oldNextPage?: number | null;
+  prevPage: number | null;
+  oldPrevPage?: number | null;
+  fromPageSizeChange?: boolean;
 }
 
 
@@ -496,6 +633,8 @@ export interface FiboGridProps<T = any> extends GridEvents<T> {
 
   quickFilterText?: string;
 
+  depends?: GridDependsConfig<T>;
+  dispatch?: GridDispatchConfig;
 
   enableFilterValueVirtualization?: boolean;
   filterValues?: Record<string, any[]>;
@@ -524,3 +663,8 @@ export interface FiboGridProps<T = any> extends GridEvents<T> {
 }
 
 
+export type UseFiboGridReturn<T = any> = {
+  registry: GridRegistryContextValue<T>;
+  events: EventBuilder<T>;
+  grid: GridApi<T>;
+}

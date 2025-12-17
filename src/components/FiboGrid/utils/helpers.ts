@@ -441,3 +441,28 @@ export function throttle<T extends (...args: any[]) => any>(
     }
   };
 }
+
+export function deepMerge(target: any, source: any): any {
+  if (typeof target !== 'object' || target === null || typeof source !== 'object' || source === null) {
+    return source;
+  }
+
+  if (Array.isArray(source)) {
+    return [...source]; // Replace arrays
+  }
+
+  const result = { ...target };
+
+  Object.keys(source).forEach(key => {
+    const sourceValue = source[key];
+    const targetValue = result[key];
+
+    if (typeof sourceValue === 'object' && sourceValue !== null && targetValue && typeof targetValue === 'object' && !Array.isArray(sourceValue)) {
+      result[key] = deepMerge(targetValue, sourceValue);
+    } else {
+      result[key] = sourceValue;
+    }
+  });
+
+  return result;
+}

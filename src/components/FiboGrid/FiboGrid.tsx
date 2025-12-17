@@ -13,7 +13,7 @@ import { useClickDetector } from './hooks/useClickDetector';
 import { useKeyboardNavigation } from './hooks/useKeyboardNavigation';
 import { useGrouping } from './hooks/useGrouping';
 import { useGridContext, GridProvider } from './context/GridContext';
-import { useGridRegistry } from './context/GridRegistryContext';
+import { useGridRegistry, useGridEvent } from './context/GridRegistryContext';
 import { GridHeader } from './components/GridHeader';
 import { GridRow } from './components/GridRow';
 import { GroupRow } from './components/GroupRow';
@@ -81,10 +81,14 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     onColumnMoved,
     onGridReady,
     onPaginationChanged,
+    onGlobalFilterChange,
+    onFilterRemoved,
     onRowClickFallback,
     lang = enUS,
     configs,
     shortcuts = true,
+    depends,
+    dispatch,
   } = props;
 
   const effectiveShowToolbar = configs?.header?.show ?? showToolbar;
@@ -147,6 +151,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     hasCustomCheckbox,
     quickFilter,
     setQuickFilter,
+    fireEvent,
   } = useGridState(props, containerWidth);
 
   const isLoading = loading || serverSideLoading;
@@ -203,8 +208,138 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
   }, [gridId, registerGlobal, unregisterGlobal]);
 
   useEffect(() => {
+    if (!depends || !gridId) return;
+
+    const { registerDependency } = useGridRegistry<T>();
+    const parentIds = Array.isArray(depends.on) ? depends.on : [depends.on];
+    const cleanupFns: (() => void)[] = [];
+
+    parentIds.forEach(parentId => {
+      const receiveActions: string[] = [];
+      const receiveHandlers: Record<string, (parentApi: any, action: any) => void> = {};
+
+      if (depends.receive) {
+        Object.entries(depends.receive).forEach(([actionType, handler]) => {
+          if (actionType === 'custom' && typeof handler === 'object') {
+            Object.entries(handler).forEach(([customAction, customHandler]) => {
+              receiveActions.push(customAction);
+              receiveHandlers[customAction] = customHandler;
+            });
+          } else if (typeof handler === 'function') {
+            receiveActions.push(actionType);
+            receiveHandlers[actionType] = handler;
+          }
+        });
+      }
+
+      const cleanup = registerDependency({
+        childId: gridId,
+        parentId,
+        receiveActions,
+        receiveHandlers,
+        autoRefresh: depends.autoRefresh || false,
+      });
+
+      cleanupFns.push(cleanup);
+    });
+
+    return () => {
+      cleanupFns.forEach(fn => fn());
+    };
+  }, [depends, gridId]);
+
+  useEffect(() => {
     onGridReady?.({ api });
   }, [api, onGridReady]);
+
+  // Bridge generic events to props
+  useGridEvent<T>(gridId, 'cellValueChanged', (event) => {
+    onCellValueChanged?.(event);
+  });
+
+  useGridEvent<T>(gridId, 'sortChanged', (event) => {
+    onSortChanged?.(event);
+  });
+
+  useGridEvent<T>(gridId, 'filterChanged', (event) => {
+    onFilterChanged?.(event);
+  });
+
+  useGridEvent<T>(gridId, 'paginationChanged', (event) => {
+    onPaginationChanged?.(event);
+  });
+
+  useGridEvent<T>(gridId, 'quickFilterChanged', (event) => {
+    onGlobalFilterChange?.(event);
+  });
+
+  useGridEvent<T>(gridId, 'filterRemoved', (event) => {
+    onFilterRemoved?.(event);
+  });
+
+  const prevSelectionRef = useRef(selection);
+  useEffect(() => {
+    if (!dispatch || !gridId || !dispatch.on) return;
+
+    if (dispatch.on.includes('selectionChanged')) {
+      const currentIds = selection.selectedRows;
+      const prevIds = prevSelectionRef.current.selectedRows;
+
+      let changed = currentIds.size !== prevIds.size;
+      if (!changed) {
+        for (const id of currentIds) {
+          if (!prevIds.has(id)) {
+            changed = true;
+            break;
+          }
+        }
+      }
+
+      if (changed) {
+        const selectedRows = displayedRows.filter(r => selection.selectedRows.has(r.id));
+
+        if (!dispatch.filter || dispatch.filter({ type: 'selectionChanged', source: gridId, timestamp: Date.now(), data: { selectedIds: Array.from(currentIds), selectedRows } }, gridId)) {
+          api.dispatch('selectionChanged', {
+            selectedIds: Array.from(currentIds),
+            selectedRows,
+          });
+        }
+      }
+    }
+
+    prevSelectionRef.current = selection;
+  }, [selection, dispatch, gridId, api, displayedRows]);
+
+  const prevFilterModelRef = useRef(filterModel);
+  useEffect(() => {
+    if (!dispatch || !gridId || !dispatch.on) return;
+
+    if (dispatch.on.includes('filterChanged')) {
+      if (JSON.stringify(filterModel) !== JSON.stringify(prevFilterModelRef.current)) {
+        if (!dispatch.filter || dispatch.filter({ type: 'filterChanged', source: gridId, timestamp: Date.now(), data: { filterModel } }, gridId)) {
+          api.dispatch('filterChanged', { filterModel });
+        }
+      }
+    }
+
+    prevFilterModelRef.current = filterModel;
+  }, [filterModel, dispatch, gridId, api]);
+
+  const prevSortModelRef = useRef(sortModel);
+  useEffect(() => {
+    if (!dispatch || !gridId || !dispatch.on) return;
+
+    if (dispatch.on.includes('sortChanged')) {
+      if (JSON.stringify(sortModel) !== JSON.stringify(prevSortModelRef.current)) {
+        if (!dispatch.filter || dispatch.filter({ type: 'sortChanged', source: gridId, timestamp: Date.now(), data: { sortModel } }, gridId)) {
+          api.dispatch('sortChanged', { sortModel });
+        }
+      }
+    }
+
+    prevSortModelRef.current = sortModel;
+  }, [sortModel, dispatch, gridId, api]);
+
 
   const effectiveContainerHeight = typeof height === 'number' ? height : (containerHeight || 600);
   const toolbarHeight = effectiveShowToolbar ? 48 : 0;
@@ -240,6 +375,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
       const column = columns.find((c) => c.field === field);
       if (column) {
         onColumnResized?.({ column, newWidth: width });
+        fireEvent('columnResized', { column, newWidth: width });
       }
     }
   );
@@ -297,6 +433,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     const column = columns[fromIndex];
     if (column) {
       onColumnMoved?.({ column, fromIndex, toIndex });
+      fireEvent('columnMoved', { column, fromIndex, toIndex });
     }
   });
 
@@ -371,9 +508,11 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
       const rowNode = api.getRowNode(rowId);
       const value = rowNode ? (rowNode.data as any)[field] : null;
       setEditingCell({ rowId, field, value, originalValue: value });
+      fireEvent('cellEditingStarted', { rowNode, field, value });
     },
     onStopEdit: () => {
       setEditingCell(null);
+      fireEvent('cellEditingStopped', {});
     },
     isEditing: !!editingCell,
     shortcuts,
@@ -405,11 +544,10 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
           }
         }
 
-        onSortChanged?.({ sortModel: newModel });
         return newModel;
       });
     },
-    [setSortModel, onSortChanged]
+    [setSortModel /* onSortChanged removed to avoid dupe */]
   );
 
   const handleFilterChange = useCallback(
@@ -427,11 +565,10 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
             newModel = [...prev, filter];
           }
         }
-        onFilterChanged?.({ filterModel: newModel });
         return newModel;
       });
     },
-    [setFilterModel, filterState, onFilterChanged]
+    [setFilterModel, filterState]
   );
 
   const handleFilterClick = useCallback((column: ProcessedColumn<T>, anchorRect: DOMRect) => {
@@ -506,12 +643,30 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
       if (isRowDragging || isDraggingRows) return;
 
       const target = e.target as HTMLElement;
-      const isCheckboxClick = target.closest('.fibogrid-checkbox-column') ||
-        (target.tagName === 'INPUT' && (target as HTMLInputElement).type === 'checkbox') ||
-        target.getAttribute('role') === 'checkbox';
+
+      // Check if this is a checkbox click (but not an editable cell input)
+      const isCheckboxColumn = !!target.closest('.fibogrid-checkbox-column');
+      const isCheckboxElement = target.getAttribute('role') === 'checkbox' ||
+        (target.tagName === 'BUTTON' && target.getAttribute('role') === 'checkbox');
+      const isCheckboxInput = target.tagName === 'INPUT' && (target as HTMLInputElement).type === 'checkbox' && isCheckboxColumn;
+
+      const isCheckboxClick = isCheckboxColumn || isCheckboxElement || isCheckboxInput;
 
       if (rowSelection && !isCheckboxClick) {
-        selectRow(rowId, true, e.shiftKey, e.ctrlKey || e.metaKey);
+        const isShift = e.shiftKey;
+        const isCtrl = e.ctrlKey || e.metaKey;
+
+        if (rowSelection === 'single') {
+          selectRow(rowId, true, isShift, isCtrl);
+        } else {
+          // Multiple selection mode - toggle if no modifier keys
+          if (!isShift && !isCtrl) {
+            const currentlySelected = selectionRef.current.selectedRows.has(rowId);
+            selectRow(rowId, !currentlySelected, false, false);
+          } else {
+            selectRow(rowId, true, isShift, isCtrl);
+          }
+        }
       }
 
       if (onRowClickFallback) {
@@ -532,26 +687,64 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
             }
           }
 
-          detectRowClick((clickType) =>
-            onRowClickFallback({
+          detectRowClick((clickType) => {
+            const rowClickEvent = {
               clickType,
               rowData: row.data,
               allRowsData: displayedRows.map(r => r.data),
               rowNode: { ...row, selected: futureSelected },
               event: e,
               api,
-            })
-          );
+            };
+
+            onRowClickFallback(rowClickEvent);
+
+            // Fire generic rowClicked event for EventBuilder subscribers
+            fireEvent('rowClicked', {
+              rowNode: { ...row, selected: futureSelected },
+              event: e,
+              api
+            });
+
+            // Call onRowClicked prop if present
+            onRowClicked?.({
+              rowNode: { ...row, selected: futureSelected },
+              event: e,
+              api
+            });
+          });
         }
       }
     },
     [rowSelection, selectRow, isRowDragging, isDraggingRows, onRowClickFallback, displayedRows, detectRowClick, api, selection.selectedRows]
   );
 
+  const prevSelectedIdsRef = useRef<Set<string> | null>(null);
+  const prevSelectedRowsRef = useRef<RowNode<T>[] | undefined>(undefined);
+
   useEffect(() => {
     if (onSelectionChanged) {
-      const selectedRows = displayedRows.filter((r) => selection.selectedRows.has(r.id));
-      onSelectionChanged({ selectedRows, api });
+      const currentIds = selection.selectedRows;
+      const prevIds = prevSelectedIdsRef.current;
+
+      let changed = !prevIds || currentIds.size !== prevIds.size;
+      if (!changed && prevIds) {
+        for (const id of currentIds) {
+          if (!prevIds.has(id)) {
+            changed = true;
+            break;
+          }
+        }
+      }
+
+      if (changed) {
+        prevSelectedIdsRef.current = new Set(currentIds);
+        const selectedRows = displayedRows.filter((r) => selection.selectedRows.has(r.id));
+        const oldSelectedRows = prevSelectedRowsRef.current;
+        prevSelectedRowsRef.current = selectedRows;
+
+        onSelectionChanged({ selectedRows, oldSelectedRows, api });
+      }
     }
   }, [selection.selectedRows, displayedRows, api, onSelectionChanged]);
 
@@ -590,22 +783,20 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     (page: number) => {
       setPaginationState((prev) => {
         const newState = { ...prev, currentPage: page };
-        onPaginationChanged?.(newState);
         return newState;
       });
     },
-    [setPaginationState, onPaginationChanged]
+    [setPaginationState]
   );
 
   const handlePageSizeChange = useCallback(
     (size: number) => {
       setPaginationState((prev) => {
         const newState = { ...prev, pageSize: size, currentPage: 0 };
-        onPaginationChanged?.(newState);
         return newState;
       });
     },
-    [setPaginationState, onPaginationChanged]
+    [setPaginationState]
   );
 
   const handleColumnVisibilityChange = useCallback(
@@ -718,6 +909,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                 <div style={{ transform: `translateY(${offsetTop}px)` }}>
                   {virtualRows.map((row, index) => {
                     if (!isGroupRow(row)) {
+
                       const isSelected = selection.selectedRows.has(row.id);
                       const regularRow = row as any;
 
@@ -746,25 +938,25 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                             }
                           }}
                           onCellClick={(col, e) => {
-                            e.stopPropagation();
-
                             const currentSelection = selectionRef.current;
                             const isCurrentlySelected = currentSelection.selectedRows.has(row.id);
-                            let futureSelected = isCurrentlySelected;
 
+                            let futureSelected = isCurrentlySelected;
                             if (rowSelection && !isRowDragging && !isDraggingRows) {
-                              if (rowSelection === 'single') {
-                                futureSelected = true;
-                              } else {
-                                if (e.shiftKey) {
+                              const target = e.target as HTMLElement;
+                              const isCheckboxClick = !!target.closest('.fibogrid-checkbox-column');
+
+                              if (!isCheckboxClick) {
+                                if (rowSelection === 'single') {
                                   futureSelected = true;
                                 } else {
-                                  futureSelected = !isCurrentlySelected;
+                                  if (!e.shiftKey && !e.ctrlKey && !e.metaKey) {
+                                    futureSelected = !isCurrentlySelected;
+                                  } else {
+                                    futureSelected = true;
+                                  }
                                 }
                               }
-
-                              const shouldSelect = rowSelection === 'single' ? !isCurrentlySelected : true;
-                              selectRow(row.id, shouldSelect, e.shiftKey, e.ctrlKey || e.metaKey);
                             }
 
                             focusCell(row.id, col.field);

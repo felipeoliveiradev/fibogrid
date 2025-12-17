@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef, useMemo, ReactNode } from 'react';
 import { RowNode, GridApi } from '../types';
 import { FiboGridLocale } from '../locales/types';
 import { enUS } from '../locales/enUS';
@@ -27,53 +27,60 @@ interface GridProviderProps {
 
 export function GridProvider<T = any>({ children, onRowSelectChange, locale = enUS }: GridProviderProps) {
   const [selectedRow, setSelectedRow] = useState<RowNode<T> | null>(null);
-  const [grids, setGrids] = useState<Map<string, GridApi<T>>>(new Map());
-  const [subscribers, setSubscribers] = useState<Array<(gridId: string, row: RowNode<T>) => void>>([]);
 
+  // ✅ Use useRef para dados que não afetam UI
+  const gridsRef = useRef<Map<string, GridApi<T>>>(new Map());
+  const subscribersRef = useRef<Set<(gridId: string, row: RowNode<T>) => void>>(new Set());
+
+  // ✅ Funções estáveis
   const registerGrid = useCallback((id: string, api: GridApi<T>) => {
-    setGrids(prev => {
-      const next = new Map(prev);
-      next.set(id, api);
-      return next;
-    });
+    gridsRef.current.set(id, api);
   }, []);
 
   const unregisterGrid = useCallback((id: string) => {
-    setGrids(prev => {
-      const next = new Map(prev);
-      next.delete(id);
-      return next;
-    });
+    gridsRef.current.delete(id);
   }, []);
 
   const getGridApi = useCallback((id: string) => {
-    return grids.get(id);
-  }, [grids]);
+    return gridsRef.current.get(id);
+  }, []);
 
   const onRowSelect = useCallback((gridId: string, row: RowNode<T>) => {
     setSelectedRow(row);
     onRowSelectChange?.(gridId, row);
-    subscribers.forEach(sub => sub(gridId, row));
-  }, [onRowSelectChange, subscribers]);
+    subscribersRef.current.forEach(sub => sub(gridId, row));
+  }, [onRowSelectChange]);
 
   const subscribeToRowSelect = useCallback((callback: (gridId: string, row: RowNode<T>) => void) => {
-    setSubscribers(prev => [...prev, callback]);
+    subscribersRef.current.add(callback);
+
     return () => {
-      setSubscribers(prev => prev.filter(s => s !== callback));
+      subscribersRef.current.delete(callback);
     };
   }, []);
 
+  // ✅ Use useMemo para criar value apenas quando dependências mudarem
+  const contextValue = useMemo<GridContextValue<T>>(() => ({
+    selectedRow,
+    setSelectedRow,
+    registerGrid,
+    unregisterGrid,
+    getGridApi,
+    onRowSelect,
+    subscribeToRowSelect,
+    locale,
+  }), [
+    selectedRow,
+    registerGrid,
+    unregisterGrid,
+    getGridApi,
+    onRowSelect,
+    subscribeToRowSelect,
+    locale,
+  ]);
+
   return (
-    <GridContext.Provider value={{
-      selectedRow,
-      setSelectedRow,
-      registerGrid,
-      unregisterGrid,
-      getGridApi,
-      onRowSelect,
-      subscribeToRowSelect,
-      locale,
-    }}>
+    <GridContext.Provider value={contextValue}>
       {children}
     </GridContext.Provider>
   );

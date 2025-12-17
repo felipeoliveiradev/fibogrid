@@ -1,4 +1,5 @@
-import { FiboGrid } from '@/components/FiboGrid';
+import { FiboGrid, useGridEvents } from '@/components/FiboGrid';
+import { useEffect } from 'react';
 import { FiboGridLocale } from '@/components/FiboGrid/locales/types';
 import { FiboGridConfigs, ColumnDef, GridApi, CellValueChangedEvent, RowClickedEvent, ServerSideDataSourceRequest, ServerSideDataSourceResponse } from '@/components/FiboGrid/types';
 import { Badge } from 'lucide-react';
@@ -28,6 +29,19 @@ export function DemoGrid(props: DemoGridProps) {
     const pageSize = 25;
     const pageOptions = [25, 50, 100, 250, 500];
     const groupFields = props.groupByField ? [props.groupByField] : undefined;
+
+    const events = useGridEvents(props.gridId || 'demo-grid');
+    useEffect(() => {
+        // events is no longer nullablex
+        console.log('Setting up Grid Events listener for grid:', props.gridId);
+        const unsubscribe = events.onRowClicked().listen((event) => {
+            console.log('DEBUG: Row Clicked via useGridEvents:', event);
+        });
+
+        return () => {
+            unsubscribe();
+        };
+    }, [events, props.gridId]);
 
     return (
         <div className="overflow-hidden border-primary/20 shadow-parchment glow-gold relative rounded-lg">
