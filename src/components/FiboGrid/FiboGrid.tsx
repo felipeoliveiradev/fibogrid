@@ -277,11 +277,15 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     onFilterRemoved?.(event);
   });
 
+  const dispatchConfigRef = useRef(dispatch);
+  dispatchConfigRef.current = dispatch;
+
   const prevSelectionRef = useRef(selection);
   useEffect(() => {
-    if (!dispatch || !gridId || !dispatch.on) return;
+    const config = dispatchConfigRef.current;
+    if (!config || !gridId || !config.on) return;
 
-    if (dispatch.on.includes('selectionChanged')) {
+    if (config.on.includes('selectionChanged')) {
       const currentIds = selection.selectedRows;
       const prevIds = prevSelectionRef.current.selectedRows;
 
@@ -296,11 +300,12 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
       }
 
       if (changed) {
-        const selectedRows = displayedRows.filter(r => selection.selectedRows.has(r.id));
+        const selectedIds = Array.from(currentIds);
+        const selectedRows = allRows.filter(r => currentIds.has(r.id));
 
-        if (!dispatch.filter || dispatch.filter({ type: 'selectionChanged', source: gridId, timestamp: Date.now(), data: { selectedIds: Array.from(currentIds), selectedRows } }, gridId)) {
+        if (!config.filter || config.filter({ type: 'selectionChanged', source: gridId, timestamp: Date.now(), data: { selectedIds, selectedRows } }, gridId)) {
           api.dispatch('selectionChanged', {
-            selectedIds: Array.from(currentIds),
+            selectedIds,
             selectedRows,
           });
         }
@@ -308,37 +313,39 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     }
 
     prevSelectionRef.current = selection;
-  }, [selection, dispatch, gridId, api, displayedRows]);
+  }, [selection, gridId, api, allRows]);
 
   const prevFilterModelRef = useRef(filterModel);
   useEffect(() => {
-    if (!dispatch || !gridId || !dispatch.on) return;
+    const config = dispatchConfigRef.current;
+    if (!config || !gridId || !config.on) return;
 
-    if (dispatch.on.includes('filterChanged')) {
+    if (config.on.includes('filterChanged')) {
       if (JSON.stringify(filterModel) !== JSON.stringify(prevFilterModelRef.current)) {
-        if (!dispatch.filter || dispatch.filter({ type: 'filterChanged', source: gridId, timestamp: Date.now(), data: { filterModel } }, gridId)) {
+        if (!config.filter || config.filter({ type: 'filterChanged', source: gridId, timestamp: Date.now(), data: { filterModel } }, gridId)) {
           api.dispatch('filterChanged', { filterModel });
         }
       }
     }
 
     prevFilterModelRef.current = filterModel;
-  }, [filterModel, dispatch, gridId, api]);
+  }, [filterModel, gridId, api]);
 
   const prevSortModelRef = useRef(sortModel);
   useEffect(() => {
-    if (!dispatch || !gridId || !dispatch.on) return;
+    const config = dispatchConfigRef.current;
+    if (!config || !gridId || !config.on) return;
 
-    if (dispatch.on.includes('sortChanged')) {
+    if (config.on.includes('sortChanged')) {
       if (JSON.stringify(sortModel) !== JSON.stringify(prevSortModelRef.current)) {
-        if (!dispatch.filter || dispatch.filter({ type: 'sortChanged', source: gridId, timestamp: Date.now(), data: { sortModel } }, gridId)) {
+        if (!config.filter || config.filter({ type: 'sortChanged', source: gridId, timestamp: Date.now(), data: { sortModel } }, gridId)) {
           api.dispatch('sortChanged', { sortModel });
         }
       }
     }
 
     prevSortModelRef.current = sortModel;
-  }, [sortModel, dispatch, gridId, api]);
+  }, [sortModel, gridId, api]);
 
 
   const effectiveContainerHeight = typeof height === 'number' ? height : (containerHeight || 600);
