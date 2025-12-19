@@ -10,6 +10,7 @@ import {
   isGroupNode,
   addChildRows,
 } from '../utils/grouping';
+import { setValueAtPath } from '../utils/helpers';
 
 interface UseGroupingOptions<T> {
   rows: RowNode<T>[];
@@ -17,9 +18,11 @@ interface UseGroupingOptions<T> {
   splitByField?: string;
   aggregations?: Record<string, 'sum' | 'avg' | 'min' | 'max' | 'count'>;
   getRowId?: (data: T) => string;
+  overrides?: Record<string, Record<string, any>>;
 }
 
-interface UseGroupingResult<T> {
+export interface UseGroupingResult<T> {
+  hasChildren: boolean;
   displayRows: GroupableRowNode<T>[];
   groupedRows: GroupableRowNode<T>[];
   splitPoints: number[];
@@ -42,6 +45,7 @@ export function useGrouping<T>({
   splitByField,
   aggregations,
   getRowId = (data: T) => (data as any).id || String(Math.random()),
+  overrides = {}
 }: UseGroupingOptions<T>): UseGroupingResult<T> {
   const [groupByFields, setGroupByFields] = useState<string[]>(initialGroupFields);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
@@ -51,13 +55,25 @@ export function useGrouping<T>({
 
   const rowsWithChildren = useMemo(() => {
     let result = rows as RegularRowNode<T>[];
-    
+
     childRowsMap.forEach((children, parentId) => {
-      result = addChildRows(result, parentId, children, getRowId);
+      // Apply overrides to child data before creating nodes
+      const processedChildren = children.map(childData => {
+        let finalData = childData;
+        const childId = getRowId(childData);
+        if (overrides && overrides[childId]) {
+          Object.entries(overrides[childId]).forEach(([field, value]) => {
+            finalData = setValueAtPath(finalData, field, value);
+          });
+        }
+        return finalData;
+      });
+
+      result = addChildRows(result, parentId, processedChildren, getRowId);
     });
-    
+
     return result;
-  }, [rows, childRowsMap, getRowId]);
+  }, [rows, childRowsMap, getRowId, overrides]);
 
 
   const groupedRows = useMemo(() => {
@@ -82,20 +98,20 @@ export function useGrouping<T>({
       const allGroupIds = groupedRows
         .filter(r => isGroupNode(r))
         .map(r => r.id);
-      
 
-      const effectiveExpanded = expandedGroups.size === 0 
+
+      const effectiveExpanded = expandedGroups.size === 0
         ? new Set(allGroupIds)
         : expandedGroups;
-      
+
       return flattenGroupedRows(groupedRows, effectiveExpanded);
     }
-    
+
 
     const result: RegularRowNode<T>[] = [];
     (splitByField ? splitRows : rowsWithChildren).forEach(row => {
       result.push(row);
-      
+
       const regularRow = row as RegularRowNode<T>;
       if (regularRow.childRows && expandedRows.has(row.id)) {
         regularRow.childRows.forEach(child => {
@@ -106,7 +122,7 @@ export function useGrouping<T>({
         });
       }
     });
-    
+
     return result;
   }, [groupedRows, expandedGroups, splitRows, splitByField, rowsWithChildren, expandedRows, groupByFields]);
 
@@ -138,6 +154,7 @@ export function useGrouping<T>({
   }, []);
 
   const addChildToRow = useCallback((parentId: string, childData: T[]) => {
+    console.log('[UseGrouping] addChildToRow called', parentId, childData.length);
     setChildRowsMap(prev => {
       const next = new Map(prev);
       const existing = next.get(parentId) || [];
@@ -178,5 +195,6 @@ export function useGrouping<T>({
     addChildToRow,
     expandedRows,
     toggleRowExpand,
+    hasChildren: childRowsMap.size > 0,
   };
 }

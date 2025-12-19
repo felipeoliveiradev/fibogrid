@@ -11,7 +11,7 @@ import { useRangeSelection } from './hooks/useRangeSelection';
 import { useRowRangeSelection } from './hooks/useRowRangeSelection';
 import { useClickDetector } from './hooks/useClickDetector';
 import { useKeyboardNavigation } from './hooks/useKeyboardNavigation';
-import { useGrouping } from './hooks/useGrouping';
+
 import { useGridContext, GridProvider } from './context/GridContext';
 import { useGridRegistry, useGridEvent } from './context/GridRegistryContext';
 import { GridHeader } from './components/GridHeader';
@@ -87,8 +87,6 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     lang = enUS,
     configs,
     shortcuts = true,
-    depends,
-    dispatch,
   } = props;
 
   const effectiveShowToolbar = configs?.header?.show ?? showToolbar;
@@ -143,6 +141,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     editingCell,
     setEditingCell,
     api,
+    internalApi,
     setColumnOrder,
     setColumnWidths,
     setColumnPinned,
@@ -152,6 +151,8 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     quickFilter,
     setQuickFilter,
     fireEvent,
+    grouping, // Destructure grouping from useGridState result
+    finalDisplayedRows
   } = useGridState(props, containerWidth);
 
   const isLoading = loading || serverSideLoading;
@@ -175,17 +176,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     addChildToRow,
     expandedRows,
     toggleRowExpand,
-  } = useGrouping({
-    rows: displayedRows,
-    groupByFields: initialGroupByFields,
-    splitByField,
-    aggregations: groupAggregations,
-    getRowId: props.getRowId,
-  });
-
-  const finalDisplayedRows = useMemo(() => {
-    return groupByFields.length > 0 || splitByField ? groupedDisplayRows : displayedRows;
-  }, [groupByFields, splitByField, groupedDisplayRows, displayedRows]);
+  } = grouping;
 
   const gridContext = useGridContext<T>();
   const { registerGrid: registerGlobal, unregisterGrid: unregisterGlobal } = useGridRegistry();
@@ -198,55 +189,14 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
       gridContext.registerGrid(gridId, apiRef.current);
       return () => gridContext.unregisterGrid(gridId);
     }
-  }, [gridContext, gridId]);
+  }, [gridContext, gridId, api]);
 
   useEffect(() => {
     if (gridId && registerGlobal && unregisterGlobal) {
       registerGlobal(gridId, apiRef.current);
       return () => unregisterGlobal(gridId);
     }
-  }, [gridId, registerGlobal, unregisterGlobal]);
-
-  useEffect(() => {
-    if (!depends || !gridId) return;
-
-    const { registerDependency } = useGridRegistry<T>();
-    const parentIds = Array.isArray(depends.on) ? depends.on : [depends.on];
-    const cleanupFns: (() => void)[] = [];
-
-    parentIds.forEach(parentId => {
-      const receiveActions: string[] = [];
-      const receiveHandlers: Record<string, (parentApi: any, action: any) => void> = {};
-
-      if (depends.receive) {
-        Object.entries(depends.receive).forEach(([actionType, handler]) => {
-          if (actionType === 'custom' && typeof handler === 'object') {
-            Object.entries(handler).forEach(([customAction, customHandler]) => {
-              receiveActions.push(customAction);
-              receiveHandlers[customAction] = customHandler;
-            });
-          } else if (typeof handler === 'function') {
-            receiveActions.push(actionType);
-            receiveHandlers[actionType] = handler;
-          }
-        });
-      }
-
-      const cleanup = registerDependency({
-        childId: gridId,
-        parentId,
-        receiveActions,
-        receiveHandlers,
-        autoRefresh: depends.autoRefresh || false,
-      });
-
-      cleanupFns.push(cleanup);
-    });
-
-    return () => {
-      cleanupFns.forEach(fn => fn());
-    };
-  }, [depends, gridId]);
+  }, [gridId, registerGlobal, unregisterGlobal, api]);
 
   useEffect(() => {
     onGridReady?.({ api });
@@ -276,77 +226,6 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
   useGridEvent<T>(gridId, 'filterRemoved', (event) => {
     onFilterRemoved?.(event);
   });
-
-  const dispatchConfigRef = useRef(dispatch);
-  dispatchConfigRef.current = dispatch;
-
-  const prevSelectionRef = useRef(selection);
-  useEffect(() => {
-    const config = dispatchConfigRef.current;
-    if (!config || !gridId || !config.on) return;
-
-    if (config.on.includes('selectionChanged')) {
-      const currentIds = selection.selectedRows;
-      const prevIds = prevSelectionRef.current.selectedRows;
-
-      let changed = currentIds.size !== prevIds.size;
-      if (!changed) {
-        for (const id of currentIds) {
-          if (!prevIds.has(id)) {
-            changed = true;
-            break;
-          }
-        }
-      }
-
-      if (changed) {
-        const selectedIds = Array.from(currentIds);
-        const selectedRows = allRows.filter(r => currentIds.has(r.id));
-
-        if (!config.filter || config.filter({ type: 'selectionChanged', source: gridId, timestamp: Date.now(), data: { selectedIds, selectedRows } }, gridId)) {
-          api.dispatch('selectionChanged', {
-            selectedIds,
-            selectedRows,
-          });
-        }
-      }
-    }
-
-    prevSelectionRef.current = selection;
-  }, [selection, gridId, api, allRows]);
-
-  const prevFilterModelRef = useRef(filterModel);
-  useEffect(() => {
-    const config = dispatchConfigRef.current;
-    if (!config || !gridId || !config.on) return;
-
-    if (config.on.includes('filterChanged')) {
-      if (JSON.stringify(filterModel) !== JSON.stringify(prevFilterModelRef.current)) {
-        if (!config.filter || config.filter({ type: 'filterChanged', source: gridId, timestamp: Date.now(), data: { filterModel } }, gridId)) {
-          api.dispatch('filterChanged', { filterModel });
-        }
-      }
-    }
-
-    prevFilterModelRef.current = filterModel;
-  }, [filterModel, gridId, api]);
-
-  const prevSortModelRef = useRef(sortModel);
-  useEffect(() => {
-    const config = dispatchConfigRef.current;
-    if (!config || !gridId || !config.on) return;
-
-    if (config.on.includes('sortChanged')) {
-      if (JSON.stringify(sortModel) !== JSON.stringify(prevSortModelRef.current)) {
-        if (!config.filter || config.filter({ type: 'sortChanged', source: gridId, timestamp: Date.now(), data: { sortModel } }, gridId)) {
-          api.dispatch('sortChanged', { sortModel });
-        }
-      }
-    }
-
-    prevSortModelRef.current = sortModel;
-  }, [sortModel, gridId, api]);
-
 
   const effectiveContainerHeight = typeof height === 'number' ? height : (containerHeight || 600);
   const toolbarHeight = effectiveShowToolbar ? 48 : 0;
@@ -509,10 +388,10 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     containerRef,
     displayedRows,
     columns,
-    api,
+    api: internalApi,
     onStartEdit: (rowId, field) => {
 
-      const rowNode = api.getRowNode(rowId);
+      const rowNode = internalApi.getRowNode(rowId);
       const value = rowNode ? (rowNode.data as any)[field] : null;
       setEditingCell({ rowId, field, value, originalValue: value });
       fireEvent('cellEditingStarted', { rowNode, field, value });
@@ -646,7 +525,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
   }, [displayedRows, columns, focusCell, handleRangeMouseDown]);
 
   const handleRowClick = useCallback(
-    (rowId: string, e: React.MouseEvent) => {
+    (rowId: string, e: React.MouseEvent, fromCell = false) => {
       if (isRowDragging || isDraggingRows) return;
 
       const target = e.target as HTMLElement;
@@ -704,7 +583,9 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
               api,
             };
 
-            onRowClickFallback(rowClickEvent);
+            if (!fromCell) {
+              onRowClickFallback(rowClickEvent);
+            }
 
             // Fire generic rowClicked event for EventBuilder subscribers
             fireEvent('rowClicked', {
@@ -845,7 +726,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     >
       {effectiveShowToolbar && (
         <GridToolbar
-          api={api}
+          api={internalApi}
           columns={columns}
           quickFilterValue={quickFilter}
           onQuickFilterChange={setQuickFilter}
@@ -855,7 +736,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
           filterModel={filterModel}
           headerConfig={configs?.header}
           onResetFilters={filterModel.length > 0 ? () => {
-            api.setFilterModel([]);
+            internalApi.setFilterModel([]);
             setQuickFilter('');
           } : undefined}
           className={className}
@@ -871,7 +752,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
           <div style={{ minWidth: totalContentWidth }}>
             <div className="sticky top-0 z-10">
               <GridHeader
-                api={api}
+                api={internalApi}
                 columns={columns}
                 sortModel={sortModel}
                 filterModel={filterModel}
@@ -945,6 +826,9 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                             }
                           }}
                           onCellClick={(col, e) => {
+                            e.stopPropagation();
+                            handleRowClick(row.id, e, true);
+
                             const currentSelection = selectionRef.current;
                             const isCurrentlySelected = currentSelection.selectedRows.has(row.id);
 
@@ -988,7 +872,20 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                             }
                           }}
                           onCellDoubleClick={(col, e) => {
-                            if (col.editable) api.startEditingCell(row.id, col.field);
+                            let isEditable = col.editable;
+                            if (typeof isEditable === 'function') {
+                              isEditable = isEditable({
+                                value: getValueFromPath(row.data, col.field),
+                                data: row.data,
+                                rowIndex: row.rowIndex,
+                                colDef: col,
+                                column: col,
+                                api,
+                                rowNode: row
+                              });
+                            }
+
+                            if (isEditable) internalApi.startEditingCell(row.id, col.field);
                             onCellDoubleClicked?.({ rowNode: row, column: col, value: getValueFromPath(row.data, col.field), event: e, api });
                           }}
                           showCheckboxColumn={!hasCustomCheckbox && configs?.center?.checkboxSelection !== false && !!rowSelection}
@@ -1006,7 +903,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                               originalValue: value,
                             };
                             editingCellRef.current = edit;
-                            api.startEditingCell(row.id, field);
+                            internalApi.startEditingCell(row.id, field);
                           }}
                           onEditChange={(value) => {
                             setEditingCell((prev) => {
@@ -1062,7 +959,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                           isCellFocused={isCellFocused}
                           onCellMouseDown={handleCellMouseDown}
                           onCellMouseEnter={handleCellMouseEnter}
-                          api={api}
+                          api={internalApi}
                           isEven={index % 2 === 0}
                           level={regularRow.level || 0}
                           hasChildren={regularRow.childRows?.length > 0}

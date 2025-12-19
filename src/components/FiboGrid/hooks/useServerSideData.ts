@@ -1,7 +1,7 @@
 import { useRef, useCallback, useSyncExternalStore } from 'react';
 import { ServerSideDataSource, ServerSideDataSourceRequest } from '../types';
 
-interface ServerSideDataState<T> {
+export interface ServerSideDataState<T> {
   data: T[];
   totalRows: number;
   loading: boolean;

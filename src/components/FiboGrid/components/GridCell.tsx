@@ -235,6 +235,25 @@ export function GridCell<T>({
           />
         );
 
+      case 'custom':
+        if (column.cellEditorRenderer) {
+          return column.cellEditorRenderer({
+            value: editValue ?? value,
+            data: row.data,
+            rowIndex: row.rowIndex,
+            colDef: column,
+            column,
+            api,
+            rowNode: row,
+            update: (val: any) => {
+              onEditChange(val);
+              onStopEdit(false);
+            },
+            stopEditing: onStopEdit
+          });
+        }
+        return null;
+
       default:
         return (
           <input

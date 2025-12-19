@@ -1,72 +1,80 @@
-import { GridApi } from '../types';
+import { GridApi, EventSubscription, DiffSubscription } from '../types';
+import { useState, useEffect, useRef } from 'react';
 
 export type EventHandler<T = any> = (data: T) => void;
 
-export interface EventSubscription {
-    listen: (handler: EventHandler) => () => void;
-    once: (handler: EventHandler) => () => void;
-    off: (handler?: EventHandler) => void;
-}
+
 
 export class EventBuilder<T = any> {
     private addEventListener: (eventType: string, listener: EventHandler) => void;
     private removeEventListener: (eventType: string, listener: EventHandler) => void;
+    private fireEvent: (eventType: string, eventData: any) => void;
     private listeners: Map<string, Set<EventHandler>> = new Map();
 
     constructor(
         addEventListener: (eventType: string, listener: EventHandler) => void,
-        removeEventListener: (eventType: string, listener: EventHandler) => void
+        removeEventListener: (eventType: string, listener: EventHandler) => void,
+        fireEvent: (eventType: string, eventData: any) => void
     ) {
         this.addEventListener = addEventListener;
         this.removeEventListener = removeEventListener;
+        this.fireEvent = fireEvent;
+    }
+
+    calls() {
+        return {
+            onSelectionChanged: (event: any) => this.fireEvent('selectionChanged', event),
+            onSortChanged: (event: any) => this.fireEvent('sortChanged', event),
+            onFilterChanged: (event: any) => this.fireEvent('filterChanged', event),
+            onRowClicked: (event: any) => this.fireEvent('rowClicked', event),
+            onCellValueChanged: (event: any) => this.fireEvent('cellValueChanged', event),
+            onPaginationChanged: (event: any) => this.fireEvent('paginationChanged', event),
+            onColumnResized: (event: any) => this.fireEvent('columnResized', event),
+            onColumnMoved: (event: any) => this.fireEvent('columnMoved', event),
+            onRowDataUpdated: (event: any) => this.fireEvent('rowDataUpdated', event),
+            onCellEditingStarted: (event: any) => this.fireEvent('cellEditingStarted', event),
+            onCellEditingStopped: (event: any) => this.fireEvent('cellEditingStopped', event),
+            onQuickFilterChanged: (event: any) => this.fireEvent('quickFilterChanged', event),
+            onFilterRemoved: (event: any) => this.fireEvent('filterRemoved', event),
+        };
     }
 
     private createSubscription(eventName: string, transform?: (data: any) => any, filter?: (data: any) => boolean): EventSubscription {
         const self = this;
 
-        return {
-            listen: (handler: EventHandler) => {
-                const wrappedHandler = (data: any) => {
-                    if (filter && !filter(data)) return;
-
-                    const result = transform ? transform(data) : data;
-                    handler(result);
-                };
-
-                self.addEventListener(eventName, wrappedHandler);
-
-                if (!self.listeners.has(eventName)) {
-                    self.listeners.set(eventName, new Set());
+        const selfSubscription = {
+            listen: (handler?: EventHandler): any => {
+                if (handler) {
+                    return createListen(handler);
                 }
-                self.listeners.get(eventName)!.add(wrappedHandler);
-
-                return () => {
-                    self.removeEventListener(eventName, wrappedHandler);
-                    self.listeners.get(eventName)?.delete(wrappedHandler);
-                };
+                return selfSubscription;
             },
 
-            once: (handler: EventHandler) => {
-                const wrappedHandler = (data: any) => {
-                    if (filter && !filter(data)) return;
+            once: (handler?: EventHandler): any => {
+                if (handler) {
+                    const wrappedHandler = (data: any) => {
+                        if (filter && !filter(data)) return;
 
-                    const transformedData = transform ? transform(data) : data;
-                    handler(transformedData);
-                    self.removeEventListener(eventName, wrappedHandler);
-                    self.listeners.get(eventName)?.delete(wrappedHandler);
-                };
+                        self.removeEventListener(eventName, wrappedHandler);
+                        self.listeners.get(eventName)?.delete(wrappedHandler);
 
-                self.addEventListener(eventName, wrappedHandler);
+                        const transformedData = transform ? transform(data) : data;
+                        handler(transformedData);
+                    };
 
-                if (!self.listeners.has(eventName)) {
-                    self.listeners.set(eventName, new Set());
+                    self.addEventListener(eventName, wrappedHandler);
+
+                    if (!self.listeners.has(eventName)) {
+                        self.listeners.set(eventName, new Set());
+                    }
+                    self.listeners.get(eventName)!.add(wrappedHandler);
+
+                    return () => {
+                        self.removeEventListener(eventName, wrappedHandler);
+                        self.listeners.get(eventName)?.delete(wrappedHandler);
+                    };
                 }
-                self.listeners.get(eventName)!.add(wrappedHandler);
-
-                return () => {
-                    self.removeEventListener(eventName, wrappedHandler);
-                    self.listeners.get(eventName)?.delete(wrappedHandler);
-                };
+                return selfSubscription;
             },
 
             off: (handler?: EventHandler) => {
@@ -80,8 +88,52 @@ export class EventBuilder<T = any> {
                         handlers.clear();
                     }
                 }
+            },
+
+            render: <R = any>(initialValue?: R): R => {
+                const [value, setValue] = useState<R>(initialValue as R);
+                // Use a ref to keep track of the setter, although useState setter is stable,
+                // this pattern is consistent with stabilizing callbacks if we needed to.
+                const setValueRef = useRef(setValue);
+                setValueRef.current = setValue;
+
+                useEffect(() => {
+                    // Subscribe to the event
+                    // When event fires, listen() calls handler with result.
+                    // We pass setValue (via ref wrapper) as the handler.
+                    const handler = (data: any) => {
+                        setValueRef.current(data);
+                    };
+
+                    const unsub = createListen(handler);
+                    return unsub;
+                }, []); // Subscribe once on mount
+
+                return value as R;
             }
         };
+        return selfSubscription;
+
+        function createListen(handler: EventHandler) {
+            const wrappedHandler = (data: any) => {
+                if (filter && !filter(data)) return;
+
+                const result = transform ? transform(data) : data;
+                handler(result);
+            };
+
+            self.addEventListener(eventName, wrappedHandler);
+
+            if (!self.listeners.has(eventName)) {
+                self.listeners.set(eventName, new Set());
+            }
+            self.listeners.get(eventName)!.add(wrappedHandler);
+
+            return () => {
+                self.removeEventListener(eventName, wrappedHandler);
+                self.listeners.get(eventName)?.delete(wrappedHandler);
+            };
+        }
     }
 
     private createDiffSubscription<T>(
@@ -104,8 +156,20 @@ export class EventBuilder<T = any> {
             return val;
         };
 
-        return {
+        const selfDiffSubscription = {
             ...base,
+            listen: (handler?: EventHandler): any => {
+                if (handler) {
+                    return base.listen(handler);
+                }
+                return selfDiffSubscription;
+            },
+            once: (handler?: EventHandler): any => {
+                if (handler) {
+                    return base.once(handler);
+                }
+                return selfDiffSubscription;
+            },
             old: () => this.createSubscription(eventName, transformOld || (() => undefined), hasChanged),
             actual: () => this.createSubscription(eventName, transformActual, hasChanged),
             all: () => this.createSubscription(eventName, transformAll || ((data) => data), hasChanged),
@@ -123,6 +187,7 @@ export class EventBuilder<T = any> {
                 }
             )
         };
+        return selfDiffSubscription;
     }
 
     // Selection Changed Event

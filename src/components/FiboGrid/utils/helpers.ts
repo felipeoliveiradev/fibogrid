@@ -93,6 +93,28 @@ export function processColumns<T>(
     return processed;
   });
 }
+export function toArray(value: any): any[] {
+  if (Array.isArray(value)) return value;
+  if (value === null || value === undefined) return [];
+  return [value];
+}
+export function mergeUnique<T>(
+  original: T[] | T,
+  incoming: T[] | T,
+  compareKey: keyof T,
+): T[] {
+  const originalArray = this.toArray(original);
+  const incomingArray = this.toArray(incoming);
+
+  if (!incomingArray.length) return originalArray;
+  if (!originalArray.length) return incomingArray;
+
+  const filteredOriginal = originalArray.filter(
+    (origItem) => !incomingArray.some((newItem) => String(newItem[compareKey]) === String(origItem[compareKey]))
+  );
+
+  return [...filteredOriginal, ...incomingArray];
+}
 
 export function sortRows<T>(
   rows: RowNode<T>[],
@@ -465,4 +487,51 @@ export function deepMerge(target: any, source: any): any {
   });
 
   return result;
+}
+export function isEqual(value: any, other: any): boolean {
+  if (value === other) {
+    return true;
+  }
+
+  if (value == null || other == null || (typeof value !== 'object' && typeof other !== 'object')) {
+    return value !== value && other !== other; // NaN check
+  }
+
+  if (value.constructor !== other.constructor) {
+    return false;
+  }
+
+  if (Array.isArray(value)) {
+    if (value.length !== other.length) {
+      return false;
+    }
+    for (let i = 0; i < value.length; i++) {
+      if (!isEqual(value[i], other[i])) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  if (value instanceof RegExp) {
+    return value.source === other.source && value.flags === other.flags;
+  }
+
+  if (value instanceof Date) {
+    return value.getTime() === other.getTime();
+  }
+
+  const keys = Object.keys(value);
+
+  if (keys.length !== Object.keys(other).length) {
+    return false;
+  }
+
+  for (const key of keys) {
+    if (!Object.prototype.hasOwnProperty.call(other, key) || !isEqual(value[key], other[key])) {
+      return false;
+    }
+  }
+
+  return true;
 }
