@@ -8,6 +8,18 @@ export function updateCellManager<T>(
     field: string,
     value: any
 ): GridManagerBuilder<T> {
-    console.warn("updateCell not fully ported in this snippet - see execution function");
+    if (!rowId) {
+        console.warn('Grid Manager: updateCell() requires a valid rowId.');
+        return managerBuilder;
+    }
+
+    const sId = String(rowId);
+    const existingUpdate = state.pendingUpdates.get(sId) || {};
+
+    state.pendingUpdates.set(sId, {
+        ...existingUpdate,
+        [field]: value
+    });
+
     return managerBuilder;
 }
