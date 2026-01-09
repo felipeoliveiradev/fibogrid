@@ -61,6 +61,12 @@ export function useGridApi<T>(props: UseGridApiProps<T>): { api: GridApi<T>, int
                         return (newSourceId: string) => createSecureProxy(target, newSourceId);
                     }
 
+                    // Check for non-configurable properties to satisfy Proxy invariant
+                    const descriptor = Reflect.getOwnPropertyDescriptor(target, prop);
+                    if (descriptor && !descriptor.configurable && !descriptor.writable) {
+                        return Reflect.get(target, prop, receiver);
+                    }
+
                     // Intercept 'events'
                     if (prop === 'events') {
                         return () => {
