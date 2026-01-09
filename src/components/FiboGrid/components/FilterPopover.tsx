@@ -227,7 +227,7 @@ export function FilterPopover<T>({
         <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-muted/50 rounded-t-lg">
           <div className="flex items-center gap-2">
             <Filter className="h-4 w-4 text-muted-foreground" />
-            <span className="font-medium text-sm">{column.headerName}</span>
+            <span className="font-medium text-sm">{column.filterLabel || column.headerName}</span>
           </div>
           <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={onClose}>
             <X className="h-4 w-4" />

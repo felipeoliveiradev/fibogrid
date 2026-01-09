@@ -21,6 +21,7 @@ export interface ColumnDef<T = any> {
   pinned?: 'left' | 'right' | null;
   pinnedPriority?: number;
   hide?: boolean;
+  filterLabel?: string;
   filterType?: FilterType;
   type?: 'data' | 'action' | 'checkbox' | 'rowNumber';
   cellEditor?: CellEditorType;

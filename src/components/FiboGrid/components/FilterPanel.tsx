@@ -89,7 +89,7 @@ export function FilterPanel<T>({
                   className="flex items-center justify-between px-2 py-1 bg-muted rounded text-sm"
                 >
                   <span className="truncate flex-1">
-                    {column?.headerName}: {String(filter.value).substring(0, 15)}
+                    {column?.filterLabel || column?.headerName}: {String(filter.value).substring(0, 15)}
                   </span>
                   <button
                     onClick={() => onFilterChange(null)}
@@ -124,7 +124,7 @@ export function FilterPanel<T>({
                 )} />
 
                 <span className="flex-1 text-sm truncate">
-                  {column.headerName}
+                  {column.filterLabel || column.headerName}
                 </span>
 
                 {filter && (
