@@ -10,6 +10,9 @@ High-performance React data grid component inspired by mathematical elegance and
 ## ✨ Features
 
 - ⚡ **Blazing Fast** - Virtual scrolling optimized for 100k+ rows at 60fps
+- 🛡️ **Enterprise Security** - Built-in `Ingress`/`Egress` rules to strictly control cross-grid communication
+- 🧠 **Headless Architecture** - Use `useFiboGrid` and `useGridEvent` to control grids from anywhere
+- 🔧 **Fluent API Builder** - Chainable, atomic updates for complex state changes (`api.params()...execute()`)
 - 🎨 **Modern Design** - Built with Tailwind CSS and shadcn/ui components
 - 📊 **Advanced Sorting** - Multi-column sorting with priority order
 - 🔍 **Excel-style Filtering** - Powerful filtering with multiple conditions
