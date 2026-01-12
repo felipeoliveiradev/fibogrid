@@ -1,11 +1,7 @@
 import { GridRegistryContextValue } from './context/GridRegistryContext';
-
 export type SortDirection = 'asc' | 'desc' | null;
-
 export type FilterType = 'text' | 'number' | 'date' | 'select' | 'boolean';
-
 export type CellEditorType = 'text' | 'number' | 'date' | 'select' | 'checkbox' | 'custom' | 'action';
-
 export interface ColumnDef<T = any> {
   field: string;
   headerName: string;
@@ -44,7 +40,6 @@ export interface ColumnDef<T = any> {
   aggFunc?: 'sum' | 'avg' | 'min' | 'max' | 'count' | ((values: any[]) => any);
   useInternalFilter?: boolean;
 }
-
 export interface CellRendererParams<T = any> {
   value: any;
   data: T;
@@ -55,25 +50,21 @@ export interface CellRendererParams<T = any> {
   rowNode: RowNode<T>;
   selectedRows?: T[];
 }
-
 export interface CellEditorParams<T = any> extends CellRendererParams<T> {
   update: (value: any) => void;
   stopEditing: (cancel?: boolean) => void;
 }
-
 export interface HeaderRendererParams<T = any> {
   colDef: ColumnDef<T>;
   column: ProcessedColumn<T>;
   api: GridApi<T>;
 }
-
 export interface RowClassParams<T = any> {
   data: T;
   rowIndex: number;
   rowNode: RowNode<T>;
   api: GridApi<T>;
 }
-
 export interface ValueSetterParams<T = any> {
   oldValue: any;
   newValue: any;
@@ -81,13 +72,11 @@ export interface ValueSetterParams<T = any> {
   column: ProcessedColumn<T>;
   api: GridApi<T>;
 }
-
 export interface ProcessedColumn<T = any> extends ColumnDef<T> {
   computedWidth: number;
   left: number;
   index: number;
 }
-
 export interface ContextMenuItem {
   name?: string;
   action?: () => void;
@@ -97,7 +86,6 @@ export interface ContextMenuItem {
   separator?: boolean;
   cssClasses?: string[];
 }
-
 export interface RowNode<T = any> {
   id: string;
   data: T;
@@ -109,7 +97,6 @@ export interface RowNode<T = any> {
   children?: RowNode<T>[];
   highlighted?: boolean;
 }
-
 export interface KeyboardEventParams<T = any> {
   event: React.KeyboardEvent | KeyboardEvent;
   api: GridApi<T>;
@@ -121,7 +108,6 @@ export interface KeyboardEventParams<T = any> {
     focusedCell: { rowId: string; field: string } | null;
   };
 }
-
 export interface ShortcutDef<T = any> {
   id: string;
   keys: string | string[];
@@ -129,12 +115,10 @@ export interface ShortcutDef<T = any> {
   description?: string;
   preventDefault?: boolean;
 }
-
 export interface SortModel {
   field: string;
   direction: SortDirection;
 }
-
 export interface FilterModel<T = any> {
   field: string;
   filterType: FilterType;
@@ -142,13 +126,11 @@ export interface FilterModel<T = any> {
   operator?: 'equals' | 'contains' | 'startsWith' | 'endsWith' | 'greaterThan' | 'lessThan' | 'between';
   meta?: T;
 }
-
 export interface SelectionState {
   selectedRows: Set<string>;
   lastSelectedIndex: number | null;
   anchorIndex: number | null;
 }
-
 export interface GridState<T = any> {
   rows: RowNode<T>[];
   displayedRows: RowNode<T>[];
@@ -161,7 +143,6 @@ export interface GridState<T = any> {
   columnOrder: string[];
   scrollPosition: { top: number; left: number };
 }
-
 export interface PaginationState {
   enabled: boolean;
   pageSize: number;
@@ -169,9 +150,7 @@ export interface PaginationState {
   totalRows: number;
   totalPages: number;
 }
-
 export type PaginationMode = 'client' | 'server';
-
 export interface ServerSideDataSourceRequest {
   page: number;
   pageSize: number;
@@ -179,32 +158,27 @@ export interface ServerSideDataSourceRequest {
   filterModel: FilterModel[];
   quickFilterText?: string;
 }
-
 export interface ServerSideDataSourceResponse<T = any> {
   data: T[];
   totalRows: number;
   page: number;
   pageSize: number;
 }
-
 export interface ServerSideDataSource<T = any> {
   getRows: (request: ServerSideDataSourceRequest) => Promise<ServerSideDataSourceResponse<T>>;
 }
-
 export interface EditingCell {
   rowId: string;
   field: string;
   value: any;
   originalValue: any;
 }
-
 export interface EventSubscription {
   listen: ((handler: (data: any) => void) => () => void) & (() => EventSubscription);
   once: ((handler: (data: any) => void) => () => void) & (() => EventSubscription);
   off: (handler?: (data: any) => void) => void;
   render: <R = any>(initialValue?: R) => R;
 }
-
 export interface SelectionChangedSubscription extends EventSubscription {
   getRowData: () => EventSubscription;
   getAllData: () => EventSubscription;
@@ -212,8 +186,6 @@ export interface SelectionChangedSubscription extends EventSubscription {
   getCount: () => EventSubscription;
   getFirstRow: () => EventSubscription;
 }
-
-// Fluent API for Diffs
 export interface DiffSubscription<T> extends EventSubscription {
   old: () => EventSubscription;
   actual: () => EventSubscription;
@@ -223,28 +195,23 @@ export interface DiffSubscription<T> extends EventSubscription {
   listen: ((handler: (data: any) => void) => () => void) & (() => DiffSubscription<T>);
   once: ((handler: (data: any) => void) => () => void) & (() => DiffSubscription<T>);
 }
-
 export interface SortChangedSubscription extends EventSubscription {
   getSortModel: () => DiffSubscription<SortModel[]>;
   getFirstSort: () => DiffSubscription<SortModel | null>;
 }
-
 export interface FilterChangedSubscription extends EventSubscription {
   getFilterModel: () => DiffSubscription<FilterModel[]>;
   getFilterCount: () => DiffSubscription<number>;
 }
-
 export interface RowClickedSubscription extends EventSubscription {
   getRowData: () => EventSubscription;
   getRowId: () => EventSubscription;
 }
-
 export interface CellValueChangedSubscription extends EventSubscription {
   getNewValue: () => EventSubscription;
   getOldValue: () => EventSubscription;
   getField: () => EventSubscription;
 }
-
 export interface PaginationChangedSubscription extends EventSubscription {
   getCurrentPage: () => DiffSubscription<number>;
   getPageSize: () => DiffSubscription<number>;
@@ -254,7 +221,6 @@ export interface PaginationChangedSubscription extends EventSubscription {
   getNextPage: () => DiffSubscription<number | null>;
   getPrevPage: () => DiffSubscription<number | null>;
 }
-
 export interface EventCallsBuilder<T = any> {
   onSelectionChanged(event: SelectionChangedEvent<T>): void;
   onSortChanged(event: SortChangedEvent): void;
@@ -270,7 +236,6 @@ export interface EventCallsBuilder<T = any> {
   onQuickFilterChanged(event: any): void;
   onFilterRemoved(event: FilterRemovedEvent<T>): void;
 }
-
 export interface EventBuilder<T = any> {
   calls(): EventCallsBuilder<T>;
   onSelectionChanged(): SelectionChangedSubscription;
@@ -294,7 +259,6 @@ export interface GridApi<T = any> {
   events: () => EventBuilder<T>;
   connect: (sourceId: string) => GridApi<T>;
   addChildToRow: (parentId: string, data: T[]) => void;
-
   setRowData: (data: T[]) => void;
   getRowData: () => T[];
   getDisplayedRows: () => RowNode<T>[];
@@ -303,25 +267,17 @@ export interface GridApi<T = any> {
   forEachNode: (callback: (node: RowNode<T>) => void) => void;
   getDisplayedRowCount: () => number;
   getDisplayedRowAtIndex: (index: number) => RowNode<T> | null;
-
-
   selectAll: () => void;
   deselectAll: () => void;
   selectRow: (id: string, selected?: boolean) => void;
   selectRows: (ids: string[], selected?: boolean) => void;
   getSelectedRows: () => RowNode<T>[];
   getSelectedNodes: () => RowNode<T>[];
-
-
   setSortModel: (model: SortModel[]) => void;
   getSortModel: () => SortModel[];
-
-
   setFilterModel: (model: FilterModel[], options?: SetFilterOptions) => void;
   getFilterModel: () => FilterModel[];
   setQuickFilter: (text: string) => void;
-
-
   getColumnDefs: () => ColumnDef<T>[];
   setColumnVisible: (field: string, visible: boolean) => void;
   setColumnPinned: (field: string, pinned: 'left' | 'right' | null) => void;
@@ -329,29 +285,19 @@ export interface GridApi<T = any> {
   resizeColumn: (field: string, width: number) => void;
   autoSizeColumn: (field: string) => void;
   autoSizeAllColumns: () => void;
-
-
   setPage: (page: number) => void;
   setPageSize: (size: number) => void;
   nextPage: () => void;
   previousPage: () => void;
-
-
   startEditingCell: (rowId: string, field: string) => void;
   stopEditing: (cancel?: boolean) => void;
-
-
   ensureRowVisible: (id: string) => void;
   ensureColumnVisible: (field: string) => void;
   scrollTo: (position: { top?: number; left?: number }) => void;
-
-
   exportToCsv: (params?: ExportParams) => void;
   copyToClipboard: (includeHeaders?: boolean) => Promise<void>;
   undo: () => void;
   pasteFromClipboard: () => Promise<void>;
-
-
   params: () => GridApiBuilder<T>;
   manager: () => GridManagerBuilder<T>;
   refreshCells: () => void;
@@ -359,11 +305,9 @@ export interface GridApi<T = any> {
   refresh: () => void;
   refreshSelection: () => void;
 }
-
 export interface SetFilterOptions {
   behavior?: 'replace' | 'merge';
 }
-
 export interface GridApiBuilder<T = any> {
   setFilterModel: (model: FilterModel[], options?: SetFilterOptions) => GridApiBuilder<T>;
   removeFilter: (field: string) => GridApiBuilder<T>;
@@ -388,7 +332,6 @@ export interface GridApiBuilder<T = any> {
   gridManager: (callback: (manager: GridManagerBuilder<T>) => GridManagerBuilder<T>) => GridApiBuilder<T>;
   execute: () => void;
 }
-
 export interface GridManagerBuilder<T = any> {
   add: (rows: T[]) => GridManagerBuilder<T>;
   upAdd: (rows: T[]) => GridManagerBuilder<T>;
@@ -406,14 +349,12 @@ export interface GridManagerBuilder<T = any> {
   split: (rowId: string, options?: { asChild?: boolean }) => GridManagerBuilder<T>;
   execute: () => void;
 }
-
 export interface ExportParams {
   fileName?: string;
   columnKeys?: string[];
   onlySelected?: boolean;
   skipHeader?: boolean;
 }
-
 export interface RowClickFallbackEvent<T = any> {
   clickType: 'single' | 'double' | 'triple' | 'menu' | number;
   rowData: T;
@@ -421,14 +362,12 @@ export interface RowClickFallbackEvent<T = any> {
   rowNode: RowNode<T>;
   event: React.MouseEvent;
   api: GridApi<T>;
-
   cell?: {
     column: ProcessedColumn<T>;
     value: any;
     isEditable: boolean;
   };
 }
-
 export interface GridEvents<T = any> {
   onRowSelected?: (event: RowSelectedEvent<T>) => void;
   onSelectionChanged?: (event: SelectionChangedEvent<T>) => void;
@@ -451,30 +390,25 @@ export interface GridEvents<T = any> {
   onGlobalFilterChange?: (event: GlobalFilterChangedEvent<T>) => void;
   onFilterRemoved?: (event: FilterRemovedEvent<T>) => void;
 }
-
 export interface GlobalFilterChangedEvent<T = any> {
   quickFilterValue: string;
   oldQuickFilterValue?: string;
   api: GridApi<T>;
 }
-
 export interface FilterRemovedEvent<T = any> {
   filter: FilterModel;
   api: GridApi<T>;
 }
-
 export interface RowSelectedEvent<T = any> {
   rowNode: RowNode<T>;
   selected: boolean;
   api: GridApi<T>;
 }
-
 export interface SelectionChangedEvent<T = any> {
   selectedRows: RowNode<T>[];
   oldSelectedRows?: RowNode<T>[];
   api: GridApi<T>;
 }
-
 export interface CellClickedEvent<T = any> {
   rowNode: RowNode<T>;
   column: ProcessedColumn<T>;
@@ -482,9 +416,7 @@ export interface CellClickedEvent<T = any> {
   event: React.MouseEvent;
   api: GridApi<T>;
 }
-
 export interface CellDoubleClickedEvent<T = any> extends CellClickedEvent<T> { }
-
 export interface CellValueChangedEvent<T = any> {
   rowNode: RowNode<T>;
   column: ProcessedColumn<T>;
@@ -492,53 +424,43 @@ export interface CellValueChangedEvent<T = any> {
   newValue: any;
   api: GridApi<T>;
 }
-
 export interface RowClickedEvent<T = any> {
   rowNode: RowNode<T>;
   event: React.MouseEvent;
   api: GridApi<T>;
 }
-
 export interface RowDoubleClickedEvent<T = any> extends RowClickedEvent<T> { }
-
 export interface RowDragEvent<T = any> {
   rowNode: RowNode<T>;
   overNode?: RowNode<T>;
   overIndex?: number;
   api: GridApi<T>;
 }
-
 export interface SortChangedEvent {
   sortModel: SortModel[];
   oldSortModel?: SortModel[];
 }
-
 export interface FilterChangedEvent {
   filterModel: FilterModel[];
   oldFilterModel?: FilterModel[];
 }
-
 export interface ColumnResizedEvent<T = any> {
   column: ProcessedColumn<T>;
   newWidth: number;
   oldWidth?: number;
 }
-
 export interface ColumnMovedEvent<T = any> {
   column: ProcessedColumn<T>;
   fromIndex: number;
   toIndex: number;
 }
-
 export interface ColumnVisibleEvent<T = any> {
   column: ProcessedColumn<T>;
   visible: boolean;
 }
-
 export interface GridReadyEvent<T = any> {
   api: GridApi<T>;
 }
-
 export interface PaginationChangedEvent {
   currentPage: number;
   oldCurrentPage?: number;
@@ -554,12 +476,15 @@ export interface PaginationChangedEvent {
   oldPrevPage?: number | null;
   fromPageSizeChange?: boolean;
 }
-
-
 export type HeaderLayoutItem = 'search' | 'active-filters' | 'filter-button' | 'density-button' | 'export-button' | 'columns-button' | 'copy-button' | 'refresh-button' | 'custom-actions' | 'spacer';
 export type FooterLayoutItem = 'pagination' | 'pagination-page-size' | 'pagination-info' | 'pagination-controls' | 'status-bar' | 'status-info' | 'status-selected' | 'status-aggregations' | 'spacer';
-
+export type ZIndexType = {
+  popover?: number;
+  select?: number;
+  modal?: number;
+}
 export interface FiboGridConfigs {
+  zIndex?: ZIndexType;
   header?: {
     show?: boolean;
     layout?: HeaderLayoutItem[];
@@ -586,98 +511,62 @@ export interface FiboGridConfigs {
     information?: boolean;
   };
 }
-
-
 export interface GridPermission {
   action: string;
 }
-
 export interface GridEgress {
   destiny: string;
   permissions: string[];
 }
-
 export interface GridIngress {
   origin: string;
   permissions: string[];
 }
-
 export interface FiboGridProps<T = any> extends GridEvents<T> {
   rowData: T[];
   columnDefs: ColumnDef<T>[];
   getRowId?: (data: T) => string;
-
-  // Communication Security
   egress?: GridEgress[];
   ingress?: GridIngress[];
-
   configs?: FiboGridConfigs;
-
-
-
   gridId?: string;
-
-
   pagination?: boolean;
   paginationPageSize?: number;
   paginationPageSizeOptions?: number[];
   paginationMode?: PaginationMode;
   serverSideDataSource?: ServerSideDataSource<T>;
-
   rowSelection?: 'single' | 'multiple';
   rangeCellSelection?: boolean;
   rowDragEnabled?: boolean;
   rowDragManaged?: boolean;
-
   defaultColDef?: Partial<ColumnDef<T>>;
-
   getRowClass?: (params: RowClassParams<T>) => string | string[] | undefined;
-
   rowHeight?: number;
   headerHeight?: number;
   rowBuffer?: number;
-
-
   className?: string;
   theme?: 'light' | 'dark' | 'auto';
   height?: number | string;
-
-
   loading?: boolean;
   loadingOverlayComponent?: React.ReactNode;
   noRowsOverlayComponent?: React.ReactNode;
-
-
   quickFilterText?: string;
-
-
   enableFilterValueVirtualization?: boolean;
   filterValues?: Record<string, any[]>;
-
-
   showToolbar?: boolean;
   showStatusBar?: boolean;
   showRowNumbers?: boolean;
-
-
   contextMenu?: boolean;
   getContextMenuItems?: (params: CellRendererParams<T>) => ContextMenuItem[];
-
-
   groupByFields?: string[];
   splitByField?: string;
   groupAggregations?: Record<string, 'sum' | 'avg' | 'min' | 'max' | 'count'>;
-
-
   treeData?: boolean;
   getChildRows?: (parentData: T) => T[] | Promise<T[]>;
   childRowsField?: string;
-
   lang?: import('./locales/types').FiboGridLocale;
   shortcuts?: boolean | ShortcutDef<T>[];
 }
-
-
 export type UseFiboGridReturn<T = any> = {
   registry: GridRegistryContextValue<T>;
   events: EventBuilder<T>;
