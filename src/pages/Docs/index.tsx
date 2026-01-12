@@ -1,127 +1,88 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { ThemeToggle } from '@/components/ThemeToggle';
-import { ArrowLeft, Hexagon } from 'lucide-react';
+import { DocsLayout } from './components/DocsLayout';
+import { DocSection } from './components/DocsSidebar';
 
-import { DocsSidebar } from './components/DocsSidebar';
-
-// Sections
-import { Setup } from './sections/Setup';
-import { GridConfig } from './sections/GridConfig';
-import { Features } from './sections/Features';
-import { Advanced } from './sections/Advanced';
+// Sections (Placeholders for now)
+import { Introduction } from './sections/Introduction';
+import { Installation } from './sections/Installation';
+import { QuickStart } from './sections/QuickStart';
+// Core
+import { Columns } from './sections/Columns';
+import { Rows } from './sections/Rows';
 import { Styling } from './sections/Styling';
+// Data
 import { Filtering } from './sections/Filtering';
+import { Sorting } from './sections/Sorting';
+import { Pagination } from './sections/Pagination';
+import { Selection } from './sections/Selection';
+// Advanced
+import { Editing } from './sections/Editing';
 import { ServerSide } from './sections/ServerSide';
-import { VisualCustomization } from './sections/VisualCustomization';
-import { Localization } from './sections/Localization';
-import { ApiManager } from './sections/ApiManager';
-
-// FiboGrid Logo Component
-const FiboLogo = ({ className = "h-8 w-8" }: { className?: string }) => (
-  <svg viewBox="0 0 100 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="hsl(42 70% 55%)" />
-        <stop offset="50%" stopColor="hsl(40 65% 45%)" />
-        <stop offset="100%" stopColor="hsl(38 60% 35%)" />
-      </linearGradient>
-    </defs>
-    <rect x="10" y="10" width="34" height="34" stroke="url(#goldGradient)" strokeWidth="2" fill="none" rx="2" />
-    <rect x="44" y="10" width="21" height="21" stroke="url(#goldGradient)" strokeWidth="2" fill="none" rx="1" />
-    <rect x="44" y="31" width="13" height="13" stroke="url(#goldGradient)" strokeWidth="2" fill="none" rx="1" />
-    <rect x="57" y="31" width="8" height="8" stroke="url(#goldGradient)" strokeWidth="2" fill="none" rx="1" />
-    <rect x="10" y="50" width="55" height="40" stroke="url(#goldGradient)" strokeWidth="2" fill="none" rx="3" />
-    <line x1="10" y1="60" x2="65" y2="60" stroke="url(#goldGradient)" strokeWidth="1.5" />
-    <line x1="10" y1="70" x2="65" y2="70" stroke="url(#goldGradient)" strokeWidth="1" />
-    <line x1="10" y1="80" x2="65" y2="80" stroke="url(#goldGradient)" strokeWidth="1" />
-    <line x1="30" y1="50" x2="30" y2="90" stroke="url(#goldGradient)" strokeWidth="1" />
-    <line x1="50" y1="50" x2="50" y2="90" stroke="url(#goldGradient)" strokeWidth="1" />
-    <circle cx="80" cy="70" r="12" stroke="url(#goldGradient)" strokeWidth="2" fill="none" />
-    <circle cx="80" cy="70" r="7" stroke="url(#goldGradient)" strokeWidth="1.5" fill="hsl(40 65% 45% / 0.2)" />
-  </svg>
-);
+import { Performance } from './sections/Performance';
+// Enterprise
+import { Security } from './sections/Security';
+import { Registry } from './sections/Registry';
+import { Hooks } from './sections/Hooks';
+// API
+import { GridApi } from './sections/GridApi';
+import { Manager } from './sections/Manager';
+import { Events } from './sections/Events';
+import { Interfaces } from './sections/Interfaces';
+// Advanced Topics
+import { AdvancedSelection } from './sections/AdvancedSelection';
+import { ColumnManagement } from './sections/ColumnManagement';
+import { EditingAdvanced } from './sections/EditingAdvanced';
+// Internals
+import { ParamsBuilder } from './sections/ParamsBuilder';
+import { TransactionSystem } from './sections/TransactionSystem';
 
 export default function Docs() {
-  const [activeSection, setActiveSection] = useState('installation');
+    const [activeSection, setActiveSection] = useState<DocSection>('intro');
 
-  return (
-    <div className="min-h-screen bg-background relative">
-      {/* Texture overlay */}
-      <div className="fixed inset-0 texture-overlay pointer-events-none" />
+    const renderSection = () => {
+        switch (activeSection) {
+            case 'intro': return <Introduction />;
+            case 'install': return <Installation />;
+            case 'quick-start': return <QuickStart />;
 
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-primary/10 bg-card/80 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link to="/" className="flex items-center gap-3">
-              <FiboLogo className="h-8 w-8" />
-              <span className="font-display font-bold text-xl">FiboGrid</span>
-              <Badge className="bg-primary/10 text-primary border-primary/30 font-body text-xs px-2 py-0.5">Beta</Badge>
-            </Link>
-            <Badge className="bg-primary/10 text-primary border-primary/30 font-body">
-              <Hexagon className="h-3 w-3 mr-1" />
-              Documentation
-            </Badge>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" className="font-body hover:bg-primary/5" asChild>
-              <Link to="/">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Home
-              </Link>
-            </Button>
-            <Button variant="ghost" size="sm" className="font-body hover:bg-primary/5" asChild>
-              <Link to="/changelog">
-                Changelog
-              </Link>
-            </Button>
-            <ThemeToggle />
-            <Button size="sm" className="bg-gradient-gold text-primary-foreground shadow-gold font-body" asChild>
-              <Link to="/demo">Live Demo</Link>
-            </Button>
-          </div>
-        </div>
-      </header>
+            case 'columns': return <Columns />;
+            case 'rows': return <Rows />;
+            case 'styling': return <Styling />;
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="grid lg:grid-cols-[260px_1fr] gap-8">
-          {/* Sidebar */}
-          <DocsSidebar activeSection={activeSection} setActiveSection={setActiveSection} />
+            case 'filtering': return <Filtering />;
+            case 'sorting': return <Sorting />;
+            case 'pagination': return <Pagination />;
+            case 'selection': return <Selection />;
 
-          {/* Content */}
-          <main className="min-w-0">
-            <ScrollArea className="h-[calc(100vh-8rem)]">
-              <div className="prose prose-neutral dark:prose-invert max-w-none pr-4">
+            case 'editing': return <Editing />;
+            case 'server-side': return <ServerSide />;
+            case 'performance': return <Performance />;
 
-                <Setup activeSection={activeSection} />
+            case 'security': return <Security />;
+            case 'registry': return <Registry />;
+            case 'hooks': return <Hooks />;
 
-                {activeSection === 'filtering' && <Filtering />}
+            case 'api-grid': return <GridApi />;
+            case 'api-manager': return <Manager />;
+            case 'api-events': return <Events />;
+            case 'api-interfaces': return <Interfaces />;
 
-                {activeSection === 'server-side' && <ServerSide />}
+            case 'advanced-selection': return <AdvancedSelection />;
+            case 'column-management': return <ColumnManagement />;
+            case 'editing-advanced': return <EditingAdvanced />;
 
-                {activeSection === 'visual-customization' && <VisualCustomization />}
+            case 'params-builder': return <ParamsBuilder />;
+            case 'transaction-system': return <TransactionSystem />;
 
-                {activeSection === 'localization' && <Localization />}
+            default: return <Introduction />;
+        }
+    };
 
-                <GridConfig activeSection={activeSection} />
-
-                <Features activeSection={activeSection} />
-
-                <Advanced activeSection={activeSection} />
-
-                <Styling activeSection={activeSection} />
-
-                {activeSection === 'api-manager' && <ApiManager />}
-
-              </div>
-            </ScrollArea>
-          </main>
-        </div>
-      </div>
-    </div>
-  );
+    return (
+        <DocsLayout activeSection={activeSection} onNavigate={setActiveSection}>
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                {renderSection()}
+            </div>
+        </DocsLayout>
+    );
 }

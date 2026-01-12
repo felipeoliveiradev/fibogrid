@@ -1,8 +1,21 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
+import { Check, Copy, Terminal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Check, Copy } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-export const CodeBlock = ({ code, language = 'tsx' }: { code: string; language?: string }) => {
+interface CodeBlockProps {
+    code: string;
+    language?: string;
+    showLineNumbers?: boolean;
+    className?: string;
+}
+
+export const CodeBlock: React.FC<CodeBlockProps> = ({
+    code,
+    language = 'typescript',
+    showLineNumbers = false,
+    className
+}) => {
     const [copied, setCopied] = useState(false);
 
     const handleCopy = async () => {
@@ -12,30 +25,37 @@ export const CodeBlock = ({ code, language = 'tsx' }: { code: string; language?:
     };
 
     return (
-        <div className="relative group">
-            <pre className="paper-aged rounded-lg p-4 overflow-x-auto text-sm font-mono border border-primary/10">
-                <code className="text-foreground/90">{code}</code>
-            </pre>
-            <Button
-                size="sm"
-                variant="ghost"
-                className={`absolute top-2 right-2 h-8 w-8 p-0 transition-all duration-200 ${copied
-                        ? 'bg-primary/20 text-primary opacity-100'
-                        : 'opacity-0 group-hover:opacity-100 hover:bg-primary/10'
-                    }`}
-                onClick={handleCopy}
-            >
-                {copied ? (
-                    <Check className="h-4 w-4" />
-                ) : (
-                    <Copy className="h-4 w-4" />
-                )}
-            </Button>
-            {copied && (
-                <span className="absolute top-2 right-12 text-xs text-primary font-body bg-primary/10 px-2 py-1 rounded animate-fade-in">
-                    Copied!
-                </span>
-            )}
+        <div className={cn("relative group rounded-lg border border-primary/10 bg-muted/30 overflow-hidden my-4", className)}>
+            <div className="flex items-center justify-between px-4 py-2 bg-muted/50 border-b border-primary/5">
+                <div className="flex items-center gap-2">
+                    <Terminal className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-xs font-mono text-muted-foreground">{language}</span>
+                </div>
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                    onClick={handleCopy}
+                >
+                    {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                </Button>
+            </div>
+            <div className="p-4 overflow-x-auto">
+                <pre className="text-sm font-mono leading-relaxed">
+                    {showLineNumbers ? (
+                        <code className="grid">
+                            {code.split('\n').map((line, i) => (
+                                <div key={i} className="table-row">
+                                    <span className="table-cell select-none text-muted-foreground/30 text-right pr-4 w-8">{i + 1}</span>
+                                    <span className="table-cell">{line || ' '}</span>
+                                </div>
+                            ))}
+                        </code>
+                    ) : (
+                        <code>{code}</code>
+                    )}
+                </pre>
+            </div>
         </div>
     );
 };

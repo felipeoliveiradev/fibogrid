@@ -1,52 +1,63 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Code, Eye } from 'lucide-react';
+import { Card } from '@/components/ui/card';
 import { CodeBlock } from './CodeBlock';
+import { Eye, Code2 } from 'lucide-react';
 
 interface ExampleBlockProps {
-    title: string;
+    title?: string;
     description?: string;
     code: string;
     preview: React.ReactNode;
-    previewHeight?: number;
 }
 
-export const ExampleBlock = ({ title, description, code, preview, previewHeight = 300 }: ExampleBlockProps) => {
+export const ExampleBlock: React.FC<ExampleBlockProps> = ({
+    title,
+    description,
+    code,
+    preview
+}) => {
     return (
-        <Card className="paper-aged border-primary/10 overflow-hidden">
-            <CardHeader className="pb-2">
-                <CardTitle className="font-display text-xl flex items-center gap-2">
-                    {title}
-                </CardTitle>
-                {description && (
-                    <p className="text-sm text-muted-foreground font-body">{description}</p>
-                )}
-            </CardHeader>
-            <CardContent className="pt-0">
+        <div className="space-y-4 my-8">
+            {(title || description) && (
+                <div className="space-y-1">
+                    {title && <h3 className="text-lg font-display font-semibold">{title}</h3>}
+                    {description && <p className="text-sm text-muted-foreground">{description}</p>}
+                </div>
+            )}
+
+            <Card className="border-primary/10 overflow-hidden bg-card/50">
                 <Tabs defaultValue="preview" className="w-full">
-                    <TabsList className="bg-primary/5 border border-primary/10">
-                        <TabsTrigger value="preview" className="data-[state=active]:bg-gradient-gold data-[state=active]:text-primary-foreground gap-2">
-                            <Eye className="h-4 w-4" />
-                            Preview
-                        </TabsTrigger>
-                        <TabsTrigger value="code" className="data-[state=active]:bg-gradient-gold data-[state=active]:text-primary-foreground gap-2">
-                            <Code className="h-4 w-4" />
-                            Code
-                        </TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="preview" className="mt-4">
-                        <div
-                            className="border border-primary/10 rounded-lg overflow-hidden bg-card"
-                            style={{ height: previewHeight }}
-                        >
+                    <div className="border-b border-primary/5 bg-muted/30 px-4">
+                        <TabsList className="h-10 bg-transparent p-0">
+                            <TabsTrigger
+                                value="preview"
+                                className="data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-t-lg rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary h-full px-4 gap-2"
+                            >
+                                <Eye className="h-4 w-4" />
+                                Preview
+                            </TabsTrigger>
+                            <TabsTrigger
+                                value="code"
+                                className="data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-t-lg rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary h-full px-4 gap-2"
+                            >
+                                <Code2 className="h-4 w-4" />
+                                Code
+                            </TabsTrigger>
+                        </TabsList>
+                    </div>
+
+                    <TabsContent value="preview" className="p-6 m-0 min-h-[200px] flex flex-col justify-center">
+                        <div className="w-full relative z-0">
                             {preview}
                         </div>
                     </TabsContent>
-                    <TabsContent value="code" className="mt-4">
-                        <CodeBlock code={code} />
+
+                    <TabsContent value="code" className="m-0">
+                        <CodeBlock code={code} className="border-none rounded-none m-0 bg-transparent" />
                     </TabsContent>
                 </Tabs>
-            </CardContent>
-        </Card>
+            </Card>
+        </div>
     );
 };
