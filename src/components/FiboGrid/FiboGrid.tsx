@@ -11,13 +11,11 @@ import { useRangeSelection } from './hooks/useRangeSelection';
 import { useRowRangeSelection } from './hooks/useRowRangeSelection';
 import { useClickDetector } from './hooks/useClickDetector';
 import { useKeyboardNavigation } from './hooks/useKeyboardNavigation';
-
 import { useGridContext, GridProvider } from './context/GridContext';
 import { useGridRegistry, useGridEvent } from './context/GridRegistryContext';
 import { GridHeader } from './components/GridHeader';
 import { GridRow } from './components/GridRow';
 import { GroupRow } from './components/GroupRow';
-
 import { GridOverlay } from './components/GridOverlay';
 import { FilterPopover } from './components/FilterPopover';
 import { GridContextMenu } from './components/ContextMenu';
@@ -27,12 +25,10 @@ import { isGroupNode, GroupRowNode } from './utils/grouping';
 import { cn } from '@/lib/utils';
 import { Copy, Download, Trash2 } from 'lucide-react';
 import { enUS } from './locales/enUS';
-
 interface FilterState<T> {
   column: ProcessedColumn<T>;
   anchorRect: DOMRect;
 }
-
 export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
   const {
     rowHeight = 40,
@@ -88,30 +84,24 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     configs,
     shortcuts = true,
   } = props;
-
   const effectiveShowToolbar = configs?.header?.show ?? showToolbar;
   const effectiveShowStatusBar = configs?.footer?.show ?? showStatusBar;
   const effectiveShowRowNumbers = configs?.center?.rowNumbers ?? showRowNumbers;
   const effectiveShowPagination = configs?.footer?.pagination ?? pagination;
   const footerInfo = configs?.footer?.information ?? true;
-
   const showBorders = configs?.center?.borders !== false;
   const showStripes = configs?.center?.stripes !== false;
-
   const containerRef = useRef<HTMLDivElement>(null);
   const cellContentRefs = useRef<Map<string, Map<string, HTMLElement>>>(new Map());
   const [containerWidth, setContainerWidth] = useState(0);
   const [containerHeight, setContainerHeight] = useState(0);
   const [filterState, setFilterState] = useState<FilterState<T> | null>(null);
-
   const [contextMenuTarget, setContextMenuTarget] = useState<any>(null);
   const [contextMenuItems, setContextMenuItems] = useState<ContextMenuItem[]>([]);
-
   const editingCellRef = useRef<{ rowId: string; field: string; value: any; originalValue: any } | null>(null);
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
-
     const observer = new ResizeObserver((entries) => {
       const entry = entries[0];
       if (entry) {
@@ -119,11 +109,9 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
         setContainerHeight(entry.contentRect.height);
       }
     });
-
     observer.observe(container);
     return () => observer.disconnect();
   }, []);
-
   const {
     displayedRows,
     allRows,
@@ -151,17 +139,13 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     quickFilter,
     setQuickFilter,
     fireEvent,
-    grouping, // Destructure grouping from useGridState result
+    grouping,
     finalDisplayedRows
   } = useGridState(props, containerWidth);
-
   const isLoading = loading || serverSideLoading;
-
   editingCellRef.current = editingCell;
-
   const selectionRef = useRef(selection);
   selectionRef.current = selection;
-
   const {
     displayRows: groupedDisplayRows,
     groupedRows,
@@ -177,62 +161,48 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     expandedRows,
     toggleRowExpand,
   } = grouping;
-
   const gridContext = useGridContext<T>();
   const { registerGrid: registerGlobal, unregisterGrid: unregisterGlobal } = useGridRegistry();
-
   const apiRef = useRef(api);
   apiRef.current = api;
-
   useEffect(() => {
     if (gridContext && gridId) {
       gridContext.registerGrid(gridId, apiRef.current);
       return () => gridContext.unregisterGrid(gridId);
     }
   }, [gridContext, gridId, api]);
-
   useEffect(() => {
     if (gridId && registerGlobal && unregisterGlobal) {
       registerGlobal(gridId, apiRef.current);
       return () => unregisterGlobal(gridId);
     }
   }, [gridId, registerGlobal, unregisterGlobal, api]);
-
   useEffect(() => {
     onGridReady?.({ api });
   }, [api, onGridReady]);
-
-  // Bridge generic events to props
   useGridEvent<T>(gridId, 'cellValueChanged', (event) => {
     onCellValueChanged?.(event);
   });
-
   useGridEvent<T>(gridId, 'sortChanged', (event) => {
     onSortChanged?.(event);
   });
-
   useGridEvent<T>(gridId, 'filterChanged', (event) => {
     onFilterChanged?.(event);
   });
-
   useGridEvent<T>(gridId, 'paginationChanged', (event) => {
     onPaginationChanged?.(event);
   });
-
   useGridEvent<T>(gridId, 'quickFilterChanged', (event) => {
     onGlobalFilterChange?.(event);
   });
-
   useGridEvent<T>(gridId, 'filterRemoved', (event) => {
     onFilterRemoved?.(event);
   });
-
   const effectiveContainerHeight = typeof height === 'number' ? height : (containerHeight || 600);
   const toolbarHeight = effectiveShowToolbar ? 48 : 0;
   const statusBarHeight = effectiveShowStatusBar ? 36 : 0;
   const paginationHeight = effectiveShowPagination ? 52 : 0;
   const bodyHeight = effectiveContainerHeight - headerHeight - toolbarHeight - statusBarHeight - paginationHeight;
-
   const totalContentWidth = useMemo(() => {
     const showCheckbox = !hasCustomCheckbox && configs?.center?.checkboxSelection !== false && !!rowSelection;
     const checkboxWidth = showCheckbox ? 48 : 0;
@@ -240,9 +210,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     const columnsWidth = columns.filter(c => !c.hide).reduce((sum, col) => sum + col.computedWidth, 0);
     return checkboxWidth + rowNumberWidth + columnsWidth;
   }, [columns, rowSelection, effectiveShowRowNumbers, hasCustomCheckbox, configs?.center?.checkboxSelection]);
-
   const virtualizationHeight = Math.max(bodyHeight, 400);
-
   const {
     virtualRows,
     totalHeight,
@@ -254,7 +222,6 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     overscan: rowBuffer,
     containerHeight: virtualizationHeight,
   });
-
   const { isResizing, resizingColumn, handleResizeStart, handleResizeDoubleClick } = useColumnResize(
     (field, width) => {
       setColumnWidths((prev) => ({ ...prev, [field]: width }));
@@ -265,11 +232,9 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
       }
     }
   );
-
   const measureColumnContent = useCallback((field: string): number => {
     const columnCells = cellContentRefs.current.get(field);
     if (!columnCells || columnCells.size === 0) return 100;
-
     let maxWidth = 0;
     columnCells.forEach((cell) => {
       const span = document.createElement('span');
@@ -280,16 +245,12 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
       span.style.fontFamily = getComputedStyle(cell).fontFamily;
       span.textContent = cell.textContent || '';
       document.body.appendChild(span);
-
       const width = span.offsetWidth;
       document.body.removeChild(span);
-
       if (width > maxWidth) maxWidth = width;
     });
-
     return Math.max(80, maxWidth);
   }, []);
-
   const registerCellRef = useCallback((field: string, rowId: string, element: HTMLElement | null) => {
     if (!cellContentRefs.current.has(field)) {
       cellContentRefs.current.set(field, new Map());
@@ -301,7 +262,6 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
       fieldMap.delete(rowId);
     }
   }, []);
-
   const {
     draggedColumn,
     dragOverColumn,
@@ -322,7 +282,6 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
       fireEvent('columnMoved', { column, fromIndex, toIndex });
     }
   });
-
   const {
     isDragging: isRowDragging,
     draggedRow,
@@ -356,7 +315,6 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     (row, target) => onRowDragEnd?.({ rowNode: row, overNode: target, api }),
     (row, target) => onRowDragMove?.({ rowNode: row, overNode: target, api })
   );
-
   const rangeSelectionHook = useRangeSelection();
   const {
     isCellSelected,
@@ -369,16 +327,13 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     handleCellMouseEnter: () => { },
     isSelecting: false,
   };
-
   const {
     isDraggingRows,
     handleRowMouseDown: handleRowRangeMouseDown,
     handleRowMouseEnter: handleRowRangeMouseEnter,
   } = useRowRangeSelection();
-
   const { detectClick: detectRowClick } = useClickDetector({ doubleClickDelay: 300 });
   const { detectClick: detectCellClick } = useClickDetector({ doubleClickDelay: 300 });
-
   const {
     focusedCell,
     focusCell,
@@ -390,7 +345,6 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     columns,
     api: internalApi,
     onStartEdit: (rowId, field) => {
-
       const rowNode = internalApi.getRowNode(rowId);
       const value = rowNode ? (rowNode.data as any)[field] : null;
       setEditingCell({ rowId, field, value, originalValue: value });
@@ -403,13 +357,11 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     isEditing: !!editingCell,
     shortcuts,
   });
-
   const handleSort = useCallback(
     (field: string, direction?: 'asc' | 'desc') => {
       setSortModel((prev) => {
         const existing = prev.find((s) => s.field === field);
         let newModel: SortModel[];
-
         if (direction) {
           if (existing) {
             newModel = prev.map((s) =>
@@ -429,13 +381,11 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
             newModel = prev.filter((s) => s.field !== field);
           }
         }
-
         return newModel;
       });
     },
     [setSortModel /* onSortChanged removed to avoid dupe */]
   );
-
   const handleFilterChange = useCallback(
     (filter: FilterModel | null) => {
       setFilterModel((prev) => {
@@ -456,24 +406,18 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     },
     [setFilterModel, filterState]
   );
-
   const handleFilterClick = useCallback((column: ProcessedColumn<T>, anchorRect: DOMRect) => {
     setFilterState({ column, anchorRect });
   }, []);
-
   const handleCloseFilter = useCallback(() => {
     setFilterState(null);
   }, []);
-
   const handlePinColumn = useCallback((field: string, pinned: 'left' | 'right' | null) => {
     setColumnPinned(field, pinned);
   }, [setColumnPinned]);
-
-
   const handleHideColumn = useCallback((field: string) => {
     api.setColumnVisible(field, false);
   }, [api]);
-
   const handleAutoSize = useCallback((field: string) => {
     const contentWidth = measureColumnContent(field);
     const column = columns.find(c => c.field === field);
@@ -484,7 +428,6 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
       setColumnWidths(prev => ({ ...prev, [field]: Math.min(newWidth, column.maxWidth || 800) }));
     }
   }, [columns, measureColumnContent, setColumnWidths]);
-
   const handleAutoSizeAll = useCallback(() => {
     columns.forEach(column => {
       if (!column.hide) {
@@ -492,7 +435,6 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
       }
     });
   }, [columns, handleAutoSize]);
-
   const handleQuickColumnFilter = useCallback((field: string, value: string) => {
     if (!value.trim()) {
       setFilterModel(prev => prev.filter(f => f.field !== field));
@@ -514,7 +456,6 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
       });
     }
   }, [setFilterModel]);
-
   const handleCellMouseDown = useCallback((rowIndex: number, colIndex: number, e: React.MouseEvent) => {
     const row = displayedRows[rowIndex];
     const column = columns[colIndex];
@@ -523,29 +464,21 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     }
     handleRangeMouseDown(rowIndex, colIndex, e);
   }, [displayedRows, columns, focusCell, handleRangeMouseDown]);
-
   const handleRowClick = useCallback(
     (rowId: string, e: React.MouseEvent, fromCell = false) => {
       if (isRowDragging || isDraggingRows) return;
-
       const target = e.target as HTMLElement;
-
-      // Check if this is a checkbox click (but not an editable cell input)
       const isCheckboxColumn = !!target.closest('.fibogrid-checkbox-column');
       const isCheckboxElement = target.getAttribute('role') === 'checkbox' ||
         (target.tagName === 'BUTTON' && target.getAttribute('role') === 'checkbox');
       const isCheckboxInput = target.tagName === 'INPUT' && (target as HTMLInputElement).type === 'checkbox' && isCheckboxColumn;
-
       const isCheckboxClick = isCheckboxColumn || isCheckboxElement || isCheckboxInput;
-
       if (rowSelection && !isCheckboxClick) {
         const isShift = e.shiftKey;
         const isCtrl = e.ctrlKey || e.metaKey;
-
         if (rowSelection === 'single') {
           selectRow(rowId, true, isShift, isCtrl);
         } else {
-          // Multiple selection mode - toggle if no modifier keys
           if (!isShift && !isCtrl) {
             const currentlySelected = selectionRef.current.selectedRows.has(rowId);
             selectRow(rowId, !currentlySelected, false, false);
@@ -554,13 +487,11 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
           }
         }
       }
-
       if (onRowClickFallback) {
         const row = displayedRows.find(r => r.id === rowId);
         if (row) {
           const currentSelection = selectionRef.current;
           let futureSelected = currentSelection.selectedRows.has(row.id);
-
           if (rowSelection && !isCheckboxClick) {
             const isShift = e.shiftKey;
             if (rowSelection === 'single') {
@@ -572,7 +503,6 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
               if (isShift) futureSelected = true;
             }
           }
-
           detectRowClick((clickType) => {
             const rowClickEvent = {
               clickType,
@@ -582,19 +512,14 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
               event: e,
               api,
             };
-
             if (!fromCell) {
               onRowClickFallback(rowClickEvent);
             }
-
-            // Fire generic rowClicked event for EventBuilder subscribers
             fireEvent('rowClicked', {
               rowNode: { ...row, selected: futureSelected },
               event: e,
               api
             });
-
-            // Call onRowClicked prop if present
             onRowClicked?.({
               rowNode: { ...row, selected: futureSelected },
               event: e,
@@ -606,15 +531,12 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     },
     [rowSelection, selectRow, isRowDragging, isDraggingRows, onRowClickFallback, displayedRows, detectRowClick, api, selection.selectedRows]
   );
-
   const prevSelectedIdsRef = useRef<Set<string> | null>(null);
   const prevSelectedRowsRef = useRef<RowNode<T>[] | undefined>(undefined);
-
   useEffect(() => {
     if (onSelectionChanged) {
       const currentIds = selection.selectedRows;
       const prevIds = prevSelectedIdsRef.current;
-
       let changed = !prevIds || currentIds.size !== prevIds.size;
       if (!changed && prevIds) {
         for (const id of currentIds) {
@@ -624,23 +546,19 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
           }
         }
       }
-
       if (changed) {
         prevSelectedIdsRef.current = new Set(currentIds);
         const selectedRows = displayedRows.filter((r) => selection.selectedRows.has(r.id));
         const oldSelectedRows = prevSelectedRowsRef.current;
         prevSelectedRowsRef.current = selectedRows;
-
         onSelectionChanged({ selectedRows, oldSelectedRows, api });
       }
     }
   }, [selection.selectedRows, displayedRows, api, onSelectionChanged]);
-
   const allSelected =
     displayedRows.length > 0 &&
     displayedRows.every((r) => selection.selectedRows.has(r.id));
   const someSelected = displayedRows.some((r) => selection.selectedRows.has(r.id));
-
   const getDefaultContextMenuItems = useCallback(
     (): ContextMenuItem[] => [
       {
@@ -666,7 +584,6 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     ],
     [api, selection.selectedRows.size]
   );
-
   const handlePageChange = useCallback(
     (page: number) => {
       setPaginationState((prev) => {
@@ -676,7 +593,6 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     },
     [setPaginationState]
   );
-
   const handlePageSizeChange = useCallback(
     (size: number) => {
       setPaginationState((prev) => {
@@ -686,14 +602,12 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     },
     [setPaginationState]
   );
-
   const handleColumnVisibilityChange = useCallback(
     (field: string, visible: boolean) => {
       api.setColumnVisible(field, visible);
     },
     [api]
   );
-
   const handleAddChildRow = useCallback((parentId: string) => {
     const parentRow = displayedRows.find(r => r.id === parentId);
     if (parentRow) {
@@ -701,10 +615,8 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
       addChildToRow(parentId, [childData]);
     }
   }, [displayedRows, addChildToRow]);
-
   const effectiveShowFilterRow = configs?.header?.filterRow ?? true;
   const currentFilterRowHeight = effectiveShowFilterRow ? 36 : 0;
-
   const gridContent = (
     <div
       ref={containerRef}
@@ -742,7 +654,6 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
           className={className}
         />
       )}
-
       <div className="flex-1 flex flex-col overflow-hidden">
         <div
           ref={scrollContainerRef}
@@ -784,7 +695,6 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                 locale={lang}
               />
             </div>
-
             <GridContextMenu
               enabled={contextMenu}
               items={contextMenuItems}
@@ -797,10 +707,8 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                 <div style={{ transform: `translateY(${offsetTop}px)` }}>
                   {virtualRows.map((row, index) => {
                     if (!isGroupRow(row)) {
-
                       const isSelected = selection.selectedRows.has(row.id);
                       const regularRow = row as any;
-
                       return (
                         <GridRow
                           key={row.id}
@@ -814,7 +722,6 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                             if (onRowClickFallback) {
                               const currentSelection = selectionRef.current;
                               const isCurrentlySelected = currentSelection.selectedRows.has(row.id);
-
                               onRowClickFallback({
                                 clickType: 'menu',
                                 rowData: row.data,
@@ -828,15 +735,12 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                           onCellClick={(col, e) => {
                             e.stopPropagation();
                             handleRowClick(row.id, e, true);
-
                             const currentSelection = selectionRef.current;
                             const isCurrentlySelected = currentSelection.selectedRows.has(row.id);
-
                             let futureSelected = isCurrentlySelected;
                             if (rowSelection && !isRowDragging && !isDraggingRows) {
                               const target = e.target as HTMLElement;
                               const isCheckboxClick = !!target.closest('.fibogrid-checkbox-column');
-
                               if (!isCheckboxClick) {
                                 if (rowSelection === 'single') {
                                   futureSelected = true;
@@ -849,10 +753,8 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                                 }
                               }
                             }
-
                             focusCell(row.id, col.field);
                             onCellClicked?.({ rowNode: { ...row, selected: futureSelected }, column: col, value: (row.data as any)[col.field], event: e, api });
-
                             if (onRowClickFallback) {
                               detectCellClick((clickType) => {
                                 onRowClickFallback({
@@ -884,7 +786,6 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                                 rowNode: row
                               });
                             }
-
                             if (isEditable) internalApi.startEditingCell(row.id, col.field);
                             onCellDoubleClicked?.({ rowNode: row, column: col, value: getValueFromPath(row.data, col.field), event: e, api });
                           }}
@@ -914,10 +815,8 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                           }}
                           onStopEdit={(cancel, currentValue) => {
                             const currentEditing = editingCellRef.current;
-
                             if (currentEditing && !cancel && currentValue !== undefined) {
                               const column = columns.find((c) => c.field === currentEditing.field)!;
-
                               let isValid = true;
                               if (column.valueSetter) {
                                 isValid = column.valueSetter({
@@ -928,11 +827,9 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                                   api,
                                 });
                               }
-
                               if (isValid) {
                                 currentEditing.value = currentValue;
                                 editingCellRef.current = currentEditing;
-
                                 onCellValueChanged?.({
                                   rowNode: { ...row, data: setValueAtPath(row.data, currentEditing.field, currentValue) },
                                   column,
@@ -971,17 +868,13 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                           getRowClass={getRowClass}
                           onAddChildRow={handleAddChildRow}
                           onRowRangeMouseDown={handleRowRangeMouseDown}
-
                           onRowRangeMouseEnter={handleRowRangeMouseEnter}
                           onCellContextMenu={(rowIndex, colIndex, e) => {
                             const column = columns[colIndex];
                             const value = getValueFromPath(row.data, column.field);
-
                             focusCell(row.id, column.field);
-
                             const currentSelection = selectionRef.current;
                             let newSelectedRows = new Set(currentSelection.selectedRows);
-
                             if (rowSelection) {
                               if (rowSelection === 'multiple') {
                                 if (currentSelection.selectedRows.has(row.id)) {
@@ -997,11 +890,9 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                                 }
                               }
                             }
-
                             const selectedData = displayedRows
                               .filter(r => newSelectedRows.has(r.id))
                               .map(r => r.data);
-
                             const params = {
                               api,
                               column,
@@ -1013,18 +904,15 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                               rowIndex: row.rowIndex,
                               selectedRows: selectedData
                             };
-
                             const items = getContextMenuItems
                               ? getContextMenuItems(params)
                               : getDefaultContextMenuItems();
-
                             setContextMenuItems(items);
                             setContextMenuTarget(true);
                           }}
                         />
                       );
                     }
-
                     const groupRow = row as unknown as GroupRowNode<T>;
                     const isExpanded = expandedGroups.has(row.id);
                     return (
@@ -1050,7 +938,6 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
           </div>
         </div>
       </div>
-
       <div className="flex-none">
         {(effectiveShowPagination || effectiveShowStatusBar) && (
           <GridFooter
@@ -1065,6 +952,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
             pageSizeOptions={paginationPageSizeOptions}
             config={{
               ...configs?.footer,
+              zIndex: configs?.zIndex,
               layout: configs?.footer?.layout || [
                 ...(effectiveShowPagination && paginationState.enabled ? ['pagination'] as const : []),
                 ...(effectiveShowStatusBar && footerInfo ? ['status-bar'] as const : [])
@@ -1091,13 +979,11 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
           filterRowHeight={currentFilterRowHeight}
         />
       )}
-
       {filterState && (() => {
         const columnField = filterState.column.field;
         const allValues = filterValues?.[columnField]
           ? filterValues[columnField]
           : allRows.map((r) => getValueFromPath(r.data, columnField));
-
         return (
           <FilterPopover
             column={filterState.column}
@@ -1118,9 +1004,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
       })()}
     </div>
   );
-
   const content = gridContent;
-
   return (
     <GridProvider locale={lang}>
       {content}

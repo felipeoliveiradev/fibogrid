@@ -1,5 +1,5 @@
 import React from 'react';
-import { RowNode, ProcessedColumn, PaginationState, FiboGridConfigs, FooterLayoutItem } from '../types';
+import { RowNode, ProcessedColumn, PaginationState, FiboGridConfigs, FooterLayoutItem, ZIndexType } from '../types';
 import { useGridContext } from '../context/GridContext';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -7,7 +7,6 @@ import { cn } from '@/lib/utils';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { GridPagination } from './GridPagination';
 import { GridStatusBar } from './GridStatusBar';
-
 interface GridFooterProps<T> {
     displayedRows: RowNode<T>[];
     totalRows: number;
@@ -18,10 +17,9 @@ interface GridFooterProps<T> {
     pageSizeOptions: number[];
     onPageChange: (page: number) => void;
     onPageSizeChange: (size: number) => void;
-    config?: FiboGridConfigs['footer'];
+    config?: FiboGridConfigs['footer'] & { zIndex?: ZIndexType };
     className?: string;
 }
-
 export function GridFooter<T>({
     displayedRows,
     totalRows,
@@ -38,7 +36,6 @@ export function GridFooter<T>({
     const { locale } = useGridContext<T>()!;
     const layout: FooterLayoutItem[] = config?.layout || ['pagination', 'status-bar'];
     const hasGranular = layout.some(i => !['pagination', 'status-bar'].includes(i));
-
     const numericColumns = columns.filter(col => col.filterType === 'number' || col.aggFunc);
     const aggData = aggregations || (() => {
         if (displayedRows.length === 0) return null;
@@ -56,23 +53,21 @@ export function GridFooter<T>({
         });
         return results;
     })();
-
     const { currentPage, totalPages, pageSize } = paginationState;
     const startRow = currentPage * pageSize + 1;
     const endRow = Math.min((currentPage + 1) * pageSize, totalRows);
-
     const renderItem = (item: FooterLayoutItem, index: number) => {
         switch (item) {
             case 'pagination':
                 return <GridPagination
                     key={`bp-${index}`}
+                    zIndex={config?.zIndex}
                     pagination={paginationState}
                     pageSizeOptions={pageSizeOptions}
                     onPageChange={onPageChange}
                     onPageSizeChange={onPageSizeChange}
                     className="border-none bg-transparent"
                 />;
-
             case 'status-bar':
                 return <GridStatusBar
                     key={`bs-${index}`}
@@ -81,10 +76,8 @@ export function GridFooter<T>({
                     selectedCount={selectedCount}
                     columns={columns}
                 />;
-
             case 'spacer':
                 return <div key={`sp-${index}`} className="flex-1" />;
-
             case 'pagination-page-size':
                 return (
                     <div key={`pps-${index}`} className="flex items-center gap-2 text-sm text-muted-foreground mr-4">
@@ -104,14 +97,12 @@ export function GridFooter<T>({
                         </Select>
                     </div>
                 );
-
             case 'pagination-info':
                 return (
                     <span key={`pi-${index}`} className="text-sm text-muted-foreground whitespace-nowrap mr-4">
                         {totalRows > 0 ? locale.pagination.pageInfo(startRow, endRow, totalRows) : locale.pagination.zeroRows}
                     </span>
                 );
-
             case 'pagination-controls':
                 return (
                     <div key={`pc-${index}`} className="flex items-center gap-1">
@@ -132,21 +123,18 @@ export function GridFooter<T>({
                         </Button>
                     </div>
                 );
-
             case 'status-info':
                 return (
                     <span key={`si-${index}`} className="text-xs text-muted-foreground mr-4">
                         <strong className="text-foreground">{displayedRows.length.toLocaleString()}</strong> {locale.statusBar.rows}
                     </span>
                 );
-
             case 'status-selected':
                 return selectedCount > 0 && (
                     <span key={`ss-${index}`} className="px-2 py-0.5 bg-primary/10 rounded text-xs text-primary mr-4">
                         {locale.statusBar.selected(selectedCount)}
                     </span>
                 );
-
             case 'status-aggregations':
                 return aggData && Object.keys(aggData).length > 0 && (
                     <div key={`sa-${index}`} className="flex items-center gap-4 text-xs text-muted-foreground">
@@ -161,11 +149,9 @@ export function GridFooter<T>({
                         })}
                     </div>
                 );
-
             default: return null;
         }
     };
-
     return (
         <div className={cn(
             "w-full",
