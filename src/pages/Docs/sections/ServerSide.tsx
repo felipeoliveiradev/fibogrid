@@ -1,61 +1,91 @@
+import React from 'react';
 import { CodeBlock } from '../components/CodeBlock';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
+import { Server, ArrowRightLeft } from 'lucide-react';
 
 export const ServerSide = () => {
     return (
-        <div className="space-y-8 animate-fade-in">
-            <h1 className="text-4xl md:text-5xl font-display font-bold text-gradient-gold">Server-Side Integration</h1>
-
-            <p className="text-lg text-muted-foreground font-body">
-                For large datasets, you can fetch data, sort, and filter on the server.
-            </p>
-
-            <Card className="paper-aged border-primary/10">
-                <CardHeader>
-                    <CardTitle className="font-display text-xl">Server Side Data Source</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <CodeBlock code={`<FiboGrid
-  serverSideDataSource={{
-    getRows: async (params) => {
-      // params contains: page, pageSize, sortModel, filterModel
-      const response = await fetch('/api/data', {
-        method: 'POST',
-        body: JSON.stringify(params)
-      });
-      return await response.json(); // { data: [], totalRows: 1000 }
-    }
-  }}
-  pagination={true}
-  paginationMode="server" // Important!
-/>`} />
-                </CardContent>
-            </Card>
+        <div className="space-y-10 animate-fade-in">
+            <div className="space-y-4">
+                <h1 className="text-4xl font-display font-bold text-gradient-gold">Server-Side Data</h1>
+                <p className="text-lg text-muted-foreground">
+                    Connect FiboGrid to any backend API.
+                </p>
+            </div>
 
             <div className="space-y-4">
-                <h2 className="text-2xl font-display font-semibold text-gradient-gold">Hybrid Filtering</h2>
-                <p className="text-muted-foreground font-body">
-                    You can mix server-side pagination with client-side filtering for specific columns.
-                    Use <code className="font-mono bg-primary/10 px-1 rounded">useInternalFilter: true</code> on a column definition.
+                <h2 className="text-2xl font-display font-semibold flex items-center gap-2">
+                    <Server className="h-5 w-5 text-primary" />
+                    The DataSource Pattern
+                </h2>
+                <p className="text-muted-foreground">
+                    Instead of passing accurate <code className="text-primary">rowData</code>, you enable <code className="text-primary">paginationMode="server"</code> and provide a <code className="text-primary">serverSideDataSource</code>.
                 </p>
-                <p className="text-muted-foreground font-body">
-                    This is useful when the server returns a subset of data (e.g. a page), but you want to filter that specific page's data immediately in the browser without triggering a new server request.
-                </p>
+            </div>
 
-                <CodeBlock code={`const columns: ColumnDef[] = [
-  { 
-    field: 'status', 
-    headerName: 'Status (Client Filter)', 
+            <div className="space-y-4">
+                <h2 className="text-2xl font-display font-semibold">Implementation Example</h2>
+                <Card className="bg-card/50 border-primary/10">
+                    <CardContent className="p-0">
+                        <CodeBlock
+                            code={`import { ServerSideDataSource } from 'fibogrid';
+
+// 1. Define your data source
+const myDataSource: ServerSideDataSource = {
+    getRows: async (params) => {
+        // params contains: page, pageSize, sortModel, filterModel, quickFilterText
+        const queryParams = new URLSearchParams({
+            page: params.page.toString(),
+            limit: params.pageSize.toString(),
+            sort: JSON.stringify(params.sortModel),
+            filter: JSON.stringify(params.filterModel),
+            q: params.quickFilterText || ''
+        });
+
+        const response = await fetch(\`/api/items?\${queryParams}\`);
+        const result = await response.json();
+
+        // Return standard response format
+        return {
+            data: result.items,      // Array of rows for current page
+            totalRows: result.total, // Total count (for pagination)
+            page: params.page,
+            pageSize: params.pageSize
+        };
+    }
+};
+
+// 2. Pass to Grid
+<FiboGrid
+    pagination={true}
+    paginationMode="server"
+    serverSideDataSource={myDataSource}
+    columnDefs={columns}
+/>`}
+                            className="border-none m-0 rounded-none bg-transparent"
+                        />
+                    </CardContent>
+                </Card>
+            </div>
+
+            <div className="space-y-4">
+                <h2 className="text-2xl font-display font-semibold flex items-center gap-2">
+                    <ArrowRightLeft className="h-5 w-5 text-purple-500" />
+                    Hybrid Filtering
+                </h2>
+                <p className="text-muted-foreground">
+                    Sometimes you want to fetch large pages from the server, but <span className="text-purple-400">filter locally</span> within that page for instant feedback.
+                </p>
+                <CodeBlock
+                    code={`// In Column Definition
+{
+    field: 'status',
     filterable: true,
-    useInternalFilter: true // <--- Filters only the current page data on client
-  },
-  { 
-    field: 'name', 
-    headerName: 'Name (Server Filter)', 
-    filterable: true 
-    // Default behavior: triggers getRows() with new filterModel
-  }
-];`} />
+    // Forces grid to use client-side logic for this column 
+    // even when in server-side mode
+    useInternalFilter: true 
+}`}
+                />
             </div>
         </div>
     );
