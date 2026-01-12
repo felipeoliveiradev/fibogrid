@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import Demo from "./pages/demo";
 import Docs from "./pages/Docs";
+
 import Changelog from "./pages/Changelog";
 import EditTest from "./pages/EditTest";
 import ThemeBuilder from "./pages/ThemeBuilder";
@@ -23,6 +24,7 @@ const App = () => (
           <Route path="/" element={<Home />} />
           <Route path="/demo" element={<Demo />} />
           <Route path="/docs" element={<Docs />} />
+
           <Route path="/changelog" element={<Changelog />} />
           <Route path="/theme-builder" element={<ThemeBuilder />} />
           <Route path="/edit-test" element={<EditTest />} />
