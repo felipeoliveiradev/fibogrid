@@ -1,6 +1,5 @@
 import { GridApiBuilder } from '../../../../../../types';
 import { GridApiUpdateState } from '../../../gridApiUpdateState';
-
 export function removeSortBase<T>(
     state: GridApiUpdateState,
     builder: GridApiBuilder<T>,

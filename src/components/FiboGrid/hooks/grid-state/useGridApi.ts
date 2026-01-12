@@ -1,5 +1,4 @@
 import { validateIngress } from '../../utils/permissionValidator';
-
 import { useMemo, MutableRefObject } from 'react';
 import {
     GridApi,
@@ -17,7 +16,6 @@ import { UseGridApiContext } from './api/apiTypes';
 import { createGridApiMethods } from './api/gridApiMethods';
 import { createGridApiBuilder } from './api/createGridApiBuilder';
 import { UseGroupingResult } from '../useGrouping';
-
 interface UseGridApiProps<T> {
     props: FiboGridProps<T>;
     events: ReturnType<typeof useGridEventSystem>;
@@ -30,15 +28,10 @@ interface UseGridApiProps<T> {
     apiRef: MutableRefObject<GridApi<T> | undefined>;
     grouping: UseGroupingResult<T>;
 }
-
 export function useGridApi<T>(props: UseGridApiProps<T>): { api: GridApi<T>, internalApi: GridApi<T> } {
-
-    // Create a context object to pass around
     const context: UseGridApiContext<T> = props;
-
     const api = useMemo(() => {
         const methods = createGridApiMethods(context);
-
         const baseApi = {
             ...methods,
             params: () => createGridApiBuilder(context),
@@ -51,23 +44,16 @@ export function useGridApi<T>(props: UseGridApiProps<T>): { api: GridApi<T>, int
                 return managerBuilderInstance!;
             }
         } as unknown as GridApi<T>;
-
         const createSecureProxy = (targetApi: GridApi<T>, id: string | undefined): GridApi<T> => {
             return new Proxy(targetApi, {
                 get(target, prop, receiver) {
-                    // Allow 'connect' to pass through or be intercepted?
-                    // connect is defined on baseApi.
                     if (prop === 'connect') {
                         return (newSourceId: string) => createSecureProxy(target, newSourceId);
                     }
-
-                    // Check for non-configurable properties to satisfy Proxy invariant
                     const descriptor = Reflect.getOwnPropertyDescriptor(target, prop);
                     if (descriptor && !descriptor.configurable && !descriptor.writable) {
                         return Reflect.get(target, prop, receiver);
                     }
-
-                    // Intercept 'events'
                     if (prop === 'events') {
                         return () => {
                             const evtBuilder = target.events();
@@ -76,9 +62,6 @@ export function useGridApi<T>(props: UseGridApiProps<T>): { api: GridApi<T>, int
                                     get(subTarget, subProp) {
                                         if (subProp === 'listen' || subProp === 'once') {
                                             return (handler: any) => {
-                                                // If id is undefined (default API), validateIngress checks for 'undefined' origin rules
-                                                // permissionValidator was updated to allow ALL if ingress is undefined.
-                                                // If ingress is defined, it validates against id.
                                                 if (validateIngress(context.props.ingress, id || 'undefined', eventName)) {
                                                     return subTarget[subProp](handler);
                                                 }
@@ -99,7 +82,6 @@ export function useGridApi<T>(props: UseGridApiProps<T>): { api: GridApi<T>, int
                                     }
                                 });
                             }
-
                             return new Proxy(evtBuilder, {
                                 get(ebTarget, ebProp) {
                                     const val = Reflect.get(ebTarget, ebProp);
@@ -114,13 +96,10 @@ export function useGridApi<T>(props: UseGridApiProps<T>): { api: GridApi<T>, int
                             });
                         }
                     }
-
-                    // Intercept 'manager'
                     if (prop === 'manager') {
                         return () => {
                             const mgrBuilder = target.manager();
                             const actionsQueue: string[] = [];
-
                             const proxyMgr = new Proxy(mgrBuilder, {
                                 get(mgrTarget, mgrProp) {
                                     if (mgrProp === 'execute') {
@@ -133,13 +112,12 @@ export function useGridApi<T>(props: UseGridApiProps<T>): { api: GridApi<T>, int
                                             }
                                         }
                                     }
-
                                     const val = Reflect.get(mgrTarget, mgrProp);
                                     if (typeof val === 'function') {
                                         return (...args: any[]) => {
                                             actionsQueue.push(`manager.${String(mgrProp)}`);
                                             val.apply(mgrTarget, args);
-                                            return proxyMgr; // Return proxy to keep chaining intercepted
+                                            return proxyMgr;
                                         }
                                     }
                                     return val;
@@ -148,8 +126,6 @@ export function useGridApi<T>(props: UseGridApiProps<T>): { api: GridApi<T>, int
                             return proxyMgr;
                         }
                     }
-
-                    // Intercept direct API calls
                     const val = Reflect.get(target, prop);
                     if (typeof val === 'function') {
                         return (...args: any[]) => {
@@ -160,17 +136,12 @@ export function useGridApi<T>(props: UseGridApiProps<T>): { api: GridApi<T>, int
                             }
                         }
                     }
-
                     return val;
                 }
             });
         };
-
-        // Wrap the base API with the secure proxy, keeping 'undefined' as the default sourceId
         const secureApi = createSecureProxy(baseApi, undefined);
-
         return { api: secureApi, internalApi: baseApi };
-
     }, [
         props.events,
         props.sortFilter,
@@ -184,6 +155,5 @@ export function useGridApi<T>(props: UseGridApiProps<T>): { api: GridApi<T>, int
         props.apiRef,
         props.props.ingress
     ]);
-
     return api;
 }

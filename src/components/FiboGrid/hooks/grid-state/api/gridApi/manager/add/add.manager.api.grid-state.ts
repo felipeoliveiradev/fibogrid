@@ -1,10 +1,9 @@
 import { GridManagerBuilder } from '../../../../../../types';
 import { GridApiUpdateState } from '../../../gridApiUpdateState';
-
 export function addManager<T>(
     state: GridApiUpdateState,
     managerBuilder: GridManagerBuilder<T>,
-    builder: any, // explicit type if circular ref issue or use generic
+    builder: any,
     rows: T[]
 ): GridManagerBuilder<T> {
     if (!rows || !Array.isArray(rows) || rows.length === 0) {

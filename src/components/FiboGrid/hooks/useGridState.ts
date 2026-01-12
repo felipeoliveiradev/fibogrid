@@ -11,22 +11,16 @@ import {
   useGridEditing,
   useGridApi
 } from './grid-state';
-
 import { useGrouping } from './useGrouping';
-
 export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number) {
   const events = useGridEventSystem(props.gridId);
   const apiRef = useRef<GridApi<T>>();
   const rowsRef = useRef<RowNode<T>[]>([]);
   const displayedRowsRef = useRef<RowNode<T>[]>([]);
-
   const columns = useGridColumns(props, containerWidth);
   const sortFilter = useGridSortFilter(props, events, apiRef);
   const { paginationState, setPaginationState } = useGridPaginationState(props);
-
-  // Initialize selection first (state only) but it needs refs which we created above
   const selection = useGridSelection(props, rowsRef, displayedRowsRef, events, apiRef);
-
   const rows = useGridRows({
     props,
     columns: columns.processedColumns,
@@ -38,7 +32,6 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
     rowsRef,
     displayedRowsRef
   });
-
   const pagination = useGridPaginationInfo(
     props,
     paginationState,
@@ -47,7 +40,6 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
     events,
     apiRef
   );
-
   const grouping = useGrouping({
     rows: rows.displayedRows,
     groupByFields: props.groupByFields,
@@ -56,18 +48,11 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
     getRowId: props.getRowId,
     overrides: rows.overrides
   });
-
-  // Calculate final displayed rows (handling grouping/splitting)
-  // This logic was previously in FiboGrid.tsx
   const isGrouped = props.groupByFields?.length > 0 || !!props.splitByField || grouping.hasChildren;
   const finalDisplayedRows = isGrouped ? grouping.displayRows : rows.displayedRows;
-
-  // Keep a ref to the FINAL displayed rows for hooks that need the "view" state (like editing, navigation)
   const finalDisplayedRowsRef = useRef<RowNode<T>[]>(finalDisplayedRows);
   finalDisplayedRowsRef.current = finalDisplayedRows;
-
   const editing = useGridEditing(finalDisplayedRowsRef, columns.processedColumns, rows.setOverrides, events, apiRef);
-
   const { api, internalApi } = useGridApi({
     props,
     events,
@@ -80,10 +65,7 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
     apiRef,
     grouping
   });
-
-  // Assign INTERNAL API to ref for side effects in hooks (unrestricted access)
   apiRef.current = internalApi;
-
   return {
     rows: rows.rows,
     allRows: rows.rows,
@@ -112,7 +94,6 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
     quickFilter: sortFilter.quickFilter,
     setQuickFilter: sortFilter.setQuickFilter,
     fireEvent: events.fireEvent,
-    // Grouping
     grouping,
     finalDisplayedRows
   };

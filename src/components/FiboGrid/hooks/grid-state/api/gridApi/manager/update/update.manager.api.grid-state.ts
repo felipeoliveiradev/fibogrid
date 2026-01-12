@@ -1,6 +1,5 @@
 import { GridManagerBuilder } from '../../../../../../types';
 import { GridApiUpdateState } from '../../../gridApiUpdateState';
-
 export function updateManager<T>(
     state: GridApiUpdateState,
     managerBuilder: GridManagerBuilder<T>,
@@ -19,7 +18,6 @@ export function updateManager<T>(
         } else {
             id = getRowId ? getRowId(row) : (row as any).id;
         }
-
         if (id !== undefined && id !== null) state.pendingUpdates.set(String(id), row);
         else console.warn('Grid Manager: update() failed for row without ID:', row);
     });

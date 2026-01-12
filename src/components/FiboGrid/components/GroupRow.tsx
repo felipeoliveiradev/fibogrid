@@ -3,7 +3,6 @@ import { ChevronRight, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { GroupRowNode } from '../utils/grouping';
 import { ProcessedColumn } from '../types';
-
 interface GroupRowProps<T> {
   row: GroupRowNode<T>;
   columns: ProcessedColumn<T>[];
@@ -15,7 +14,6 @@ interface GroupRowProps<T> {
   someChildrenSelected?: boolean;
   onSelectAll?: (selected: boolean) => void;
 }
-
 export function GroupRow<T>({
   row,
   columns,
@@ -29,7 +27,6 @@ export function GroupRow<T>({
 }: GroupRowProps<T>) {
   const groupFields = row.groupField.split(',');
   const totalWidth = columns.reduce((sum, col) => sum + col.computedWidth, 0) + (showCheckboxColumn ? 48 : 0);
-
   return (
     <div
       className={cn(
@@ -55,7 +52,6 @@ export function GroupRow<T>({
           />
         </div>
       )}
-      
       <div className="flex items-center px-3 flex-1">
         <button
           className="mr-2 p-0.5 rounded hover:bg-muted-foreground/20"
@@ -70,7 +66,6 @@ export function GroupRow<T>({
             <ChevronRight className="h-4 w-4" />
           )}
         </button>
-        
         <span className="text-sm">
           {groupFields.map((field, i) => (
             <span key={field}>
@@ -87,7 +82,6 @@ export function GroupRow<T>({
             ({row.groupChildren.length} items)
           </span>
         </span>
-        
         {}
         {row.aggregatedValues && Object.keys(row.aggregatedValues).length > 0 && (
           <div className="ml-4 flex items-center gap-4 text-xs text-muted-foreground">

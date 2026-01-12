@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, MutableRefObject, Dispatch, SetStateAction } from 'react';
 import { FiboGridProps, SortModel, FilterModel, GridApi } from '../../types';
 import { useGridEventSystem } from './useGridEventSystem';
-
 export interface UseGridSortFilterResult {
     sortModel: SortModel[];
     setSortModel: Dispatch<SetStateAction<SortModel[]>>;
@@ -10,7 +9,6 @@ export interface UseGridSortFilterResult {
     quickFilter: string;
     setQuickFilter: Dispatch<SetStateAction<string>>;
 }
-
 export function useGridSortFilter<T>(
     props: FiboGridProps<T>,
     events: ReturnType<typeof useGridEventSystem>,
@@ -19,20 +17,14 @@ export function useGridSortFilter<T>(
     const {
         quickFilterText,
     } = props;
-
     const [sortModel, setSortModel] = useState<SortModel[]>([]);
     const [filterModel, setFilterModel] = useState<FilterModel[]>([]);
     const [internalQuickFilter, setInternalQuickFilter] = useState(quickFilterText || '');
     const prevQuickFilterTextRef = useRef(quickFilterText);
-
-    // Sync prop quickFilter
     if (quickFilterText !== undefined && quickFilterText !== prevQuickFilterTextRef.current) {
         prevQuickFilterTextRef.current = quickFilterText;
         setInternalQuickFilter(quickFilterText);
     }
-
-
-    // Fire Sort Changed Event
     const prevSortModel = useRef(sortModel);
     useEffect(() => {
         if (prevSortModel.current !== sortModel && apiRef.current) {
@@ -45,16 +37,12 @@ export function useGridSortFilter<T>(
             }
         }
     }, [sortModel, events, apiRef]);
-
-    // Fire Filter Changed Event
     const prevFilterModel = useRef(filterModel);
     useEffect(() => {
         if (prevFilterModel.current !== filterModel && apiRef.current) {
             const oldFilterModel = prevFilterModel.current;
-
             const hasFilterChangedListeners = events.hasListeners('filterChanged');
             const hasFilterRemovedListeners = events.hasListeners('filterRemoved');
-
             if (hasFilterChangedListeners || hasFilterRemovedListeners) {
                 if (hasFilterRemovedListeners) {
                     if (oldFilterModel.length > filterModel.length) {
@@ -66,7 +54,6 @@ export function useGridSortFilter<T>(
                         });
                     }
                 }
-
                 if (hasFilterChangedListeners) {
                     events.fireEvent('filterChanged', { api: apiRef.current, filterModel, oldFilterModel });
                 }
@@ -74,12 +61,9 @@ export function useGridSortFilter<T>(
                 prevFilterModel.current = filterModel;
                 return;
             }
-
             prevFilterModel.current = filterModel;
         }
     }, [filterModel, events, apiRef]);
-
-    // Fire Quick Filter Changed Event
     const prevQuickFilterRef = useRef(internalQuickFilter);
     useEffect(() => {
         if (prevQuickFilterRef.current !== internalQuickFilter && apiRef.current) {
@@ -90,7 +74,6 @@ export function useGridSortFilter<T>(
             prevQuickFilterRef.current = internalQuickFilter;
         }
     }, [internalQuickFilter, events, apiRef]);
-
     return {
         sortModel,
         setSortModel,

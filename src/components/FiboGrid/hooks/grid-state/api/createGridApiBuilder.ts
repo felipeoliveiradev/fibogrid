@@ -39,11 +39,9 @@ import {
     resetRowBase,
     executeBase
 } from "./gridApi/base";
-
 export function createGridApiBuilder<T>(context: UseGridApiContext<T>): GridApiBuilder<T> {
     const { getRowId } = context.props;
     const state = createInitialUpdateState();
-
     const builder: GridApiBuilder<T> = {
         setFilterModel: (model, options) => setFilterModelBase(state, builder, model, options),
         removeFilter: (field) => removeFilterBase(state, builder, field),
@@ -67,9 +65,7 @@ export function createGridApiBuilder<T>(context: UseGridApiContext<T>): GridApiB
         resetRow: (rowId) => resetRowBase(state, builder, rowId),
         gridManager: (callback) => {
             let currentKey: string | undefined;
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             let isMergeUnique = false;
-
             const managerBuilder: GridManagerBuilder<T> = {
                 add: (rows) => addManager(state, managerBuilder, builder, rows),
                 upAdd: (rows) => upAddManager(state, managerBuilder, rows),
@@ -101,7 +97,6 @@ export function createGridApiBuilder<T>(context: UseGridApiContext<T>): GridApiB
             callback(managerBuilder);
             return builder;
         },
-
         execute: () => {
             executeBase(context, state);
         }

@@ -23,7 +23,6 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useGridContext } from '../context/GridContext';
-
 interface GridToolbarProps<T> {
   api: GridApi<T>;
   columns: ProcessedColumn<T>[];
@@ -37,7 +36,6 @@ interface GridToolbarProps<T> {
   className?: string;
   headerConfig?: FiboGridConfigs['header'];
 }
-
 export function GridToolbar<T>({
   api,
   columns,
@@ -54,56 +52,44 @@ export function GridToolbar<T>({
   const { locale } = useGridContext<T>()!;
   const [copied, setCopied] = useState(false);
   const [localSearch, setLocalSearch] = useState(quickFilterValue);
-
   const prevQuickFilterValueRef = useRef(quickFilterValue);
-
   if (quickFilterValue !== prevQuickFilterValueRef.current) {
     prevQuickFilterValueRef.current = quickFilterValue;
     setLocalSearch(quickFilterValue);
   }
-
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       onQuickFilterChange(localSearch);
     }
   };
-
   const handleExport = () => {
     api.exportToCsv({ fileName: 'data-export.csv' });
   };
-
   const handleCopy = async () => {
     await api.copyToClipboard(true);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
-
   const handleRefresh = () => {
     api.refresh();
   };
-
   const showSearch = headerConfig?.search !== false;
   const showFilterTags = headerConfig?.filterButton !== false;
   const hasActiveFilters = (filterModel.length > 0 || quickFilterValue.length > 0) && showFilterTags;
-
   const getFilterLabel = (filter: FilterModel): string => {
     const column = columns.find(c => c.field === filter.field);
     const columnName = column?.headerName || filter.field;
-
     if (Array.isArray(filter.value)) {
       const count = filter.value.length;
       return locale.toolbar.filterLabelCount(columnName, count);
     }
-
     return locale.toolbar.filterLabel(columnName, filter.value);
   };
-
   return (
     <div className="flex flex-col">
       {hasActiveFilters && (
         <div className="flex items-center gap-2 px-3 py-2 border-b border-border bg-muted/20">
           <span className="text-xs text-muted-foreground font-medium">{locale.toolbar.activeFilters}</span>
-
           {quickFilterValue && (
             <div className="flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded-md text-xs">
               <Search className="h-3 w-3" />
@@ -116,7 +102,6 @@ export function GridToolbar<T>({
               </button>
             </div>
           )}
-
           {filterModel.map((filter, idx) => (
             <div
               key={`${filter.field}-${idx}`}
@@ -134,7 +119,6 @@ export function GridToolbar<T>({
               </button>
             </div>
           ))}
-
           {onResetFilters && (
             <Button
               variant="ghost"
@@ -148,8 +132,6 @@ export function GridToolbar<T>({
           )}
         </div>
       )}
-
-
       <div className="flex items-center gap-2 p-2 border-b border-border bg-muted/30 w-full overflow-x-auto">
         {(headerConfig?.layout || ['search', 'spacer', 'custom-actions', 'columns-button', 'copy-button', 'export-button', 'refresh-button']).map((item, index) => {
           switch (item) {
@@ -177,17 +159,14 @@ export function GridToolbar<T>({
                   )}
                 </div>
               );
-
             case 'spacer':
               return <div key={`spacer-${index}`} className="flex-1" />;
-
             case 'custom-actions':
               return headerConfig?.customActions && (
                 <div key="custom-actions" className="flex items-center gap-2">
                   {headerConfig.customActions}
                 </div>
               );
-
             case 'columns-button':
               return headerConfig?.columnsButton !== false && (
                 <Popover key="columns-btn">
@@ -247,7 +226,6 @@ export function GridToolbar<T>({
                   </PopoverContent>
                 </Popover>
               );
-
             case 'copy-button':
               return headerConfig?.copyButton !== false && (
                 <Button
@@ -265,7 +243,6 @@ export function GridToolbar<T>({
                   <span className="ml-1.5 hidden sm:inline">{copied ? locale.toolbar.copied : locale.toolbar.copy}</span>
                 </Button>
               );
-
             case 'export-button':
               return headerConfig?.exportButton !== false && (
                 <Button
@@ -279,7 +256,6 @@ export function GridToolbar<T>({
                   <span className="ml-1.5 hidden sm:inline">{locale.toolbar.export}</span>
                 </Button>
               );
-
             case 'refresh-button':
               return headerConfig?.refreshButton !== false && (
                 <Button
@@ -292,12 +268,10 @@ export function GridToolbar<T>({
                   <RefreshCw className="h-4 w-4" />
                 </Button>
               );
-
             default:
               return null;
           }
         })}
-
         {selectedCount > 0 && (
           <div className="text-sm text-muted-foreground px-2 py-1 bg-primary/10 rounded ml-2">
             {locale.toolbar.selectedCount(selectedCount, totalCount)}

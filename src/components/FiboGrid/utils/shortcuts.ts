@@ -1,28 +1,20 @@
 import { ShortcutDef, KeyboardEventParams } from '../types';
-
 export const isShortcutMatch = (event: React.KeyboardEvent | KeyboardEvent, shortcut: ShortcutDef): boolean => {
   const keys = Array.isArray(shortcut.keys) ? shortcut.keys : [shortcut.keys];
-
   return keys.some(keyCombo => {
     const parts = keyCombo.toLowerCase().split('+');
     const mainKey = parts[parts.length - 1];
-
     const needsCtrl = parts.includes('ctrl') || parts.includes('control');
     const needsMeta = parts.includes('meta') || parts.includes('cmd') || parts.includes('command');
     const needsShift = parts.includes('shift');
     const needsAlt = parts.includes('alt');
-
     if (needsCtrl && !event.ctrlKey) return false;
     if (needsMeta && !event.metaKey) return false;
     if (needsShift && !event.shiftKey) return false;
     if (needsAlt && !event.altKey) return false;
-
-
-
     return event.key.toLowerCase() === mainKey;
   });
 };
-
 export const defaultShortcuts: ShortcutDef[] = [
   {
     id: 'navigateUp',
@@ -83,7 +75,6 @@ export const defaultShortcuts: ShortcutDef[] = [
       if (event.shiftKey) return;
       const { rowIndex, colIndex } = currentState;
       const visibleColumns = api.getColumnDefs().filter(c => !c.hide);
-
       if (colIndex < visibleColumns.length - 1) {
         focusCell(rowIndex, colIndex + 1);
       } else {
@@ -102,7 +93,6 @@ export const defaultShortcuts: ShortcutDef[] = [
     action: ({ currentState, focusCell, api }) => {
       const { rowIndex, colIndex } = currentState;
       const visibleColumns = api.getColumnDefs().filter(c => !c.hide);
-
       if (colIndex > 0) {
         focusCell(rowIndex, colIndex - 1);
       } else if (rowIndex > 0) {

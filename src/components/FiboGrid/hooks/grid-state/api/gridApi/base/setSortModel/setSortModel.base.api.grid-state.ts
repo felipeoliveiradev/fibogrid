@@ -1,6 +1,5 @@
 import { GridApiBuilder, SortModel } from '../../../../../../types';
 import { GridApiUpdateState } from '../../../gridApiUpdateState';
-
 export function setSortModelBase<T>(
     state: GridApiUpdateState,
     builder: GridApiBuilder<T>,

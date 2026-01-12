@@ -1,5 +1,4 @@
 import { RowNode } from '../types';
-
 export interface GroupRowNode<T = any> extends RowNode<T> {
   isGroup: true;
   groupField: string;
@@ -7,7 +6,6 @@ export interface GroupRowNode<T = any> extends RowNode<T> {
   groupChildren: RowNode<T>[];
   aggregatedValues?: Record<string, any>;
 }
-
 export interface RegularRowNode<T = any> extends RowNode<T> {
   isGroup?: false;
   parentGroupId?: string;
@@ -15,13 +13,10 @@ export interface RegularRowNode<T = any> extends RowNode<T> {
   isChildRow?: boolean;
   parentRowId?: string;
 }
-
 export type GroupableRowNode<T = any> = GroupRowNode<T> | RegularRowNode<T>;
-
 export function isGroupNode<T>(node: RowNode<T>): node is GroupRowNode<T> {
   return (node as GroupRowNode<T>).isGroup === true;
 }
-
 export function groupRowsByFields<T>(
   rows: RowNode<T>[],
   groupFields: string[],
@@ -30,30 +25,23 @@ export function groupRowsByFields<T>(
   if (groupFields.length === 0) {
     return rows as RegularRowNode<T>[];
   }
-
   const groupMap = new Map<string, RowNode<T>[]>();
-  
   rows.forEach(row => {
     const groupKey = groupFields
       .map(field => String((row.data as any)[field] ?? 'undefined'))
       .join('|||');
-    
     if (!groupMap.has(groupKey)) {
       groupMap.set(groupKey, []);
     }
     groupMap.get(groupKey)!.push(row);
   });
-
   const result: GroupableRowNode<T>[] = [];
-  
   groupMap.forEach((groupRows, groupKey) => {
     const keyParts = groupKey.split('|||');
     const groupValues: Record<string, any> = {};
     groupFields.forEach((field, i) => {
       groupValues[field] = keyParts[i];
     });
-
-
     const aggregatedValues: Record<string, any> = {};
     if (aggregations) {
       Object.entries(aggregations).forEach(([field, aggFunc]) => {
@@ -79,7 +67,6 @@ export function groupRowsByFields<T>(
         }
       });
     }
-
     const groupNode: GroupRowNode<T> = {
       id: `group-${groupKey}`,
       data: groupRows[0].data,
@@ -93,13 +80,10 @@ export function groupRowsByFields<T>(
       groupChildren: groupRows,
       aggregatedValues,
     };
-
     result.push(groupNode);
   });
-
   return result;
 }
-
 export function splitRowsByField<T>(
   rows: RowNode<T>[],
   splitField: string
@@ -107,29 +91,22 @@ export function splitRowsByField<T>(
   if (rows.length === 0) {
     return { rows: [], splitPoints: [] };
   }
-
   const result: RegularRowNode<T>[] = [];
   const splitPoints: number[] = [];
   let lastValue: any = undefined;
-
   rows.forEach((row, index) => {
     const currentValue = (row.data as any)[splitField];
-    
     if (lastValue !== undefined && currentValue !== lastValue) {
       splitPoints.push(result.length);
     }
-    
     result.push({
       ...row,
       isGroup: false,
     } as RegularRowNode<T>);
-    
     lastValue = currentValue;
   });
-
   return { rows: result, splitPoints };
 }
-
 export function addChildRows<T>(
   rows: RowNode<T>[],
   parentId: string,
@@ -137,14 +114,12 @@ export function addChildRows<T>(
   getRowId: (data: T) => string
 ): RegularRowNode<T>[] {
   const result: RegularRowNode<T>[] = [];
-  
   rows.forEach(row => {
     const regularRow: RegularRowNode<T> = {
       ...row,
       isGroup: false,
     };
     result.push(regularRow);
-    
     if (row.id === parentId) {
       regularRow.childRows = childData.map((data, index) => ({
         id: getRowId(data),
@@ -158,23 +133,19 @@ export function addChildRows<T>(
       } as RegularRowNode<T>));
     }
   });
-  
   return result;
 }
-
 export function flattenGroupedRows<T>(
   groupedRows: GroupableRowNode<T>[],
   expandedGroups: Set<string>
 ): RegularRowNode<T>[] {
   const result: RegularRowNode<T>[] = [];
-  
   groupedRows.forEach(row => {
     if (isGroupNode(row)) {
       result.push({
         ...row,
         rowIndex: result.length,
       } as unknown as RegularRowNode<T>);
-      
       if (expandedGroups.has(row.id)) {
         row.groupChildren.forEach(child => {
           result.push({
@@ -192,8 +163,6 @@ export function flattenGroupedRows<T>(
         rowIndex: result.length,
         isGroup: false,
       } as RegularRowNode<T>);
-      
-
       const regularRow = row as RegularRowNode<T>;
       if (regularRow.childRows && regularRow.expanded !== false) {
         regularRow.childRows.forEach(child => {
@@ -206,6 +175,5 @@ export function flattenGroupedRows<T>(
       }
     }
   });
-  
   return result;
 }

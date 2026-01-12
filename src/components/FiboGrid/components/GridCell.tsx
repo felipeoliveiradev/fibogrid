@@ -3,7 +3,6 @@ import { ProcessedColumn, RowNode, GridApi } from '../types';
 import { getValueFromPath } from '../utils/helpers';
 import { cn } from '@/lib/utils';
 import { ChevronRight, ChevronDown } from 'lucide-react';
-
 interface GridCellProps<T> {
   column: ProcessedColumn<T>;
   row: RowNode<T>;
@@ -29,7 +28,6 @@ interface GridCellProps<T> {
   isFirstPinnedRight?: boolean;
   isLastCenterBeforeRight?: boolean;
 }
-
 export function GridCell<T>({
   column,
   row,
@@ -59,23 +57,19 @@ export function GridCell<T>({
   const selectRef = useRef<HTMLSelectElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const value = getValueFromPath(row.data, column.field);
-
   useEffect(() => {
     if (isEditing && inputRef.current) {
       inputRef.current.focus();
       inputRef.current.select();
     }
   }, [isEditing]);
-
   useEffect(() => {
     if (registerCellRef && contentRef.current) {
       registerCellRef(column.field, row.id, contentRef.current);
       return () => registerCellRef(column.field, row.id, null);
     }
   }, [registerCellRef, column.field, row.id]);
-
   const isStoppingRef = useRef(false);
-
   const getCurrentValue = () => {
     if (inputRef.current) {
       const inputType = inputRef.current.type;
@@ -91,7 +85,6 @@ export function GridCell<T>({
     }
     return editValue;
   };
-
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -108,7 +101,6 @@ export function GridCell<T>({
       onStopEdit(false, currentValue);
     }
   };
-
   const handleBlur = () => {
     if (!isStoppingRef.current) {
       const currentValue = getCurrentValue();
@@ -116,42 +108,34 @@ export function GridCell<T>({
     }
     isStoppingRef.current = false;
   };
-
   const handleCellClick = (e: React.MouseEvent) => {
     onClick(e);
   };
-
   const handleCellDoubleClick = (e: React.MouseEvent) => {
     onDoubleClick(e);
     if (column.editable) {
       onStartEdit();
     }
   };
-
   const handleMouseDownInternal = (e: React.MouseEvent) => {
     if (isEditing) {
       return;
     }
-
     if (onMouseDown) {
       onMouseDown(e);
     }
   };
-
   const formattedValue = column.valueFormatter
     ? column.valueFormatter(value, row.data)
     : value;
-
   const cellClass =
     typeof column.cellClass === 'function'
       ? column.cellClass({ value, data: row.data, rowIndex: row.rowIndex, colDef: column, column, api, rowNode: row })
       : column.cellClass;
-
   const renderContent = () => {
     if (isEditing) {
       return renderEditor();
     }
-
     if (column.cellRenderer) {
       return column.cellRenderer({
         value,
@@ -163,15 +147,12 @@ export function GridCell<T>({
         rowNode: row,
       });
     }
-
     return (
       <span className="truncate whitespace-nowrap">{String(formattedValue ?? '')}</span>
     );
   };
-
   const renderEditor = () => {
     const editorType = column.cellEditor || 'text';
-
     switch (editorType) {
       case 'select':
         return (
@@ -193,7 +174,6 @@ export function GridCell<T>({
             ))}
           </select>
         );
-
       case 'checkbox':
         return (
           <input
@@ -208,7 +188,6 @@ export function GridCell<T>({
             autoFocus
           />
         );
-
       case 'number':
         return (
           <input
@@ -221,7 +200,6 @@ export function GridCell<T>({
             autoFocus
           />
         );
-
       case 'date':
         return (
           <input
@@ -234,7 +212,6 @@ export function GridCell<T>({
             autoFocus
           />
         );
-
       case 'custom':
         if (column.cellEditorRenderer) {
           return column.cellEditorRenderer({
@@ -253,7 +230,6 @@ export function GridCell<T>({
           });
         }
         return null;
-
       default:
         return (
           <input
@@ -268,7 +244,6 @@ export function GridCell<T>({
         );
     }
   };
-
   return (
     <div
       className={cn(

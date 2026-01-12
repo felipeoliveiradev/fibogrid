@@ -6,7 +6,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { X, Search, Eye, EyeOff, Pin, GripVertical } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
 interface ColumnPanelProps<T> {
   columns: ProcessedColumn<T>[];
   onClose: () => void;
@@ -14,7 +13,6 @@ interface ColumnPanelProps<T> {
   onColumnPinChange: (field: string, pinned: 'left' | 'right' | null) => void;
   onColumnOrderChange: (fromIndex: number, toIndex: number) => void;
 }
-
 export function ColumnPanel<T>({
   columns,
   onClose,
@@ -25,21 +23,17 @@ export function ColumnPanel<T>({
   const [searchTerm, setSearchTerm] = useState('');
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
-
   const filteredColumns = columns.filter(col =>
     col.headerName.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
   const handleDragStart = (e: React.DragEvent, index: number) => {
     setDraggedIndex(index);
     e.dataTransfer.effectAllowed = 'move';
   };
-
   const handleDragOver = (e: React.DragEvent, index: number) => {
     e.preventDefault();
     setDragOverIndex(index);
   };
-
   const handleDrop = (e: React.DragEvent, toIndex: number) => {
     e.preventDefault();
     if (draggedIndex !== null && draggedIndex !== toIndex) {
@@ -48,12 +42,10 @@ export function ColumnPanel<T>({
     setDraggedIndex(null);
     setDragOverIndex(null);
   };
-
   const handleDragEnd = () => {
     setDraggedIndex(null);
     setDragOverIndex(null);
   };
-
   return (
     <div className="fixed right-0 top-0 bottom-0 w-72 fibogrid-column-panel fibogrid-z-column-panel flex flex-col">
       { }
@@ -63,7 +55,6 @@ export function ColumnPanel<T>({
           <X className="h-4 w-4" />
         </Button>
       </div>
-
       { }
       <div className="p-3 fibogrid-column-panel-search">
         <div className="relative">
@@ -76,7 +67,6 @@ export function ColumnPanel<T>({
           />
         </div>
       </div>
-
       { }
       <ScrollArea className="flex-1">
         <div className="p-2 space-y-1">
@@ -95,18 +85,15 @@ export function ColumnPanel<T>({
               onDragEnd={handleDragEnd}
             >
               <GripVertical className="h-4 w-4 fibogrid-column-panel-icon opacity-0 group-hover:opacity-100 cursor-grab" />
-
               <Checkbox
                 checked={!column.hide}
                 onCheckedChange={(checked) =>
                   onColumnVisibilityChange(column.field, checked as boolean)
                 }
               />
-
               <span className="flex-1 text-sm truncate">
                 {column.headerName}
               </span>
-
               <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100">
                 <button
                   onClick={() => onColumnPinChange(column.field, column.pinned === 'left' ? null : 'left')}
@@ -123,7 +110,6 @@ export function ColumnPanel<T>({
           ))}
         </div>
       </ScrollArea>
-
       { }
       <div className="p-3 fibogrid-column-panel-footer flex gap-2">
         <Button

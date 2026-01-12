@@ -1,6 +1,5 @@
 import { GridApiBuilder } from '../../../../../../types';
 import { GridApiUpdateState } from '../../../gridApiUpdateState';
-
 export function removeAllFilterBase<T>(
     state: GridApiUpdateState,
     builder: GridApiBuilder<T>

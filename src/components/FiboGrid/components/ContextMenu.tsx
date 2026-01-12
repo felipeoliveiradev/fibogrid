@@ -11,7 +11,6 @@ import {
 } from '@/components/ui/context-menu';
 import { cn } from '@/lib/utils';
 import { ContextMenuItem as ContextMenuItemType } from '../types';
-
 interface GridContextMenuProps {
   items: ContextMenuItemType[];
   children: React.ReactNode;
@@ -19,17 +18,14 @@ interface GridContextMenuProps {
   onOpenChange?: (open: boolean) => void;
   enabled?: boolean;
 }
-
 export function GridContextMenu({ items, children, className, onOpenChange, enabled = true }: GridContextMenuProps) {
   if (!enabled) {
     return <>{children}</>;
   }
-
   const renderMenuItem = (item: ContextMenuItemType, index: number) => {
     if (item.separator) {
       return <ContextMenuSeparator key={index} />;
     }
-
     if (item.subMenu && item.subMenu.length > 0) {
       return (
         <ContextMenuSub key={index}>
@@ -43,7 +39,6 @@ export function GridContextMenu({ items, children, className, onOpenChange, enab
         </ContextMenuSub>
       );
     }
-
     return (
       <ContextMenuItem
         key={index}
@@ -55,7 +50,6 @@ export function GridContextMenu({ items, children, className, onOpenChange, enab
       </ContextMenuItem>
     );
   };
-
   return (
     <RadixContextMenu onOpenChange={onOpenChange}>
       <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>

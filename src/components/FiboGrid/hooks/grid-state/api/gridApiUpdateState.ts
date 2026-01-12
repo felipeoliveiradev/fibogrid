@@ -1,5 +1,4 @@
 import { FilterModel, SortModel } from '../../../types';
-
 export interface GridApiUpdateState {
     filterUpdates: ((current: FilterModel[]) => FilterModel[])[];
     pendingQuickFilter: string | null;
@@ -17,7 +16,6 @@ export interface GridApiUpdateState {
     pendingRemoves: Set<string>;
     pendingAdds: any[];
 }
-
 export function createInitialUpdateState(): GridApiUpdateState {
     return {
         filterUpdates: [],

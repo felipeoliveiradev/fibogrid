@@ -1,5 +1,4 @@
 import { FiboGridLocale } from './types';
-
 export const jaJP: FiboGridLocale = {
     toolbar: {
         searchPlaceholder: 'クイックフィルター...',

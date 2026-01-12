@@ -1,6 +1,5 @@
 import { GridApiBuilder, FilterModel, SetFilterOptions } from '../../../../../../types';
 import { GridApiUpdateState } from '../../../gridApiUpdateState';
-
 export function setFilterModelBase<T>(
     state: GridApiUpdateState,
     builder: GridApiBuilder<T>,

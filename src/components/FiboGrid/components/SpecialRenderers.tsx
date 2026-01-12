@@ -1,8 +1,6 @@
-
 import React from 'react';
 import { CellRendererParams, HeaderRendererParams } from '../types';
 import { Checkbox } from '@/components/ui/checkbox';
-
 export const RowNumberRenderer = (params: CellRendererParams) => {
     return (
         <span className="text-muted-foreground text-xs font-mono w-full text-center block">
@@ -10,15 +8,12 @@ export const RowNumberRenderer = (params: CellRendererParams) => {
         </span>
     );
 };
-
 export const CheckboxCellRenderer = (params: CellRendererParams) => {
     const { rowNode, api } = params;
     const isSelected = rowNode.selected;
-
     const handleCheckedChange = (checked: boolean) => {
         api.selectRow(rowNode.id, checked);
     };
-
     return (
         <div className="flex items-center justify-center w-full h-full">
             <Checkbox
@@ -30,14 +25,12 @@ export const CheckboxCellRenderer = (params: CellRendererParams) => {
         </div>
     );
 };
-
 export const CheckboxHeaderRenderer = (params: HeaderRendererParams) => {
     const { api } = params;
     const selectedCount = api.getSelectedRows().length;
     const totalCount = api.getDisplayedRows().length;
     const isAllSelected = totalCount > 0 && selectedCount === totalCount;
     const isIndeterminate = selectedCount > 0 && selectedCount < totalCount;
-
     const handleCheckedChange = (checked: boolean) => {
         if (checked) {
             api.selectAll();
@@ -45,7 +38,6 @@ export const CheckboxHeaderRenderer = (params: HeaderRendererParams) => {
             api.deselectAll();
         }
     };
-
     return (
         <div className="flex items-center justify-center w-full h-full">
             <Checkbox

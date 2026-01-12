@@ -10,7 +10,4 @@ export * from './resetEdits';
 export * from './execute';
 export * from './upAdd';
 export * from './setSelectionData';
-
-
 export * from './split/split.manager.api.grid-state';
-

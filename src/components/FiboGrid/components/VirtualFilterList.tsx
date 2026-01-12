@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
-
 interface VirtualFilterListProps {
   values: string[];
   selectedValues: Set<string>;
@@ -9,9 +8,6 @@ interface VirtualFilterListProps {
   itemHeight?: number;
   overscan?: number;
 }
-
-
- 
 export function VirtualFilterList({
   values,
   selectedValues,
@@ -22,18 +18,15 @@ export function VirtualFilterList({
 }: VirtualFilterListProps) {
   const [scrollTop, setScrollTop] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
-
   const totalHeight = values.length * itemHeight;
   const visibleCount = Math.ceil(height / itemHeight);
   const startIndex = Math.max(0, Math.floor(scrollTop / itemHeight) - overscan);
   const endIndex = Math.min(values.length, startIndex + visibleCount + overscan * 2);
   const visibleItems = values.slice(startIndex, endIndex);
   const offsetY = startIndex * itemHeight;
-
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     setScrollTop(e.currentTarget.scrollTop);
   }, []);
-
   return (
     <div
       ref={scrollRef}
@@ -61,7 +54,6 @@ export function VirtualFilterList({
           })}
         </div>
       </div>
-
       {values.length === 0 && (
         <div className="text-sm text-muted-foreground text-center py-4">
           No values found

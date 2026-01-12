@@ -1,7 +1,6 @@
 import { deepMerge } from '../../../utils/helpers';
 import { UseGridApiContext } from './apiTypes';
 import { GridApiUpdateState } from './gridApiUpdateState';
-
 export function executeGridUpdates<T>(context: UseGridApiContext<T>, state: GridApiUpdateState) {
     const {
         props,
@@ -13,9 +12,7 @@ export function executeGridUpdates<T>(context: UseGridApiContext<T>, state: Grid
         selection,
         apiRef
     } = context;
-
     const { getRowId } = props;
-
     if (state.pendingReset) {
         sortFilter.setFilterModel([]);
         sortFilter.setSortModel([]);
@@ -23,13 +20,10 @@ export function executeGridUpdates<T>(context: UseGridApiContext<T>, state: Grid
         pagination.setPaginationState(prev => ({ ...prev, currentPage: 0 }));
         selection.setSelection(prev => ({ ...prev, selectedRows: new Set(), lastSelectedIndex: null, anchorIndex: null }));
         rows.setOverrides({});
-        // Removed return to allow subsequent updates (like adds) to be processed
     }
-
     if (state.pendingResetEdits) {
         rows.setOverrides({});
     }
-
     if (state.pendingResetCells.length > 0) {
         rows.setOverrides(prev => {
             const next = { ...prev };
@@ -44,7 +38,6 @@ export function executeGridUpdates<T>(context: UseGridApiContext<T>, state: Grid
             return next;
         });
     }
-
     if (state.pendingResetRows.length > 0) {
         rows.setOverrides(prev => {
             const next = { ...prev };
@@ -54,7 +47,6 @@ export function executeGridUpdates<T>(context: UseGridApiContext<T>, state: Grid
             return next;
         });
     }
-
     if (state.filterUpdates.length > 0) {
         sortFilter.setFilterModel(prev => {
             let next = prev;
@@ -64,11 +56,9 @@ export function executeGridUpdates<T>(context: UseGridApiContext<T>, state: Grid
             return next;
         });
     }
-
     if (state.pendingQuickFilter !== null) {
         sortFilter.setQuickFilter(state.pendingQuickFilter);
     }
-
     if (state.sortUpdates.length > 0) {
         sortFilter.setSortModel(prev => {
             let next = prev;
@@ -78,7 +68,6 @@ export function executeGridUpdates<T>(context: UseGridApiContext<T>, state: Grid
             return next;
         });
     }
-
     if (state.pendingPage !== null || state.pendingPageSize !== null) {
         pagination.setPaginationState(prev => ({
             ...prev,
@@ -86,7 +75,6 @@ export function executeGridUpdates<T>(context: UseGridApiContext<T>, state: Grid
             pageSize: state.pendingPageSize ?? prev.pageSize
         }));
     }
-
     if (state.pendingSelection) {
         const { mode, ids, selected } = state.pendingSelection;
         if (mode === 'all') {
@@ -101,19 +89,14 @@ export function executeGridUpdates<T>(context: UseGridApiContext<T>, state: Grid
             }
         }
     }
-
-    // Manager updates
     if (state.pendingReplaceAll.length > 0) {
         rows.setOverrides({});
     }
-
     rows.setInternalRowData(prev => {
         if (!state.pendingReset && state.pendingReplaceAll.length === 0 && state.pendingUpdates.size === 0 && state.pendingRemoves.size === 0 && state.pendingAdds.length === 0 && state.pendingUpAdds.length === 0) {
             return prev;
         }
-
         let next: any[] = [];
-
         if (state.pendingReplaceAll.length > 0) {
             next = [...state.pendingReplaceAll];
         } else if (state.pendingReset) {
@@ -121,7 +104,6 @@ export function executeGridUpdates<T>(context: UseGridApiContext<T>, state: Grid
         } else {
             next = [...prev];
         }
-
         if (state.pendingUpAdds.length > 0) {
             state.pendingUpAdds.forEach(upRow => {
                 const id = getRowId ? getRowId(upRow) : (upRow as any).id;
@@ -140,9 +122,7 @@ export function executeGridUpdates<T>(context: UseGridApiContext<T>, state: Grid
                 }
             });
         }
-
         if (state.pendingUpdates.size > 0) {
-            // Fire cellValueChanged for API updates
             state.pendingUpdates.forEach((newRowData, sId) => {
                 const oldRowNode = rows.rowsRef.current.find(r => String(r.id) === sId);
                 if (oldRowNode) {
@@ -164,7 +144,6 @@ export function executeGridUpdates<T>(context: UseGridApiContext<T>, state: Grid
                     });
                 }
             });
-
             next = next.map(row => {
                 const id = getRowId ? getRowId(row) : (row as any).id;
                 const sId = String(id);
@@ -174,18 +153,15 @@ export function executeGridUpdates<T>(context: UseGridApiContext<T>, state: Grid
                 return row;
             });
         }
-
         if (state.pendingRemoves.size > 0) {
             next = next.filter(row => {
                 const id = getRowId ? getRowId(row) : (row as any).id;
                 return !state.pendingRemoves.has(String(id));
             });
         }
-
         if (state.pendingAdds.length > 0) {
             next = [...next, ...state.pendingAdds];
         }
-
         return next;
     });
 }

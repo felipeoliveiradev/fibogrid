@@ -5,7 +5,6 @@ import { cn } from '@/lib/utils';
 import { GripVertical, Plus } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
-
 interface GridRowProps<T> {
   row: RowNode<T>;
   columns: ProcessedColumn<T>[];
@@ -49,7 +48,6 @@ interface GridRowProps<T> {
   onRowRangeMouseEnter?: (rowId: string, isSelected: boolean, onToggle: () => void) => void;
   getRowClass?: (params: RowClassParams<T>) => string | string[] | undefined;
 }
-
 function GridRowInner<T>({
   row,
   columns,
@@ -96,7 +94,6 @@ function GridRowInner<T>({
   const visibleColumns = useMemo(() => columns.filter((col) => !col.hide), [columns]);
   const indentWidth = level * 20;
   const isChildRow = (row as any).isChildRow;
-
   const dynamicRowClass = useMemo(() => {
     if (!getRowClass) return '';
     const result = getRowClass({
@@ -108,44 +105,37 @@ function GridRowInner<T>({
     if (!result) return '';
     return Array.isArray(result) ? result.join(' ') : result;
   }, [getRowClass, row, api]);
-
   const { leftPinnedColumns, centerColumns, rightPinnedColumns } = useMemo(() => {
     const left = visibleColumns.filter(c => c.pinned === 'left');
     const center = visibleColumns.filter(c => !c.pinned);
     const right = visibleColumns.filter(c => c.pinned === 'right');
-
     let leftOffset = 0;
     const leftWithPositions = left.map((col, idx) => {
       const pos = leftOffset;
       leftOffset += col.computedWidth;
       return { ...col, stickyLeft: pos, isLastPinned: idx === left.length - 1 };
     });
-
     let rightOffset = 0;
     const rightWithPositions = [...right].reverse().map((col, idx) => {
       const pos = rightOffset;
       rightOffset += col.computedWidth;
       return { ...col, stickyRight: pos, isFirstPinned: idx === right.length - 1 };
     }).reverse();
-
     const centerWithFlags = center.map((col, idx) => ({
       ...col,
       isLastCenterBeforeRight: right.length > 0 && idx === center.length - 1
     }));
-
     return {
       leftPinnedColumns: leftWithPositions,
       centerColumns: centerWithFlags,
       rightPinnedColumns: rightWithPositions,
     };
   }, [visibleColumns]);
-
   const getPinnedBgClass = useMemo(() => {
     if (isSelected) return 'fibogrid-row-selected';
     if (isEven) return 'fibogrid-row-even';
     return 'fibogrid-row-odd';
   }, [isSelected, isEven]);
-
   const renderCell = (
     column: ProcessedColumn<T> & { stickyLeft?: number; stickyRight?: number; isLastPinned?: boolean; isFirstPinned?: boolean; isLastCenterBeforeRight?: boolean },
     isPinned: boolean,
@@ -158,7 +148,6 @@ function GridRowInner<T>({
     const cellFocused = isCellFocused?.(row.id, column.field);
     const colIndex = visibleColumns.findIndex(c => c.field === column.field);
     const isFirstColumn = colIndex === 0;
-
     return (
       <div
         key={column.field}
@@ -207,7 +196,6 @@ function GridRowInner<T>({
       </div>
     );
   };
-
   return (
     <div
       className={cn(
@@ -246,7 +234,6 @@ function GridRowInner<T>({
       }}
     >
       {leftPinnedColumns.map((column) => renderCell(column, true, column.stickyLeft, undefined))}
-
       {showRowNumbers && (
         <div
           className={cn(
@@ -257,7 +244,6 @@ function GridRowInner<T>({
           {rowNumber}
         </div>
       )}
-
       {showCheckboxColumn && (
         <div
           className={cn(
@@ -279,9 +265,7 @@ function GridRowInner<T>({
           />
         </div>
       )}
-
       {centerColumns.map((column) => renderCell(column, false, undefined, undefined))}
-
       {rightPinnedColumns.map((column) => renderCell(column, true, undefined, column.stickyRight))}
       {onAddChildRow && !isChildRow && (
         <Button
@@ -300,22 +284,18 @@ function GridRowInner<T>({
     </div>
   );
 }
-
 export const GridRow = memo(GridRowInner, (prevProps, nextProps) => {
   if (prevProps.showRowNumbers !== nextProps.showRowNumbers) return false;
   if (prevProps.showCheckboxColumn !== nextProps.showCheckboxColumn) return false;
-
   if (prevProps.isSelected !== nextProps.isSelected) return false;
   if (prevProps.row.id !== nextProps.row.id) return false;
   if (prevProps.isDragging !== nextProps.isDragging) return false;
   if (prevProps.isDropTarget !== nextProps.isDropTarget) return false;
   if (prevProps.isExpanded !== nextProps.isExpanded) return false;
   if (prevProps.isCellSelected !== nextProps.isCellSelected) return false;
-
   const prevEdit = prevProps.editingCell;
   const nextEdit = nextProps.editingCell;
   if (prevEdit?.rowId !== nextEdit?.rowId || prevEdit?.field !== nextEdit?.field || prevEdit?.value !== nextEdit?.value) return false;
-
   if (prevProps.columns !== nextProps.columns) {
     if (prevProps.columns.length !== nextProps.columns.length) return false;
     for (let i = 0; i < prevProps.columns.length; i++) {
@@ -331,20 +311,14 @@ export const GridRow = memo(GridRowInner, (prevProps, nextProps) => {
       }
     }
   }
-
   if (prevProps.row.data === nextProps.row.data) return true;
-
   const prevData = prevProps.row.data as Record<string, unknown>;
   const nextData = nextProps.row.data as Record<string, unknown>;
   const cols = nextProps.columns;
   const len = cols.length;
-
   for (let i = 0; i < len; i++) {
     const field = cols[i].field;
     if (prevData[field] !== nextData[field]) return false;
   }
-
-
-
   return true;
 }) as typeof GridRowInner;

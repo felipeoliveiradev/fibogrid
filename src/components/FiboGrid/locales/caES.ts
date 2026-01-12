@@ -1,5 +1,4 @@
 import { FiboGridLocale } from './types';
-
 export const caES: FiboGridLocale = {
     toolbar: {
         searchPlaceholder: 'Filtre ràpid...',

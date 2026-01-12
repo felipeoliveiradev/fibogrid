@@ -1,5 +1,4 @@
 import { FiboGridLocale } from './types';
-
 export const zhCN: FiboGridLocale = {
     toolbar: {
         searchPlaceholder: '快速筛选...',

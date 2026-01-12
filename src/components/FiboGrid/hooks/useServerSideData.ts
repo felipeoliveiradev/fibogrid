@@ -1,6 +1,5 @@
 import { useRef, useCallback, useSyncExternalStore } from 'react';
 import { ServerSideDataSource, ServerSideDataSourceRequest } from '../types';
-
 export interface ServerSideDataState<T> {
   data: T[];
   totalRows: number;
@@ -8,7 +7,6 @@ export interface ServerSideDataState<T> {
   error: Error | null;
   refresh: () => void;
 }
-
 interface CacheKey {
   page: number;
   pageSize: number;
@@ -16,9 +14,6 @@ interface CacheKey {
   filterHash: string;
   quickFilter: string;
 }
-
-
-
 export function useServerSideData<T>(
   enabled: boolean,
   dataSource: ServerSideDataSource<T> | undefined,
@@ -31,45 +26,29 @@ export function useServerSideData<T>(
     error: null,
     refresh: () => { },
   });
-
   const listenersRef = useRef<Set<() => void>>(new Set());
   const currentRequestRef = useRef<string>('');
   const abortControllerRef = useRef<AbortController | null>(null);
   const dataSourceRef = useRef<ServerSideDataSource<T> | undefined>(undefined);
-
-
   const getCacheKey = useCallback((req: ServerSideDataSourceRequest): string => {
     const sortHash = JSON.stringify(req.sortModel);
     const filterHash = JSON.stringify(req.filterModel);
     return `${req.page}-${req.pageSize}-${sortHash}-${filterHash}-${req.quickFilterText || ''}`;
   }, []);
-
-
   const fetchData = useCallback(
     async (req: ServerSideDataSourceRequest) => {
       if (!enabled || !dataSource) return;
-
       const cacheKey = getCacheKey(req);
-
-
       if (currentRequestRef.current === cacheKey) return;
-
-
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
-
       currentRequestRef.current = cacheKey;
       abortControllerRef.current = new AbortController();
-
-
       stateRef.current = { ...stateRef.current, loading: true, error: null };
       listenersRef.current.forEach((listener) => listener());
-
       try {
         const response = await dataSource.getRows(req);
-
-
         if (currentRequestRef.current === cacheKey) {
           stateRef.current = {
             data: response.data,
@@ -93,45 +72,31 @@ export function useServerSideData<T>(
     },
     [enabled, dataSource, getCacheKey]
   );
-
-
   const subscribe = useCallback((listener: () => void) => {
     listenersRef.current.add(listener);
     return () => {
       listenersRef.current.delete(listener);
     };
   }, []);
-
-
   const refresh = useCallback(() => {
     currentRequestRef.current = '';
     listenersRef.current.forEach((listener) => listener());
   }, []);
-
   const getSnapshot = useCallback(() => {
     const cacheKey = getCacheKey(request);
-
-
     const dataSourceChanged = dataSourceRef.current !== dataSource;
     if (dataSourceChanged) {
       dataSourceRef.current = dataSource;
       currentRequestRef.current = '';
     }
-
-
     if (currentRequestRef.current !== cacheKey || dataSourceChanged) {
-
       queueMicrotask(() => fetchData(request));
     }
     if (stateRef.current.refresh !== refresh) {
       stateRef.current = { ...stateRef.current, refresh };
     }
-
     return stateRef.current;
   }, [request, dataSource, getCacheKey, fetchData, refresh]);
-
-
   const state = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
-
   return state;
 }

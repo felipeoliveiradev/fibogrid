@@ -1,6 +1,5 @@
 import { GridManagerBuilder } from '../../../../../../types';
 import { GridApiUpdateState } from '../../../gridApiUpdateState';
-
 export function upAddManager<T>(
     state: GridApiUpdateState,
     managerBuilder: GridManagerBuilder<T>,

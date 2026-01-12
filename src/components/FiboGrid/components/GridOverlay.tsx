@@ -1,7 +1,6 @@
 import React from 'react';
 import { Loader2 } from 'lucide-react';
 import { useGridContext } from '../context/GridContext';
-
 interface GridOverlayProps {
   type: 'loading' | 'noRows';
   customComponent?: React.ReactNode;
@@ -9,20 +8,15 @@ interface GridOverlayProps {
   toolbarHeight?: number;
   filterRowHeight?: number;
 }
-
 export function GridOverlay({ type, customComponent, headerHeight = 44, toolbarHeight = 0, filterRowHeight = 0 }: GridOverlayProps) {
-
-
   const { locale } = useGridContext()!;
   const topOffset = toolbarHeight + headerHeight + filterRowHeight;
-
   const overlayStyle: React.CSSProperties = {
     top: `${topOffset}px`,
     left: 'var(--fibogrid-overlay-left)',
     right: 'var(--fibogrid-overlay-right)',
     bottom: 'var(--fibogrid-overlay-bottom)',
   };
-
   if (customComponent) {
     return (
       <div
@@ -33,7 +27,6 @@ export function GridOverlay({ type, customComponent, headerHeight = 44, toolbarH
       </div>
     );
   }
-
   if (type === 'loading') {
     return (
       <div
@@ -47,7 +40,6 @@ export function GridOverlay({ type, customComponent, headerHeight = 44, toolbarH
       </div>
     );
   }
-
   return (
     <div
       className="absolute flex items-center justify-center z-10 fibogrid-overlay"

@@ -1,5 +1,4 @@
 import { FiboGridLocale } from './types';
-
 export const koKR: FiboGridLocale = {
     toolbar: {
         searchPlaceholder: '빠른 필터...',

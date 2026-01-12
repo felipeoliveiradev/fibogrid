@@ -7,7 +7,6 @@ import { UseGridColumnsResult } from '../useGridColumns';
 import { UseGridRowsResult } from '../useGridRows';
 import { UseGridSelectionResult } from '../useGridSelection';
 import { UseGridEditingResult } from '../useGridEditing';
-
 export interface UseGridApiContext<T> {
     props: FiboGridProps<T>;
     events: ReturnType<typeof useGridEventSystem>;

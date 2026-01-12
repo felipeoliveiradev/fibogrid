@@ -5,7 +5,6 @@ import { cn } from '@/lib/utils';
 import { ArrowUp, ArrowDown, MoreVertical, Filter } from 'lucide-react';
 import { ColumnMenu } from './ColumnMenu';
 import { Input } from '@/components/ui/input';
-
 interface GridHeaderProps<T> {
   api: GridApi<T>;
   columns: ProcessedColumn<T>[];
@@ -38,7 +37,6 @@ interface GridHeaderProps<T> {
   className?: string;
   locale: FiboGridLocale;
 }
-
 export function GridHeader<T>({
   api,
   columns,
@@ -75,68 +73,54 @@ export function GridHeader<T>({
     const sort = sortModel.find((s) => s.field === field);
     return sort?.direction || null;
   };
-
   const getSortIndex = (field: string): number => {
     const index = sortModel.findIndex((s) => s.field === field);
     return index === -1 ? -1 : index + 1;
   };
-
   const getActiveFilter = (field: string): FilterModel | undefined => {
     return filterModel.find((f) => f.field === field);
   };
-
   const visibleColumns = columns.filter((col) => !col.hide);
-
   const { leftPinnedColumns, centerColumns, rightPinnedColumns } = useMemo(() => {
     const left = visibleColumns.filter(c => c.pinned === 'left');
     const center = visibleColumns.filter(c => !c.pinned);
     const right = visibleColumns.filter(c => c.pinned === 'right');
-
     let leftOffset = 0;
     const leftWithPositions = left.map((col, idx) => {
       const pos = leftOffset;
       leftOffset += col.computedWidth;
       return { ...col, stickyLeft: pos, isLastPinned: idx === left.length - 1 };
     });
-
     let rightOffset = 0;
     const rightWithPositions = [...right].reverse().map((col, idx) => {
       const pos = rightOffset;
       rightOffset += col.computedWidth;
       return { ...col, stickyRight: pos, isFirstPinned: idx === right.length - 1 };
     }).reverse();
-
     const centerWithFlags = center.map((col, idx) => ({
       ...col,
       isLastCenterBeforeRight: right.length > 0 && idx === center.length - 1
     }));
-
     return {
       leftPinnedColumns: leftWithPositions,
       centerColumns: centerWithFlags,
       rightPinnedColumns: rightWithPositions,
     };
   }, [visibleColumns]);
-
   const handleFilterClick = useCallback((e: React.MouseEvent, column: ProcessedColumn<T>) => {
     e.stopPropagation();
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     onFilterClick?.(column, rect);
   }, [onFilterClick]);
-
   const handleResizeDoubleClick = (e: React.MouseEvent, column: ProcessedColumn<T>) => {
     e.preventDefault();
     e.stopPropagation();
-
     if (onResizeDoubleClick && measureColumnContent) {
       onResizeDoubleClick(column, () => measureColumnContent(column.field));
     }
   };
-
   const filterRowHeight = showFilterRow ? 36 : 0;
-
   const wasResizingRef = useRef(false);
-
   const handleHeaderClick = useCallback((column: ProcessedColumn<T>) => {
     if (wasResizingRef.current || resizingColumn) {
       wasResizingRef.current = false;
@@ -146,13 +130,11 @@ export function GridHeader<T>({
       onSort(column.field);
     }
   }, [resizingColumn, onSort]);
-
   const handleResizeMouseDown = useCallback((e: React.MouseEvent, column: ProcessedColumn<T>) => {
     e.preventDefault();
     e.stopPropagation();
     wasResizingRef.current = true;
     onResizeStart(e, column);
-
     const handleMouseUp = () => {
       setTimeout(() => {
         wasResizingRef.current = false;
@@ -162,14 +144,12 @@ export function GridHeader<T>({
     };
     document.addEventListener('mouseup', handleMouseUp);
   }, [onResizeStart]);
-
   const renderColumnHeader = (column: ProcessedColumn<T> & { stickyLeft?: number; stickyRight?: number; isLastPinned?: boolean; isFirstPinned?: boolean; isLastCenterBeforeRight?: boolean }, isPinned: boolean) => {
     const sortDirection = getSortDirection(column.field);
     const sortIndex = getSortIndex(column.field);
     const hasFilter = !!getActiveFilter(column.field);
     const isDragging = draggedColumn === column.field;
     const isDragOver = dragOverColumn === column.field;
-
     return (
       <div
         key={column.field}
@@ -204,7 +184,6 @@ export function GridHeader<T>({
             ? column.headerRenderer({ colDef: column, column, api })
             : <span className="truncate w-full block">{column.headerName}</span>}
         </div>
-
         {sortDirection && (
           <div className="flex items-center ml-1 flex-shrink-0">
             {sortDirection === 'asc' ? (
@@ -219,11 +198,9 @@ export function GridHeader<T>({
             )}
           </div>
         )}
-
         {hasFilter && (
           <Filter className="h-3 w-3 ml-1 text-primary flex-shrink-0" />
         )}
-
         <ColumnMenu
           column={column}
           onSort={onSort}
@@ -241,7 +218,6 @@ export function GridHeader<T>({
             <MoreVertical className="h-4 w-4" />
           </button>
         </ColumnMenu>
-
         {column.resizable !== false && (
           <div
             className={cn(
@@ -257,7 +233,6 @@ export function GridHeader<T>({
       </div>
     );
   };
-
   const renderFilterCell = (column: ProcessedColumn<T> & { stickyLeft?: number; stickyRight?: number; isLastPinned?: boolean; isFirstPinned?: boolean; isLastCenterBeforeRight?: boolean }, isPinned: boolean) => {
     const activeFilter = getActiveFilter(column.field);
     const hasActiveFilter = !!activeFilter;
@@ -267,7 +242,6 @@ export function GridHeader<T>({
         : Array.isArray(activeFilter.value)
           ? activeFilter.value.join(', ')
           : String(activeFilter.value);
-
     return (
       <div
         key={`filter - ${column.field} `}
@@ -317,7 +291,6 @@ export function GridHeader<T>({
       </div>
     );
   };
-
   return (
     <div className="flex flex-col border-b border-border fibogrid-header-container">
       <div
@@ -325,7 +298,6 @@ export function GridHeader<T>({
         style={{ height: `${headerHeight}px` }}
       >
         {leftPinnedColumns.map((column) => renderColumnHeader(column, true))}
-
         {showRowNumbers && (
           <div
             className="flex items-center justify-center border-r border-border px-2 flex-shrink-0 fibogrid-row-number-column fibogrid-header-container"
@@ -333,7 +305,6 @@ export function GridHeader<T>({
             <span className="text-xs text-muted-foreground font-medium">#</span>
           </div>
         )}
-
         {showCheckboxColumn && (
           <div
             className="flex items-center justify-center px-2 flex-shrink-0 fibogrid-checkbox-column fibogrid-header-container"
@@ -348,33 +319,26 @@ export function GridHeader<T>({
             />
           </div>
         )}
-
         {centerColumns.map((column) => renderColumnHeader(column, false))}
-
         {rightPinnedColumns.map((column) => renderColumnHeader(column, true))}
       </div>
-
       {showFilterRow && (
         <div
           className="flex border-t border-border fibogrid-filter-row-container"
           style={{ height: `${filterRowHeight}px` }}
         >
           {leftPinnedColumns.map((column) => renderFilterCell(column, true))}
-
           {showRowNumbers && (
             <div
               className="border-r border-border flex-shrink-0 fibogrid-row-number-column fibogrid-filter-row-container"
             />
           )}
-
           {showCheckboxColumn && (
             <div
               className="border-r border-border flex-shrink-0 fibogrid-checkbox-column fibogrid-filter-row-container"
             />
           )}
-
           {centerColumns.map((column) => renderFilterCell(column, false))}
-
           {rightPinnedColumns.map((column) => renderFilterCell(column, true))}
         </div>
       )}

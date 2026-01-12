@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { X, Search, Filter, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
 interface FilterPanelProps<T> {
   columns: ProcessedColumn<T>[];
   filterModel: FilterModel[];
@@ -13,7 +12,6 @@ interface FilterPanelProps<T> {
   onFilterChange: (filter: FilterModel | null) => void;
   onClearAllFilters: () => void;
 }
-
 export function FilterPanel<T>({
   columns,
   filterModel,
@@ -22,19 +20,15 @@ export function FilterPanel<T>({
   onClearAllFilters,
 }: FilterPanelProps<T>) {
   const [searchTerm, setSearchTerm] = useState('');
-
   const filterableColumns = columns.filter(
     col => col.filterable !== false && !col.hide
   );
-
   const filteredColumns = filterableColumns.filter(col =>
     col.headerName.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
   const getFilterForColumn = (field: string) => {
     return filterModel.find(f => f.field === field);
   };
-
   return (
     <div className="fixed right-0 top-0 bottom-0 w-72 bg-popover border-l border-border shadow-xl fibogrid-z-filter-panel flex flex-col">
       { }
@@ -52,7 +46,6 @@ export function FilterPanel<T>({
           <X className="h-4 w-4" />
         </Button>
       </div>
-
       { }
       <div className="p-3 border-b border-border">
         <div className="relative">
@@ -65,7 +58,6 @@ export function FilterPanel<T>({
           />
         </div>
       </div>
-
       { }
       {filterModel.length > 0 && (
         <div className="p-3 border-b border-border">
@@ -103,13 +95,11 @@ export function FilterPanel<T>({
           </div>
         </div>
       )}
-
       { }
       <ScrollArea className="flex-1">
         <div className="p-2 space-y-1">
           {filteredColumns.map(column => {
             const filter = getFilterForColumn(column.field);
-
             return (
               <div
                 key={column.field}
@@ -122,11 +112,9 @@ export function FilterPanel<T>({
                   'h-4 w-4',
                   filter ? 'text-primary' : 'text-muted-foreground'
                 )} />
-
                 <span className="flex-1 text-sm truncate">
                   {column.filterLabel || column.headerName}
                 </span>
-
                 {filter && (
                   <button
                     onClick={() => onFilterChange(null)}

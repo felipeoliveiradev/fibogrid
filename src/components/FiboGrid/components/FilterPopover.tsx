@@ -10,7 +10,6 @@ import { Filter, X, Search, SortAsc, SortDesc } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { VirtualFilterList } from './VirtualFilterList';
 import { useGridContext } from '../context/GridContext';
-
 interface FilterPopoverProps<T> {
   column: ProcessedColumn<T>;
   currentFilter?: FilterModel;
@@ -23,7 +22,6 @@ interface FilterPopoverProps<T> {
   enableVirtualization?: boolean;
   className?: string;
 }
-
 export function FilterPopover<T>({
   column,
   currentFilter,
@@ -44,11 +42,8 @@ export function FilterPopover<T>({
   const [selectedValues, setSelectedValues] = useState<Set<string>>(() => new Set());
   const [selectAll, setSelectAll] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
-
   const filterType = column.filterType || 'text';
   const operators = getOperatorsForType(filterType, locale);
-
-
   const uniqueValues = useMemo(() => {
     const values = new Set<string>();
     allValues.forEach(v => {
@@ -58,19 +53,14 @@ export function FilterPopover<T>({
     });
     return Array.from(values).sort();
   }, [allValues]);
-
-
   const filteredValues = useMemo(() => {
     if (!searchTerm) return uniqueValues;
     return uniqueValues.filter(v =>
       v.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [uniqueValues, searchTerm]);
-
-
   useEffect(() => {
     if (uniqueValues.length === 0) return;
-
     if (!isInitialized) {
       if (currentFilter?.value && Array.isArray(currentFilter.value)) {
         setSelectedValues(new Set(currentFilter.value.map(String)));
@@ -82,25 +72,20 @@ export function FilterPopover<T>({
       setIsInitialized(true);
     }
   }, [uniqueValues, currentFilter, isInitialized]);
-
-
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
         onClose();
       }
     };
-
     const timer = setTimeout(() => {
       document.addEventListener('mousedown', handleClickOutside);
     }, 100);
-
     return () => {
       clearTimeout(timer);
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [onClose]);
-
   const handleApplyCondition = () => {
     if (value === '' || value == null) {
       onFilterChange(null);
@@ -114,23 +99,18 @@ export function FilterPopover<T>({
     }
     onClose();
   };
-
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       handleApplyCondition();
     }
   };
-
   const handleApplyValues = () => {
     console.log('Applying filter with selected values:', Array.from(selectedValues));
     console.log('selectAll:', selectAll, 'uniqueValues.length:', uniqueValues.length, 'selectedValues.size:', selectedValues.size);
-
     if (selectAll) {
-
       console.log('All selected, clearing filter');
       onFilterChange(null);
     } else if (selectedValues.size === 0) {
-
       console.log('None selected, filtering all out');
       onFilterChange({
         field: column.field,
@@ -139,7 +119,6 @@ export function FilterPopover<T>({
         operator: 'equals',
       });
     } else {
-
       console.log('Some selected, filtering to:', Array.from(selectedValues));
       onFilterChange({
         field: column.field,
@@ -150,7 +129,6 @@ export function FilterPopover<T>({
     }
     onClose();
   };
-
   const handleClear = () => {
     setValue('');
     setSelectedValues(new Set(uniqueValues));
@@ -158,7 +136,6 @@ export function FilterPopover<T>({
     onFilterChange(null);
     onClose();
   };
-
   const toggleValue = (val: string, e?: React.MouseEvent) => {
     if (e) {
       e.stopPropagation();
@@ -177,7 +154,6 @@ export function FilterPopover<T>({
       return newSelected;
     });
   };
-
   const toggleAll = (e?: React.MouseEvent) => {
     if (e) {
       e.stopPropagation();
@@ -191,30 +167,22 @@ export function FilterPopover<T>({
       setSelectAll(true);
     }
   };
-
-
   const style = useMemo(() => {
     if (!anchorRect) return { top: 0, left: 0 };
-
     const containerRect = containerRef?.current?.getBoundingClientRect();
-
     if (containerRect) {
-
       return {
         position: 'absolute' as const,
         top: anchorRect.bottom - containerRect.top + 4,
         left: Math.max(0, anchorRect.left - containerRect.left),
       };
     }
-
-
     return {
       position: 'fixed' as const,
       top: anchorRect.bottom + 4,
       left: Math.max(8, anchorRect.left),
     };
   }, [anchorRect, containerRef]);
-
   return (
     <div
       ref={popoverRef}
@@ -233,7 +201,6 @@ export function FilterPopover<T>({
             <X className="h-4 w-4" />
           </Button>
         </div>
-
         { }
         {onSort && (
           <div className="flex gap-1 px-3 py-2 border-b border-border">
@@ -263,7 +230,6 @@ export function FilterPopover<T>({
             </Button>
           </div>
         )}
-
         <Tabs defaultValue="values" className="w-full">
           <TabsList className="w-full rounded-none border-b border-border bg-transparent h-9">
             <TabsTrigger value="values" className="flex-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent">
@@ -273,7 +239,6 @@ export function FilterPopover<T>({
               {locale.filter.condition}
             </TabsTrigger>
           </TabsList>
-
           { }
           <TabsContent value="values" className="mt-0">
             <div className="p-3 space-y-2">
@@ -288,7 +253,6 @@ export function FilterPopover<T>({
                   className="pl-8 h-8"
                 />
               </div>
-
               { }
               <label
                 className="flex items-center gap-2 py-1.5 px-2 hover:bg-muted rounded cursor-pointer"
@@ -299,7 +263,6 @@ export function FilterPopover<T>({
                 />
                 <span className="text-sm font-medium">{locale.filter.selectAll}</span>
               </label>
-
               { }
               {enableVirtualization ? (
                 <VirtualFilterList
@@ -333,7 +296,6 @@ export function FilterPopover<T>({
                   </div>
                 </ScrollArea>
               )}
-
               { }
               <div className="flex gap-2 pt-2">
                 <Button variant="outline" className="flex-1" onClick={handleClear}>
@@ -345,7 +307,6 @@ export function FilterPopover<T>({
               </div>
             </div>
           </TabsContent>
-
           { }
           <TabsContent value="condition" className="mt-0">
             <div className="p-3 space-y-3">
@@ -361,9 +322,7 @@ export function FilterPopover<T>({
                   ))}
                 </SelectContent>
               </Select>
-
               {renderInput(filterType, value, setValue, handleKeyDown, locale, className)}
-
               <div className="flex gap-2 pt-2">
                 <Button variant="outline" className="flex-1" onClick={handleClear}>
                   {locale.filter.clear}
@@ -379,7 +338,6 @@ export function FilterPopover<T>({
     </div>
   );
 }
-
 function getOperatorsForType(type: string, locale: import('../locales/types').FiboGridLocale) {
   switch (type) {
     case 'number':
@@ -405,7 +363,6 @@ function getOperatorsForType(type: string, locale: import('../locales/types').Fi
       ];
   }
 }
-
 function renderInput(
   type: string,
   value: any,

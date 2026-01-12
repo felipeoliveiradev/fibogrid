@@ -29,5 +29,4 @@ export const GridPermissions = {
         All: 'on*'
     }
 } as const;
-
 export type GridPermissionType = typeof GridPermissions;

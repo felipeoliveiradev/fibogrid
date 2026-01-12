@@ -24,7 +24,6 @@ import {
   Check,
 } from 'lucide-react';
 import { useGridContext } from '../context/GridContext';
-
 interface ColumnMenuProps<T> {
   column: ProcessedColumn<T>;
   onSort?: (field: string, direction?: 'asc' | 'desc') => void;
@@ -36,7 +35,6 @@ interface ColumnMenuProps<T> {
   children: React.ReactNode;
   className?: string;
 }
-
 export function ColumnMenu<T>({
   column,
   onSort,
@@ -50,14 +48,12 @@ export function ColumnMenu<T>({
 }: ColumnMenuProps<T>) {
   const { locale } = useGridContext<T>()!;
   const triggerRef = useRef<HTMLButtonElement>(null);
-
   const handleFilterClick = () => {
     if (triggerRef.current && onFilterClick) {
       const rect = triggerRef.current.getBoundingClientRect();
       onFilterClick(column, rect);
     }
   };
-
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild ref={triggerRef}>{children}</DropdownMenuTrigger>
@@ -76,7 +72,6 @@ export function ColumnMenu<T>({
             <DropdownMenuSeparator />
           </>
         )}
-
         { }
         {onPin && (
           <>
@@ -106,7 +101,6 @@ export function ColumnMenu<T>({
             <DropdownMenuSeparator />
           </>
         )}
-
         { }
         {onAutoSize && (
           <DropdownMenuItem onClick={() => onAutoSize(column.field)}>
@@ -114,16 +108,13 @@ export function ColumnMenu<T>({
             {locale.columnMenu.autosizeColumn}
           </DropdownMenuItem>
         )}
-
         {onAutoSizeAll && (
           <DropdownMenuItem onClick={onAutoSizeAll}>
             <Columns className="h-4 w-4 mr-2" />
             {locale.columnMenu.autosizeAll}
           </DropdownMenuItem>
         )}
-
         {(onAutoSize || onAutoSizeAll) && <DropdownMenuSeparator />}
-
         { }
         {column.filterable !== false && onFilterClick && (
           <>
@@ -134,7 +125,6 @@ export function ColumnMenu<T>({
             <DropdownMenuSeparator />
           </>
         )}
-
         { }
         {onHide && (
           <DropdownMenuItem onClick={() => onHide(column.field)}>
