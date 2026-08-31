@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { FiboGridProps, GridApi, RowNode } from '../types';
 import {
   useGridEventSystem,
@@ -40,6 +40,10 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
     events,
     apiRef
   );
+  useEffect(() => {
+    if (!props.infiniteScroll) return;
+    setPaginationState((prev) => (prev.currentPage === 0 ? prev : { ...prev, currentPage: 0 }));
+  }, [sortFilter.sortModel, sortFilter.filterModel, sortFilter.quickFilter, paginationState.pageSize, props.infiniteScroll, setPaginationState]);
   const grouping = useGrouping({
     rows: rows.displayedRows,
     groupByFields: props.groupByFields,

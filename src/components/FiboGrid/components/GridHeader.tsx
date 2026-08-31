@@ -34,6 +34,7 @@ interface GridHeaderProps<T> {
   onAutoSize?: (field: string) => void;
   onAutoSizeAll?: () => void;
   showFilterRow?: boolean;
+  compact?: boolean;
   className?: string;
   locale: FiboGridLocale;
 }
@@ -66,6 +67,7 @@ export function GridHeader<T>({
   onAutoSize,
   onAutoSizeAll,
   showFilterRow = true,
+  compact = false,
   className,
   locale,
 }: GridHeaderProps<T>) {
@@ -119,7 +121,7 @@ export function GridHeader<T>({
       onResizeDoubleClick(column, () => measureColumnContent(column.field));
     }
   };
-  const filterRowHeight = showFilterRow ? 36 : 0;
+  const filterRowHeight = showFilterRow ? (compact ? 26 : 36) : 0;
   const wasResizingRef = useRef(false);
   const handleHeaderClick = useCallback((column: ProcessedColumn<T>) => {
     if (wasResizingRef.current || resizingColumn) {
@@ -300,6 +302,7 @@ export function GridHeader<T>({
         {leftPinnedColumns.map((column) => renderColumnHeader(column, true))}
         {showRowNumbers && (
           <div
+            style={{ width: 'var(--fibogrid-row-number-width, 50px)', minWidth: 'var(--fibogrid-row-number-width, 50px)', maxWidth: 'var(--fibogrid-row-number-width, 50px)', flexShrink: 0, flexGrow: 0 }}
             className="flex items-center justify-center border-r border-border px-2 flex-shrink-0 fibogrid-row-number-column fibogrid-header-container"
           >
             <span className="text-xs text-muted-foreground font-medium">#</span>
@@ -307,6 +310,7 @@ export function GridHeader<T>({
         )}
         {showCheckboxColumn && (
           <div
+            style={{ width: 'var(--fibogrid-checkbox-column-width, 48px)', minWidth: 'var(--fibogrid-checkbox-column-width, 48px)', maxWidth: 'var(--fibogrid-checkbox-column-width, 48px)', flexShrink: 0, flexGrow: 0 }}
             className="flex items-center justify-center px-2 flex-shrink-0 fibogrid-checkbox-column fibogrid-header-container"
           >
             <input
@@ -320,6 +324,7 @@ export function GridHeader<T>({
           </div>
         )}
         {centerColumns.map((column) => renderColumnHeader(column, false))}
+        <div className="flex-1 min-w-0 pointer-events-none" />
         {rightPinnedColumns.map((column) => renderColumnHeader(column, true))}
       </div>
       {showFilterRow && (
@@ -330,15 +335,18 @@ export function GridHeader<T>({
           {leftPinnedColumns.map((column) => renderFilterCell(column, true))}
           {showRowNumbers && (
             <div
+              style={{ width: 'var(--fibogrid-row-number-width, 50px)', minWidth: 'var(--fibogrid-row-number-width, 50px)', maxWidth: 'var(--fibogrid-row-number-width, 50px)', flexShrink: 0, flexGrow: 0 }}
               className="border-r border-border flex-shrink-0 fibogrid-row-number-column fibogrid-filter-row-container"
             />
           )}
           {showCheckboxColumn && (
             <div
+              style={{ width: 'var(--fibogrid-checkbox-column-width, 48px)', minWidth: 'var(--fibogrid-checkbox-column-width, 48px)', maxWidth: 'var(--fibogrid-checkbox-column-width, 48px)', flexShrink: 0, flexGrow: 0 }}
               className="border-r border-border flex-shrink-0 fibogrid-checkbox-column fibogrid-filter-row-container"
             />
           )}
           {centerColumns.map((column) => renderFilterCell(column, false))}
+          <div className="flex-1 min-w-0 pointer-events-none" />
           {rightPinnedColumns.map((column) => renderFilterCell(column, true))}
         </div>
       )}

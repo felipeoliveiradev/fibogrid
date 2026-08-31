@@ -1,23 +1,23 @@
 import { useRef, useCallback, useSyncExternalStore } from 'react';
 import { ServerSideDataSource, ServerSideDataSourceRequest } from '../types';
+import { mergeInfiniteRows, serverQueryIdentity } from '../utils/infiniteScroll';
 export interface ServerSideDataState<T> {
   data: T[];
   totalRows: number;
   loading: boolean;
   error: Error | null;
   refresh: () => void;
+  updateData: (updater: (data: T[]) => T[]) => void;
 }
-interface CacheKey {
-  page: number;
-  pageSize: number;
-  sortHash: string;
-  filterHash: string;
-  quickFilter: string;
+export interface UseServerSideDataOptions<T> {
+  append?: boolean;
+  getRowId?: (row: T) => string;
 }
 export function useServerSideData<T>(
   enabled: boolean,
   dataSource: ServerSideDataSource<T> | undefined,
-  request: ServerSideDataSourceRequest
+  request: ServerSideDataSourceRequest,
+  options: UseServerSideDataOptions<T> = {},
 ) {
   const stateRef = useRef<ServerSideDataState<T>>({
     data: [],
@@ -25,11 +25,13 @@ export function useServerSideData<T>(
     loading: false,
     error: null,
     refresh: () => { },
+    updateData: () => { },
   });
   const listenersRef = useRef<Set<() => void>>(new Set());
   const currentRequestRef = useRef<string>('');
   const abortControllerRef = useRef<AbortController | null>(null);
   const dataSourceRef = useRef<ServerSideDataSource<T> | undefined>(undefined);
+  const queryIdentityRef = useRef<string>('');
   const getCacheKey = useCallback((req: ServerSideDataSourceRequest): string => {
     const sortHash = JSON.stringify(req.sortModel);
     const filterHash = JSON.stringify(req.filterModel);
@@ -45,17 +47,24 @@ export function useServerSideData<T>(
       }
       currentRequestRef.current = cacheKey;
       abortControllerRef.current = new AbortController();
+      const identity = serverQueryIdentity(req);
+      const append = Boolean(options.append) && identity === queryIdentityRef.current && req.page > 0;
       stateRef.current = { ...stateRef.current, loading: true, error: null };
       listenersRef.current.forEach((listener) => listener());
       try {
         const response = await dataSource.getRows(req);
         if (currentRequestRef.current === cacheKey) {
+          queryIdentityRef.current = identity;
+          const data = append
+            ? mergeInfiniteRows(stateRef.current.data, response.data, options.getRowId)
+            : response.data;
           stateRef.current = {
-            data: response.data,
+            data,
             totalRows: response.totalRows,
             loading: false,
             error: null,
             refresh: stateRef.current.refresh,
+            updateData: stateRef.current.updateData,
           };
           listenersRef.current.forEach((listener) => listener());
         }
@@ -70,7 +79,7 @@ export function useServerSideData<T>(
         }
       }
     },
-    [enabled, dataSource, getCacheKey]
+    [enabled, dataSource, getCacheKey, options.append, options.getRowId]
   );
   const subscribe = useCallback((listener: () => void) => {
     listenersRef.current.add(listener);
@@ -80,6 +89,14 @@ export function useServerSideData<T>(
   }, []);
   const refresh = useCallback(() => {
     currentRequestRef.current = '';
+    queryIdentityRef.current = '';
+    listenersRef.current.forEach((listener) => listener());
+  }, []);
+  const updateData = useCallback((updater: (data: T[]) => T[]) => {
+    stateRef.current = {
+      ...stateRef.current,
+      data: updater(stateRef.current.data)
+    };
     listenersRef.current.forEach((listener) => listener());
   }, []);
   const getSnapshot = useCallback(() => {
@@ -95,8 +112,11 @@ export function useServerSideData<T>(
     if (stateRef.current.refresh !== refresh) {
       stateRef.current = { ...stateRef.current, refresh };
     }
+    if (stateRef.current.updateData !== updateData) {
+      stateRef.current = { ...stateRef.current, updateData };
+    }
     return stateRef.current;
-  }, [request, dataSource, getCacheKey, fetchData, refresh]);
+  }, [request, dataSource, getCacheKey, fetchData, refresh, updateData]);
   const state = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
   return state;
 }

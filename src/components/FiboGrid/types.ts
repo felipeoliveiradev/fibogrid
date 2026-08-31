@@ -484,6 +484,7 @@ export type ZIndexType = {
   modal?: number;
 }
 export interface FiboGridConfigs {
+  compact?: boolean;
   zIndex?: ZIndexType;
   header?: {
     show?: boolean;
@@ -535,6 +536,14 @@ export interface FiboGridProps<T = any> extends GridEvents<T> {
   paginationPageSizeOptions?: number[];
   paginationMode?: PaginationMode;
   serverSideDataSource?: ServerSideDataSource<T>;
+  /**
+   * Fetch the next page from `serverSideDataSource` when the user scrolls
+   * near the bottom. Accumulates rows instead of replacing the current page.
+   * Requires `serverSideDataSource`. Hides page buttons.
+   */
+  infiniteScroll?: boolean;
+  /** Distance from the bottom (px) that triggers the next page. Default 240. */
+  infiniteScrollThreshold?: number;
   rowSelection?: 'single' | 'multiple';
   rangeCellSelection?: boolean;
   rowDragEnabled?: boolean;
@@ -547,6 +556,7 @@ export interface FiboGridProps<T = any> extends GridEvents<T> {
   className?: string;
   theme?: 'light' | 'dark' | 'auto';
   height?: number | string;
+  minHeight?: number | string;
   loading?: boolean;
   loadingOverlayComponent?: React.ReactNode;
   noRowsOverlayComponent?: React.ReactNode;

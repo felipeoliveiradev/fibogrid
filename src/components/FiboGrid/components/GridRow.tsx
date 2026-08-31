@@ -236,6 +236,7 @@ function GridRowInner<T>({
       {leftPinnedColumns.map((column) => renderCell(column, true, column.stickyLeft, undefined))}
       {showRowNumbers && (
         <div
+          style={{ width: 'var(--fibogrid-row-number-width, 50px)', minWidth: 'var(--fibogrid-row-number-width, 50px)', maxWidth: 'var(--fibogrid-row-number-width, 50px)', flexShrink: 0, flexGrow: 0 }}
           className={cn(
             "flex items-center justify-center border-r border-border px-2 text-xs text-muted-foreground flex-shrink-0 fibogrid-row-number-column",
             isSelected ? 'fibogrid-row-number-bg-selected' : isEven ? 'fibogrid-row-number-bg-even' : ''
@@ -246,6 +247,7 @@ function GridRowInner<T>({
       )}
       {showCheckboxColumn && (
         <div
+          style={{ width: 'var(--fibogrid-checkbox-column-width, 48px)', minWidth: 'var(--fibogrid-checkbox-column-width, 48px)', maxWidth: 'var(--fibogrid-checkbox-column-width, 48px)', flexShrink: 0, flexGrow: 0 }}
           className={cn(
             "flex items-center justify-center px-2 flex-shrink-0 fibogrid-checkbox-column",
             isSelected ? 'fibogrid-checkbox-column-bg-selected' : isEven ? 'fibogrid-checkbox-column-bg-even' : ''
@@ -261,11 +263,12 @@ function GridRowInner<T>({
             }}
             className="translate-y-[1px]"
             aria-label="Select row"
-            onClick={onRowClick}
+            onClick={(e) => e.stopPropagation()}
           />
         </div>
       )}
       {centerColumns.map((column) => renderCell(column, false, undefined, undefined))}
+      <div className="flex-1 min-w-0 pointer-events-none" />
       {rightPinnedColumns.map((column) => renderCell(column, true, undefined, column.stickyRight))}
       {onAddChildRow && !isChildRow && (
         <Button
