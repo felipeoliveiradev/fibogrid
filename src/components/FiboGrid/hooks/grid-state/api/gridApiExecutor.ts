@@ -145,7 +145,7 @@ export function executeGridUpdates<T>(context: UseGridApiContext<T>, state: Grid
                 }
             });
             next = next.map(row => {
-                const id = getRowId ? getRowId(row) : (row as any).id;
+                const id = state.idKey ? (row as any)[state.idKey] : (getRowId ? getRowId(row) : (row as any).id);
                 const sId = String(id);
                 if (state.pendingUpdates.has(sId)) {
                     return deepMerge(row, state.pendingUpdates.get(sId));
@@ -164,4 +164,57 @@ export function executeGridUpdates<T>(context: UseGridApiContext<T>, state: Grid
         }
         return next;
     });
+    if ((props.paginationMode === 'server' || props.infiniteScroll) && rows.serverSideState.updateData) {
+        rows.serverSideState.updateData(currentData => {
+            if (!state.pendingReset && state.pendingReplaceAll.length === 0 && state.pendingUpdates.size === 0 && state.pendingRemoves.size === 0 && state.pendingAdds.length === 0 && state.pendingUpAdds.length === 0) {
+                return currentData;
+            }
+            let next: any[] = [];
+            if (state.pendingReplaceAll.length > 0) {
+                next = [...state.pendingReplaceAll];
+            } else if (state.pendingReset) {
+                next = [];
+            } else {
+                next = [...currentData];
+            }
+            if (state.pendingUpAdds.length > 0) {
+                state.pendingUpAdds.forEach(upRow => {
+                    const id = getRowId ? getRowId(upRow) : (upRow as any).id;
+                    if (id !== undefined && id !== null) {
+                        const exists = next.some(r => {
+                            const rId = getRowId ? getRowId(r) : (r as any).id;
+                            return String(rId) === String(id);
+                        });
+                        if (exists) {
+                            state.pendingUpdates.set(String(id), upRow);
+                        } else {
+                            state.pendingAdds.push(upRow);
+                        }
+                    } else {
+                        state.pendingAdds.push(upRow);
+                    }
+                });
+            }
+            if (state.pendingUpdates.size > 0) {
+                next = next.map(row => {
+                    const id = state.idKey ? (row as any)[state.idKey] : (getRowId ? getRowId(row) : (row as any).id);
+                    const sId = String(id);
+                    if (state.pendingUpdates.has(sId)) {
+                        return deepMerge(row, state.pendingUpdates.get(sId));
+                    }
+                    return row;
+                });
+            }
+            if (state.pendingRemoves.size > 0) {
+                next = next.filter(row => {
+                    const id = getRowId ? getRowId(row) : (row as any).id;
+                    return !state.pendingRemoves.has(String(id));
+                });
+            }
+            if (state.pendingAdds.length > 0) {
+                next = [...next, ...state.pendingAdds];
+            }
+            return next;
+        });
+    }
 }

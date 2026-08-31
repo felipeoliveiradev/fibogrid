@@ -10,6 +10,7 @@ import {
     SelectionState
 } from '../../types';
 import { useServerSideData, ServerSideDataState } from '../useServerSideData';
+import { serverQueryIdentity } from '../../utils/infiniteScroll';
 import {
     sortRows,
     filterRows,
@@ -59,8 +60,10 @@ export function useGridRows<T>({
         pagination = false,
         paginationMode = 'client',
         serverSideDataSource,
+        infiniteScroll = false,
         columnDefs,
     } = props;
+    const isServerData = paginationMode === 'server' || infiniteScroll;
     const [internalRowData, setInternalRowData] = useState<T[]>(rowData || []);
     const [overrides, setOverrides] = useState<Record<string, Record<string, any>>>({});
     const prevRowDataRef = useRef(rowData);
@@ -82,17 +85,38 @@ export function useGridRows<T>({
         });
         return { clientFilterModel: client, serverFilterModel: server };
     }, [filterModel, columnDefs]);
+    const queryIdentity = useMemo(
+        () =>
+            serverQueryIdentity({
+                pageSize: paginationState.pageSize,
+                sortModel,
+                filterModel: serverFilterModel,
+                quickFilterText: quickFilter,
+            }),
+        [paginationState.pageSize, sortModel, serverFilterModel, quickFilter],
+    );
+    const queryIdentityRef = useRef(queryIdentity);
+    const requestPage =
+        infiniteScroll && queryIdentityRef.current !== queryIdentity
+            ? 0
+            : paginationState.currentPage;
+    queryIdentityRef.current = queryIdentity;
     const serverSideRequest: ServerSideDataSourceRequest = useMemo(() => ({
-        page: paginationState.currentPage,
+        page: requestPage,
         pageSize: paginationState.pageSize,
         sortModel,
         filterModel: serverFilterModel,
         quickFilterText: quickFilter,
-    }), [paginationState.currentPage, paginationState.pageSize, sortModel, serverFilterModel, quickFilter]);
+    }), [requestPage, paginationState.pageSize, sortModel, serverFilterModel, quickFilter]);
+    const serverSideOptions = useMemo(
+        () => ({ append: infiniteScroll, getRowId }),
+        [infiniteScroll, getRowId],
+    );
     const serverSideState = useServerSideData(
-        paginationMode === 'server',
+        isServerData,
         serverSideDataSource,
-        serverSideRequest
+        serverSideRequest,
+        serverSideOptions,
     );
     const [prevServerData, setPrevServerData] = useState(serverSideState.data);
     if (serverSideState.data !== prevServerData) {
@@ -103,7 +127,7 @@ export function useGridRows<T>({
         setOverrides({});
     }, [rowData]);
     const rows = useMemo(() => {
-        const sourceData = paginationMode === 'server' ? serverSideState.data : internalRowData;
+        const sourceData = isServerData ? serverSideState.data : internalRowData;
         const len = sourceData.length;
         const result: RowNode<T>[] = new Array(len);
         for (let i = 0; i < len; i++) {
@@ -125,10 +149,10 @@ export function useGridRows<T>({
             };
         }
         return result;
-    }, [internalRowData, serverSideState.data, paginationMode, getRowId, overrides, selection.selectedRows]);
+    }, [internalRowData, serverSideState.data, paginationMode, isServerData, getRowId, overrides, selection.selectedRows]);
     rowsRef.current = rows;
     const filteredRows = useMemo(() => {
-        if (paginationMode === 'server') {
+        if (isServerData) {
             if (clientFilterModel.length > 0) {
                 return filterRows(rows, clientFilterModel, columns, '');
             }
@@ -138,9 +162,9 @@ export function useGridRows<T>({
             return rows;
         }
         return filterRows(rows, filterModel, columns, quickFilter);
-    }, [rows, filterModel, columns, quickFilter, paginationMode, clientFilterModel]);
+    }, [rows, filterModel, columns, quickFilter, paginationMode, isServerData, clientFilterModel]);
     const sortedRows = useMemo(() => {
-        if (paginationMode === 'server') {
+        if (isServerData) {
             return filteredRows;
         }
         if (sortModel.length === 0) {
@@ -168,12 +192,12 @@ export function useGridRows<T>({
             result[i] = row.rowIndex === i ? row : { ...row, rowIndex: i };
         }
         return result;
-    }, [filteredRows, sortModel, columns, paginationMode]);
+    }, [filteredRows, sortModel, columns, paginationMode, isServerData]);
     const displayedRows = useMemo(() => {
         if (!pagination) {
             return sortedRows;
         }
-        if (paginationMode === 'server') {
+        if (isServerData) {
             return sortedRows;
         }
         const pageSize = paginationState.pageSize;
@@ -181,9 +205,9 @@ export function useGridRows<T>({
         const currentPage = Math.min(paginationState.currentPage, totalPages - 1);
         const start = currentPage * pageSize;
         return sortedRows.slice(start, start + pageSize);
-    }, [sortedRows, pagination, paginationMode, paginationState.currentPage, paginationState.pageSize]);
+    }, [sortedRows, pagination, paginationMode, isServerData, paginationState.currentPage, paginationState.pageSize]);
     displayedRowsRef.current = displayedRows;
-    const totalRows = paginationMode === 'server' ? serverSideState.totalRows : sortedRows.length;
+    const totalRows = isServerData ? serverSideState.totalRows : sortedRows.length;
     return {
         rows,
         rowsRef,

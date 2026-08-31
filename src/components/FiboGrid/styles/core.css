@@ -649,3 +649,98 @@
   border-top: none;
 }
 
+
+.fibogrid-compact {
+  --fibogrid-font-size: 12px;
+  --fibogrid-font-size-sm: 11px;
+  --fibogrid-cell-padding: 4px 6px;
+  --fibogrid-toolbar-height: 36px;
+  --fibogrid-statusbar-height: 28px;
+  --fibogrid-toolbar-padding: var(--fibogrid-spacing-xs);
+  --fibogrid-spacing-md: 6px;
+  --fibogrid-spacing-sm: 4px;
+}
+
+.fibogrid-compact .fibogrid-header-cell {
+  padding: 2px 6px;
+  gap: 4px;
+}
+
+.fibogrid-compact .fibogrid-cell {
+  padding: 2px 6px;
+}
+
+.fibogrid-compact .fibogrid-cell-checkbox {
+  width: 32px;
+}
+
+.fibogrid-compact .fibogrid-cell-row-number {
+  width: 36px;
+}
+
+.fibogrid-compact .fibogrid-button,
+.fibogrid-compact .fibogrid-button-icon {
+  height: 24px;
+  padding: 0 6px;
+  font-size: 11px;
+}
+
+.fibogrid-compact .fibogrid-button-icon {
+  width: 24px;
+  padding: 0;
+}
+
+.fibogrid-compact .fibogrid-search {
+  width: 180px;
+}
+
+.fibogrid-compact .fibogrid-search input {
+  height: 24px;
+  padding-left: 28px;
+  font-size: 11px;
+}
+
+.fibogrid-compact .fibogrid-search-icon {
+  width: 14px;
+  height: 14px;
+  left: 8px;
+}
+
+.fibogrid-compact .fibogrid-filter-input {
+  height: 22px;
+  font-size: 11px;
+}
+
+.fibogrid-compact .fibogrid-pagination select {
+  height: 22px;
+  font-size: 11px;
+}
+
+.fibogrid-compact .fibogrid-cell-full-width {
+  padding-left: 6px;
+  padding-right: 6px;
+  font-size: 12px;
+}
+
+.fibogrid-compact .fibogrid-header-container {
+  padding-left: 6px;
+  padding-right: 6px;
+  font-size: 12px;
+}
+
+.fibogrid-compact .fibogrid-filter-row-container {
+  padding-left: 2px;
+  padding-right: 2px;
+}
+
+.fibogrid-compact .fibogrid-row-number-column {
+  padding-left: 4px;
+  padding-right: 4px;
+  font-size: 11px;
+}
+
+.fibogrid-compact .fibogrid-checkbox-column {
+  padding-left: 4px;
+  padding-right: 4px;
+}
+

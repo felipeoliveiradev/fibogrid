@@ -15,12 +15,13 @@ export function createGridApiMethods<T>(context: UseGridApiContext<T>): Partial<
         apiRef,
         grouping
     } = context;
-    const { paginationMode = 'client' } = props;
+    const { paginationMode = 'client', infiniteScroll = false } = props;
+    const isServerData = paginationMode === 'server' || infiniteScroll;
     return {
         addEventListener: events.addEventListener,
         removeEventListener: events.removeEventListener,
         events: () => new EventBuilder<T>(events.addEventListener, events.removeEventListener, events.fireEvent),
-        getRowData: () => paginationMode === 'server' ? rows.serverSideState.data : rows.internalRowData,
+        getRowData: () => isServerData ? rows.serverSideState.data : rows.internalRowData,
         setRowData: (data) => {
             if (isEqual(data, rows.internalRowData)) return;
             rows.setInternalRowData(data);
@@ -194,7 +195,8 @@ export function createGridApiMethods<T>(context: UseGridApiContext<T>): Partial<
         refreshCells: () => { },
         redrawRows: () => { },
         refresh: () => {
-            if (paginationMode === 'server') {
+            if (isServerData) {
+                pagination.setPaginationState((prev) => ({ ...prev, currentPage: 0 }));
                 rows.serverSideState.refresh();
             } else {
                 sortFilter.setFilterModel([]);

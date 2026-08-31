@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import { FiboGridProps, ProcessedColumn, SortModel, FilterModel, ContextMenuItem, RowNode, EditingCell } from './types';
+import { shouldLoadMoreOnScroll } from './utils/infiniteScroll';
 import { getValueFromPath, setValueAtPath } from './utils/helpers';
 import './styles/theme-mapping.css';
 import { useGridState } from './hooks/useGridState';
@@ -31,10 +32,12 @@ interface FilterState<T> {
 }
 export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
   const {
-    rowHeight = 40,
-    headerHeight = 44,
+    rowHeight: rowHeightProp,
+    headerHeight: headerHeightProp,
     rowBuffer = 10,
     pagination = false,
+    infiniteScroll = false,
+    infiniteScrollThreshold = 240,
     paginationPageSize = 100,
     paginationPageSizeOptions = [25, 50, 100, 250, 500],
     rowSelection,
@@ -83,11 +86,15 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     lang = enUS,
     configs,
     shortcuts = true,
+    minHeight: minHeightProp,
   } = props;
+  const isCompact = configs?.compact ?? false;
+  const rowHeight = rowHeightProp ?? (isCompact ? 28 : 40);
+  const headerHeight = headerHeightProp ?? (isCompact ? 30 : 44);
   const effectiveShowToolbar = configs?.header?.show ?? showToolbar;
   const effectiveShowStatusBar = configs?.footer?.show ?? showStatusBar;
   const effectiveShowRowNumbers = configs?.center?.rowNumbers ?? showRowNumbers;
-  const effectiveShowPagination = configs?.footer?.pagination ?? pagination;
+  const effectiveShowPagination = infiniteScroll ? false : (configs?.footer?.pagination ?? pagination);
   const footerInfo = configs?.footer?.information ?? true;
   const showBorders = configs?.center?.borders !== false;
   const showStripes = configs?.center?.stripes !== false;
@@ -96,7 +103,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
   const [containerWidth, setContainerWidth] = useState(0);
   const [containerHeight, setContainerHeight] = useState(0);
   const [filterState, setFilterState] = useState<FilterState<T> | null>(null);
-  const [contextMenuTarget, setContextMenuTarget] = useState<any>(null);
+  const [contextMenuPosition, setContextMenuPosition] = useState<{ x: number; y: number } | null>(null);
   const [contextMenuItems, setContextMenuItems] = useState<ContextMenuItem[]>([]);
   const editingCellRef = useRef<{ rowId: string; field: string; value: any; originalValue: any } | null>(null);
   useEffect(() => {
@@ -142,7 +149,8 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     grouping,
     finalDisplayedRows
   } = useGridState(props, containerWidth);
-  const isLoading = loading || serverSideLoading;
+  const isInitialServerLoad = serverSideLoading && finalDisplayedRows.length === 0;
+  const isLoading = loading || (infiniteScroll ? isInitialServerLoad : serverSideLoading);
   editingCellRef.current = editingCell;
   const selectionRef = useRef(selection);
   selectionRef.current = selection;
@@ -199,9 +207,9 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     onFilterRemoved?.(event);
   });
   const effectiveContainerHeight = typeof height === 'number' ? height : (containerHeight || 600);
-  const toolbarHeight = effectiveShowToolbar ? 48 : 0;
-  const statusBarHeight = effectiveShowStatusBar ? 36 : 0;
-  const paginationHeight = effectiveShowPagination ? 52 : 0;
+  const toolbarHeight = effectiveShowToolbar ? (isCompact ? 36 : 48) : 0;
+  const statusBarHeight = effectiveShowStatusBar ? (isCompact ? 28 : 36) : 0;
+  const paginationHeight = effectiveShowPagination ? (isCompact ? 40 : 52) : 0;
   const bodyHeight = effectiveContainerHeight - headerHeight - toolbarHeight - statusBarHeight - paginationHeight;
   const totalContentWidth = useMemo(() => {
     const showCheckbox = !hasCustomCheckbox && configs?.center?.checkboxSelection !== false && !!rowSelection;
@@ -210,7 +218,8 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     const columnsWidth = columns.filter(c => !c.hide).reduce((sum, col) => sum + col.computedWidth, 0);
     return checkboxWidth + rowNumberWidth + columnsWidth;
   }, [columns, rowSelection, effectiveShowRowNumbers, hasCustomCheckbox, configs?.center?.checkboxSelection]);
-  const virtualizationHeight = Math.max(bodyHeight, 400);
+  const minHeight = minHeightProp ?? 400;
+  const virtualizationHeight = Math.max(bodyHeight, typeof minHeight === 'number' ? minHeight : 400);
   const {
     virtualRows,
     totalHeight,
@@ -222,6 +231,38 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     overscan: rowBuffer,
     containerHeight: virtualizationHeight,
   });
+  const handleViewportScroll = useCallback(
+    (e: React.UIEvent<HTMLDivElement>) => {
+      handleScroll(e);
+      if (!infiniteScroll) return;
+      const el = e.currentTarget;
+      const remaining = el.scrollHeight - el.scrollTop - el.clientHeight;
+      if (
+        !shouldLoadMoreOnScroll(
+          remaining,
+          infiniteScrollThreshold,
+          serverSideLoading,
+          paginationState.currentPage,
+          paginationState.totalPages,
+        )
+      ) {
+        return;
+      }
+      setPaginationState((prev) => {
+        if (prev.currentPage >= prev.totalPages - 1) return prev;
+        return { ...prev, currentPage: prev.currentPage + 1 };
+      });
+    },
+    [
+      handleScroll,
+      infiniteScroll,
+      infiniteScrollThreshold,
+      serverSideLoading,
+      paginationState.currentPage,
+      paginationState.totalPages,
+      setPaginationState,
+    ],
+  );
   const { isResizing, resizingColumn, handleResizeStart, handleResizeDoubleClick } = useColumnResize(
     (field, width) => {
       setColumnWidths((prev) => ({ ...prev, [field]: width }));
@@ -616,7 +657,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     }
   }, [displayedRows, addChildToRow]);
   const effectiveShowFilterRow = configs?.header?.filterRow ?? true;
-  const currentFilterRowHeight = effectiveShowFilterRow ? 36 : 0;
+  const currentFilterRowHeight = effectiveShowFilterRow ? (isCompact ? 26 : 36) : 0;
   const gridContent = (
     <div
       ref={containerRef}
@@ -627,13 +668,16 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
         isResizing && 'cursor-col-resize select-none',
         isSelecting && 'select-none cursor-crosshair',
         !showBorders && 'fibogrid-no-borders',
-        showStripes && 'fibogrid-striped'
+        showStripes && 'fibogrid-striped',
+        isCompact && 'fibogrid-compact'
       )}
-      style={{ height: height || '100%', minHeight: 400 }}
+      style={{ height: height || '100%', minHeight }}
       tabIndex={0}
       onKeyDown={handleKeyDown}
-      onMouseDown={() => {
-        setContextMenuTarget(null);
+      onMouseDown={(e) => {
+        if (e.button !== 2) {
+          setContextMenuPosition(null);
+        }
       }}
     >
       {effectiveShowToolbar && (
@@ -658,7 +702,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
         <div
           ref={scrollContainerRef}
           className="flex-1 overflow-auto"
-          onScroll={handleScroll}
+          onScroll={handleViewportScroll}
         >
           <div style={{ minWidth: totalContentWidth }}>
             <div className="sticky top-0 z-10">
@@ -691,18 +735,11 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                 onAutoSize={handleAutoSize}
                 onAutoSizeAll={handleAutoSizeAll}
                 showFilterRow={effectiveShowFilterRow}
+                compact={isCompact}
                 className={className}
                 locale={lang}
               />
             </div>
-            <GridContextMenu
-              enabled={contextMenu}
-              items={contextMenuItems}
-              className={className}
-              onOpenChange={(open) => {
-                if (!open) setContextMenuTarget(null);
-              }}
-            >
               <div style={{ height: totalHeight, position: 'relative' }}>
                 <div style={{ transform: `translateY(${offsetTop}px)` }}>
                   {virtualRows.map((row, index) => {
@@ -907,8 +944,9 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                             const items = getContextMenuItems
                               ? getContextMenuItems(params)
                               : getDefaultContextMenuItems();
+                            e.preventDefault();
                             setContextMenuItems(items);
-                            setContextMenuTarget(true);
+                            setContextMenuPosition({ x: e.clientX, y: e.clientY });
                           }}
                         />
                       );
@@ -934,10 +972,17 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                   })}
                 </div>
               </div>
-            </GridContextMenu>
           </div>
         </div>
       </div>
+      {contextMenu && (
+        <GridContextMenu
+          items={contextMenuItems}
+          position={contextMenuPosition}
+          onClose={() => setContextMenuPosition(null)}
+          className={className}
+        />
+      )}
       <div className="flex-none">
         {(effectiveShowPagination || effectiveShowStatusBar) && (
           <GridFooter

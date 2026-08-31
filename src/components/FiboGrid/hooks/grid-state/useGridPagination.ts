@@ -5,9 +5,10 @@ export function useGridPaginationState<T>(props: FiboGridProps<T>) {
     const {
         pagination = false,
         paginationPageSize = 100,
+        infiniteScroll = false,
     } = props;
     const [paginationState, setPaginationState] = useState<PaginationState>({
-        enabled: pagination,
+        enabled: pagination || infiniteScroll,
         pageSize: paginationPageSize,
         currentPage: 0,
         totalRows: 0,
@@ -38,9 +39,10 @@ export function useGridPaginationInfo<T>(
 ): UseGridPaginationInfoResult {
     const {
         pagination = false,
+        infiniteScroll = false,
     } = props;
     const paginationInfo = useMemo(() => {
-        if (!pagination) {
+        if (!pagination && !infiniteScroll) {
             return {
                 currentPage: 0,
                 pageSize: totalRows,
@@ -50,16 +52,16 @@ export function useGridPaginationInfo<T>(
         }
         const pageSize = paginationState.pageSize;
         const totalPages = Math.ceil(totalRows / pageSize) || 1;
-        const currentPage = Math.min(paginationState.currentPage, totalPages - 1);
+        const currentPage = Math.min(paginationState.currentPage, Math.max(totalPages - 1, 0));
         return {
             currentPage,
             pageSize,
             totalRows,
             totalPages,
         };
-    }, [pagination, paginationState, totalRows]);
+    }, [pagination, infiniteScroll, paginationState, totalRows]);
     const finalPaginationState: PaginationState = {
-        enabled: pagination,
+        enabled: pagination || infiniteScroll,
         pageSize: paginationState.pageSize,
         currentPage: paginationInfo.currentPage,
         totalRows: paginationInfo.totalRows,
