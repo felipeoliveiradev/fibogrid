@@ -141,7 +141,7 @@
 }
 
 .fibogrid-button-primary {
-  color: var(--fibogrid-primary-foreground);
+  color: var(--fibogrid-primary-text);
   background-color: var(--fibogrid-primary);
   border-color: var(--fibogrid-primary);
 }
@@ -358,6 +358,11 @@
 .fibogrid-cell-editing {
   border-right-color: var(--fibogrid-cell-border-editing) !important;
   border: 2px solid var(--fibogrid-cell-border-editing);
+}
+
+.fibogrid-cell-focused {
+  outline: 2px solid var(--fibogrid-focus-ring-color);
+  outline-offset: -2px;
 }
 
 .fibogrid-cell-content {

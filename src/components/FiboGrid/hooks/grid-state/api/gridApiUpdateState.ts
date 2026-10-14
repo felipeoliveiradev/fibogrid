@@ -15,6 +15,7 @@ export interface GridApiUpdateState {
     pendingUpdates: Map<string, any>;
     pendingRemoves: Set<string>;
     pendingAdds: any[];
+    idKey?: string;
 }
 export function createInitialUpdateState(): GridApiUpdateState {
     return {

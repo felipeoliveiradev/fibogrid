@@ -7,7 +7,7 @@ export { GridProvider, useGridContext } from './components/FiboGrid/context/Grid
 export { GridRegistryProvider, useGridRegistry, useGridEvent } from './components/FiboGrid/context/GridRegistryContext';
 export * from './components/FiboGrid/utils/grouping';
 export { exportToExcel } from './components/FiboGrid/utils/excelExport';
-export { EventBuilder } from './components/FiboGrid/utils/EventBuilder';
+export { EventBuilder, useEventValue } from './components/FiboGrid/utils/EventBuilder';
 
 // Hooks
 export { useGridState } from './components/FiboGrid/hooks/useGridState';

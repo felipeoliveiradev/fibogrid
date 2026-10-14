@@ -1,6 +1,6 @@
-import { deepMerge } from '../../../utils/helpers';
 import { UseGridApiContext } from './apiTypes';
 import { GridApiUpdateState } from './gridApiUpdateState';
+import { applyRowMutations, resolvePendingUpAdds } from './applyRowMutations';
 export function executeGridUpdates<T>(context: UseGridApiContext<T>, state: GridApiUpdateState) {
     const {
         props,
@@ -92,129 +92,40 @@ export function executeGridUpdates<T>(context: UseGridApiContext<T>, state: Grid
     if (state.pendingReplaceAll.length > 0) {
         rows.setOverrides({});
     }
-    rows.setInternalRowData(prev => {
-        if (!state.pendingReset && state.pendingReplaceAll.length === 0 && state.pendingUpdates.size === 0 && state.pendingRemoves.size === 0 && state.pendingAdds.length === 0 && state.pendingUpAdds.length === 0) {
-            return prev;
-        }
-        let next: any[] = [];
-        if (state.pendingReplaceAll.length > 0) {
-            next = [...state.pendingReplaceAll];
-        } else if (state.pendingReset) {
-            next = [];
-        } else {
-            next = [...prev];
-        }
-        if (state.pendingUpAdds.length > 0) {
-            state.pendingUpAdds.forEach(upRow => {
-                const id = getRowId ? getRowId(upRow) : (upRow as any).id;
-                if (id !== undefined && id !== null) {
-                    const exists = next.some(r => {
-                        const rId = getRowId ? getRowId(r) : (r as any).id;
-                        return String(rId) === String(id);
-                    });
-                    if (exists) {
-                        state.pendingUpdates.set(String(id), upRow);
-                    } else {
-                        state.pendingAdds.push(upRow);
-                    }
-                } else {
-                    state.pendingAdds.push(upRow);
-                }
-            });
-        }
-        if (state.pendingUpdates.size > 0) {
-            state.pendingUpdates.forEach((newRowData, sId) => {
-                const oldRowNode = rows.rowsRef.current.find(r => String(r.id) === sId);
-                if (oldRowNode) {
-                    const oldData = oldRowNode.data as any;
-                    Object.keys(newRowData).forEach(key => {
-                        if (oldData[key] !== (newRowData as any)[key]) {
-                            const column = columns.columns.find(c => c.field === key);
-                            if (column && apiRef.current) {
-                                events.fireEvent('cellValueChanged', {
-                                    rowNode: oldRowNode,
-                                    column,
-                                    field: key,
-                                    oldValue: oldData[key],
-                                    newValue: (newRowData as any)[key],
-                                    api: apiRef.current
-                                });
-                            }
-                        }
-                    });
-                }
-            });
-            next = next.map(row => {
-                const id = state.idKey ? (row as any)[state.idKey] : (getRowId ? getRowId(row) : (row as any).id);
-                const sId = String(id);
-                if (state.pendingUpdates.has(sId)) {
-                    return deepMerge(row, state.pendingUpdates.get(sId));
-                }
-                return row;
-            });
-        }
-        if (state.pendingRemoves.size > 0) {
-            next = next.filter(row => {
-                const id = getRowId ? getRowId(row) : (row as any).id;
-                return !state.pendingRemoves.has(String(id));
-            });
-        }
-        if (state.pendingAdds.length > 0) {
-            next = [...next, ...state.pendingAdds];
-        }
-        return next;
-    });
-    if ((props.paginationMode === 'server' || props.infiniteScroll) && rows.serverSideState.updateData) {
-        rows.serverSideState.updateData(currentData => {
-            if (!state.pendingReset && state.pendingReplaceAll.length === 0 && state.pendingUpdates.size === 0 && state.pendingRemoves.size === 0 && state.pendingAdds.length === 0 && state.pendingUpAdds.length === 0) {
-                return currentData;
-            }
-            let next: any[] = [];
-            if (state.pendingReplaceAll.length > 0) {
-                next = [...state.pendingReplaceAll];
-            } else if (state.pendingReset) {
-                next = [];
-            } else {
-                next = [...currentData];
-            }
-            if (state.pendingUpAdds.length > 0) {
-                state.pendingUpAdds.forEach(upRow => {
-                    const id = getRowId ? getRowId(upRow) : (upRow as any).id;
-                    if (id !== undefined && id !== null) {
-                        const exists = next.some(r => {
-                            const rId = getRowId ? getRowId(r) : (r as any).id;
-                            return String(rId) === String(id);
+    const writesServer = (props.paginationMode === 'server' || props.infiniteScroll) && Boolean(rows.serverSideState.updateData);
+    const upAddExisting: readonly T[] = state.pendingReplaceAll.length > 0
+        ? state.pendingReplaceAll as T[]
+        : state.pendingReset
+            ? []
+            : writesServer
+                ? rows.serverSideState.data
+                : rows.internalRowData;
+    resolvePendingUpAdds(state, upAddExisting, getRowId);
+    const apply = (current: readonly T[]) => applyRowMutations(current, state, getRowId, {
+        emitCellChanges: (sId, newRowData) => {
+            const oldRowNode = rows.rowsRef.current.find(r => String(r.id) === sId);
+            if (!oldRowNode) return;
+            const oldData = oldRowNode.data as any;
+            Object.keys(newRowData).forEach(key => {
+                if (oldData[key] !== (newRowData as any)[key]) {
+                    const column = columns.columns.find(c => c.field === key);
+                    if (column && apiRef.current) {
+                        events.fireEvent('cellValueChanged', {
+                            rowNode: oldRowNode,
+                            column,
+                            field: key,
+                            oldValue: oldData[key],
+                            newValue: (newRowData as any)[key],
+                            api: apiRef.current
                         });
-                        if (exists) {
-                            state.pendingUpdates.set(String(id), upRow);
-                        } else {
-                            state.pendingAdds.push(upRow);
-                        }
-                    } else {
-                        state.pendingAdds.push(upRow);
                     }
-                });
-            }
-            if (state.pendingUpdates.size > 0) {
-                next = next.map(row => {
-                    const id = state.idKey ? (row as any)[state.idKey] : (getRowId ? getRowId(row) : (row as any).id);
-                    const sId = String(id);
-                    if (state.pendingUpdates.has(sId)) {
-                        return deepMerge(row, state.pendingUpdates.get(sId));
-                    }
-                    return row;
-                });
-            }
-            if (state.pendingRemoves.size > 0) {
-                next = next.filter(row => {
-                    const id = getRowId ? getRowId(row) : (row as any).id;
-                    return !state.pendingRemoves.has(String(id));
-                });
-            }
-            if (state.pendingAdds.length > 0) {
-                next = [...next, ...state.pendingAdds];
-            }
-            return next;
-        });
+                }
+            });
+        }
+    });
+    if (writesServer) {
+        rows.serverSideState.updateData(currentData => apply(currentData));
+    } else {
+        rows.setInternalRowData(prev => apply(prev));
     }
 }

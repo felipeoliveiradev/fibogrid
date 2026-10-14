@@ -83,7 +83,8 @@ function App() {
 
 ## 📚 Documentation
 
-For full documentation, visit [https://felipeoliveiradev.github.io/fibogrid](https://felipeoliveiradev.github.io/fibogrid)
+- Online: [https://felipeoliveiradev.github.io/fibogrid](https://felipeoliveiradev.github.io/fibogrid)
+- In-repo: [`docs/README.md`](./docs/README.md) · [`docs/guides/usage.md`](./docs/guides/usage.md) · [`docs/guides/theming.md`](./docs/guides/theming.md)
 
 ### Core Props
 

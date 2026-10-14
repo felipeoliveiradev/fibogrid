@@ -38,14 +38,16 @@ export function useUndoRedo<T>(
     setUndoStack(prev => {
       if (prev.length === 0) return prev;
       const newStack = [...prev];
-      changes = newStack.pop() || null;
-      if (changes) {
-        const reversedChanges = changes.map(c => ({
+      const popped = newStack.pop();
+      if (popped) {
+        const reversedChanges = popped.map(c => ({
           ...c,
           oldValue: c.newValue,
           newValue: c.oldValue,
         }));
-        setRedoStack(redoPrev => [...redoPrev, changes!]);
+        changes = reversedChanges;
+        // Redo reapplies the edited value, so it stores the change before this swap.
+        setRedoStack(redoPrev => [...redoPrev, popped]);
       }
       return newStack;
     });

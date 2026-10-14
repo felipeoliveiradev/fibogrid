@@ -20,24 +20,43 @@ export function useColumnResize(
   useEffect(() => {
     onResizeRef.current = onResize;
   }, [onResize]);
+  const frameRef = useRef<number | null>(null);
+  const pendingWidth = useRef<number | null>(null);
+  const flushWidth = useCallback(() => {
+    frameRef.current = null;
+    const width = pendingWidth.current;
+    pendingWidth.current = null;
+    if (width == null) return;
+    onResizeRef.current(columnField.current, width);
+  }, []);
   const handleMouseMove = useCallback(
     (e: MouseEvent) => {
       const diff = e.clientX - startX.current;
       let newWidth = startWidth.current + diff;
       newWidth = Math.max(minWidth.current, newWidth);
       newWidth = Math.min(maxWidth.current, newWidth);
-      onResizeRef.current(columnField.current, newWidth);
+      pendingWidth.current = newWidth;
+      if (frameRef.current != null) return;
+      frameRef.current = requestAnimationFrame(flushWidth);
     },
-    []
+    [flushWidth]
   );
   const handleMouseUp = useCallback(() => {
+    if (frameRef.current != null) {
+      cancelAnimationFrame(frameRef.current);
+      frameRef.current = null;
+    }
+    if (pendingWidth.current != null) {
+      onResizeRef.current(columnField.current, pendingWidth.current);
+      pendingWidth.current = null;
+    }
     setIsResizing(false);
     setResizingColumn(null);
     document.removeEventListener('mousemove', handleMouseMove);
     document.removeEventListener('mouseup', handleMouseUp);
     document.body.style.cursor = '';
     document.body.style.userSelect = '';
-  }, [handleMouseMove]);
+  }, [handleMouseMove, flushWidth]);
   const handleResizeStart = useCallback(
     (e: React.MouseEvent, column: ProcessedColumn) => {
       e.preventDefault();

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useId } from 'react';
 import { PaginationState, ZIndexType } from '../types';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -22,18 +22,19 @@ export function GridPagination({
   zIndex
 }: GridPaginationProps) {
   const { locale } = useGridContext()!;
+  const rowsPerPageId = useId();
   const { currentPage, totalPages, totalRows, pageSize } = pagination;
   const startRow = currentPage * pageSize + 1;
   const endRow = Math.min((currentPage + 1) * pageSize, totalRows);
   return (
     <div className="flex items-center justify-between px-4 py-2 border-t border-border bg-muted/30">
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <span>{locale.pagination.rowsPerPage}</span>
+        <span id={rowsPerPageId}>{locale.pagination.rowsPerPage}</span>
         <Select
           value={String(pageSize)}
           onValueChange={(value) => onPageSizeChange(parseInt(value))}
         >
-          <SelectTrigger className="w-20 h-8">
+          <SelectTrigger className="w-20 h-8" aria-labelledby={rowsPerPageId}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent className={cn("fibogrid fibogrid-select", zIndex?.select ? `z-[${zIndex.select}]` : '', className)}>
@@ -56,6 +57,7 @@ export function GridPagination({
             className="h-8 w-8"
             onClick={() => onPageChange(0)}
             disabled={currentPage === 0}
+            aria-label={locale.pagination.firstPage}
           >
             <ChevronsLeft className="h-4 w-4" />
           </Button>
@@ -65,6 +67,7 @@ export function GridPagination({
             className="h-8 w-8"
             onClick={() => onPageChange(currentPage - 1)}
             disabled={currentPage === 0}
+            aria-label={locale.pagination.previousPage}
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
@@ -77,6 +80,7 @@ export function GridPagination({
             className="h-8 w-8"
             onClick={() => onPageChange(currentPage + 1)}
             disabled={currentPage >= totalPages - 1}
+            aria-label={locale.pagination.nextPage}
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
@@ -86,6 +90,7 @@ export function GridPagination({
             className="h-8 w-8"
             onClick={() => onPageChange(totalPages - 1)}
             disabled={currentPage >= totalPages - 1}
+            aria-label={locale.pagination.lastPage}
           >
             <ChevronsRight className="h-4 w-4" />
           </Button>

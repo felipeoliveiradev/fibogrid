@@ -8,6 +8,7 @@ export const zhCN: FiboGridLocale = {
         copy: '复制',
         copied: '已复制！',
         export: '导出',
+        refresh: '刷新',
         activeFilters: '活动筛选器：',
         resetAll: '重置全部',
         toggleColumns: '切换列',
@@ -20,6 +21,10 @@ export const zhCN: FiboGridLocale = {
         pageInfo: (start, end, total) => `第 ${start}-${end} 条，共 ${total} 条`,
         zeroRows: '0 行',
         pageOf: (current, total) => `第 ${current}/${total} 页`,
+        firstPage: '第一页',
+        previousPage: '上一页',
+        nextPage: '下一页',
+        lastPage: '最后一页',
     },
     statusBar: {
         rows: '行',
@@ -78,5 +83,41 @@ export const zhCN: FiboGridLocale = {
     overlay: {
         loading: '加载中...',
         noRows: '没有可显示的行',
+    },
+    header: {
+        density: {
+            compact: '紧凑',
+            normal: '标准',
+            comfortable: '宽松',
+            label: '密度',
+        },
+    },
+    contextMenu: {
+        copy: '复制',
+        exportCsv: '导出 CSV',
+        deleteSelected: '删除所选',
+    },
+    aria: {
+        selectRow: '选择行',
+        selectAllRows: '全选行',
+        addChildRow: '添加子行',
+        close: '关闭',
+        removeFilter: '移除筛选',
+        clearSearch: '清除搜索',
+        selectGroup: '选择分组',
+        expandGroup: '展开分组',
+    },
+    columnPanel: {
+        search: '搜索列...',
+        pinLeft: '固定在左侧',
+        unpin: '取消固定',
+    },
+    filterPanel: {
+        title: '筛选',
+    },
+    groups: {
+        expandAll: '展开分组',
+        collapseAll: '折叠分组',
+        itemCount: (count) => `${count} 项`,
     },
 };

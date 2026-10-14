@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { ProcessedColumn, GridApi, FilterModel, FiboGridConfigs } from '../types';
+import { ProcessedColumn, GridApi, FilterModel, FiboGridConfigs, HeaderLayoutItem } from '../types';
 import { cn } from '@/lib/utils';
 import {
   Search,
@@ -12,6 +12,8 @@ import {
   Eye,
   EyeOff,
   FilterX,
+  Filter,
+  Rows3,
 } from 'lucide-react';
 import {
   Popover,
@@ -23,6 +25,21 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useGridContext } from '../context/GridContext';
+import { FilterPanel } from './FilterPanel';
+
+type GridDensity = 'compact' | 'normal' | 'comfortable';
+
+const DEFAULT_LAYOUT: HeaderLayoutItem[] = [
+  'search',
+  'spacer',
+  'custom-actions',
+  'columns-button',
+  'copy-button',
+  'export-button',
+  'refresh-button',
+];
+const DENSITY_CYCLE: GridDensity[] = ['compact', 'normal', 'comfortable'];
+
 interface GridToolbarProps<T> {
   api: GridApi<T>;
   columns: ProcessedColumn<T>[];
@@ -35,6 +52,8 @@ interface GridToolbarProps<T> {
   onResetFilters?: () => void;
   className?: string;
   headerConfig?: FiboGridConfigs['header'];
+  density?: GridDensity;
+  onDensityChange?: (density: GridDensity) => void;
 }
 export function GridToolbar<T>({
   api,
@@ -48,14 +67,23 @@ export function GridToolbar<T>({
   onResetFilters,
   className,
   headerConfig,
+  density,
+  onDensityChange,
 }: GridToolbarProps<T>) {
   const { locale } = useGridContext<T>()!;
   const [copied, setCopied] = useState(false);
   const [localSearch, setLocalSearch] = useState(quickFilterValue);
+  const [filterPanelOpen, setFilterPanelOpen] = useState(false);
+  const [localDensity, setLocalDensity] = useState<GridDensity>(density ?? 'normal');
   const prevQuickFilterValueRef = useRef(quickFilterValue);
+  const prevDensityRef = useRef(density);
   if (quickFilterValue !== prevQuickFilterValueRef.current) {
     prevQuickFilterValueRef.current = quickFilterValue;
     setLocalSearch(quickFilterValue);
+  }
+  if (density !== undefined && density !== prevDensityRef.current) {
+    prevDensityRef.current = density;
+    setLocalDensity(density);
   }
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -73,9 +101,32 @@ export function GridToolbar<T>({
   const handleRefresh = () => {
     api.refresh();
   };
+  const cycleDensity = () => {
+    const next = DENSITY_CYCLE[(DENSITY_CYCLE.indexOf(localDensity) + 1) % DENSITY_CYCLE.length];
+    setLocalDensity(next);
+    onDensityChange?.(next);
+  };
+  const handlePanelFilterChange = (field: string, model: FilterModel | null) => {
+    if (model == null) {
+      api.setFilterModel(filterModel.filter((filter) => filter.field !== field));
+      return;
+    }
+    const index = filterModel.findIndex((filter) => filter.field === field);
+    if (index >= 0) {
+      const next = filterModel.slice();
+      next[index] = model;
+      api.setFilterModel(next);
+      return;
+    }
+    api.setFilterModel([...filterModel, model]);
+  };
   const showSearch = headerConfig?.search !== false;
   const showFilterTags = headerConfig?.filterButton !== false;
   const hasActiveFilters = (filterModel.length > 0 || quickFilterValue.length > 0) && showFilterTags;
+  const layout = headerConfig?.layout || DEFAULT_LAYOUT;
+  const layoutIncludesActiveFilters = layout.includes('active-filters');
+  const layoutIncludesDensity = layout.includes('density-button');
+  const showDensity = headerConfig?.densityButton === true || layoutIncludesDensity;
   const getFilterLabel = (filter: FilterModel): string => {
     const column = columns.find(c => c.field === filter.field);
     const columnName = column?.headerName || filter.field;
@@ -85,55 +136,84 @@ export function GridToolbar<T>({
     }
     return locale.toolbar.filterLabel(columnName, filter.value);
   };
+  const renderActiveFilters = (placement: 'bar' | 'inline') => {
+    if (!hasActiveFilters) return null;
+    return (
+      <div
+        key="active-filters"
+        className={
+          placement === 'bar'
+            ? 'flex items-center gap-2 px-3 py-2 border-b border-border bg-muted/20'
+            : 'flex items-center gap-2 shrink-0'
+        }
+      >
+        <span className="text-xs text-muted-foreground font-medium">{locale.toolbar.activeFilters}</span>
+        {quickFilterValue && (
+          <div className="flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded-md text-xs">
+            <Search className="h-3 w-3" />
+            <span>{quickFilterValue}</span>
+            <button
+              type="button"
+              aria-label={locale.aria.clearSearch}
+              onClick={() => onQuickFilterChange('')}
+              className="ml-1 hover:bg-primary/20 rounded p-0.5"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </div>
+        )}
+        {filterModel.map((filter, idx) => (
+          <div
+            key={`${filter.field}-${idx}`}
+            className="flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded-md text-xs"
+          >
+            <span>{getFilterLabel(filter)}</span>
+            <button
+              type="button"
+              aria-label={locale.aria.removeFilter}
+              onClick={() => {
+                const newFilters = filterModel.filter((_, i) => i !== idx);
+                api.setFilterModel(newFilters);
+              }}
+              className="ml-1 hover:bg-primary/20 rounded p-0.5"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </div>
+        ))}
+        {onResetFilters && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className={placement === 'bar' ? 'h-6 px-2 ml-auto text-xs' : 'h-6 px-2 text-xs'}
+            onClick={onResetFilters}
+          >
+            <FilterX className="h-3 w-3 mr-1" />
+            {locale.toolbar.resetAll}
+          </Button>
+        )}
+      </div>
+    );
+  };
+  const densityButton = (
+    <Button
+      key="density-btn"
+      variant="ghost"
+      size="sm"
+      className="h-8 px-2"
+      onClick={cycleDensity}
+      aria-label={`${locale.header.density.label}: ${locale.header.density[localDensity]}`}
+      title={locale.header.density[localDensity]}
+    >
+      <Rows3 className="h-4 w-4" />
+      <span className="ml-1.5 hidden sm:inline">{locale.header.density[localDensity]}</span>
+    </Button>
+  );
   return (
     <div className="flex flex-col">
-      {hasActiveFilters && (
-        <div className="flex items-center gap-2 px-3 py-2 border-b border-border bg-muted/20">
-          <span className="text-xs text-muted-foreground font-medium">{locale.toolbar.activeFilters}</span>
-          {quickFilterValue && (
-            <div className="flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded-md text-xs">
-              <Search className="h-3 w-3" />
-              <span>{quickFilterValue}</span>
-              <button
-                onClick={() => onQuickFilterChange('')}
-                className="ml-1 hover:bg-primary/20 rounded p-0.5"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </div>
-          )}
-          {filterModel.map((filter, idx) => (
-            <div
-              key={`${filter.field}-${idx}`}
-              className="flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded-md text-xs"
-            >
-              <span>{getFilterLabel(filter)}</span>
-              <button
-                onClick={() => {
-                  const newFilters = filterModel.filter((_, i) => i !== idx);
-                  api.setFilterModel(newFilters);
-                }}
-                className="ml-1 hover:bg-primary/20 rounded p-0.5"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </div>
-          ))}
-          {onResetFilters && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 px-2 ml-auto text-xs"
-              onClick={onResetFilters}
-            >
-              <FilterX className="h-3 w-3 mr-1" />
-              {locale.toolbar.resetAll}
-            </Button>
-          )}
-        </div>
-      )}
+      {!layoutIncludesActiveFilters && renderActiveFilters('bar')}
       <div className="flex items-center gap-2 p-2 border-b border-border bg-muted/30 w-full overflow-x-auto">
-        {(headerConfig?.layout || ['search', 'spacer', 'custom-actions', 'columns-button', 'copy-button', 'export-button', 'refresh-button']).map((item, index) => {
+        {layout.map((item, index) => {
           switch (item) {
             case 'search':
               return showSearch && (
@@ -141,6 +221,7 @@ export function GridToolbar<T>({
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder={locale.toolbar.searchPlaceholder}
+                    aria-label={locale.toolbar.searchPlaceholder}
                     value={localSearch}
                     onChange={(e) => setLocalSearch(e.target.value)}
                     onKeyDown={(e) => {
@@ -151,6 +232,8 @@ export function GridToolbar<T>({
                   />
                   {quickFilterValue && (
                     <button
+                      type="button"
+                      aria-label={locale.aria.clearSearch}
                       onClick={() => onQuickFilterChange('')}
                       className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 hover:bg-muted rounded"
                     >
@@ -167,11 +250,35 @@ export function GridToolbar<T>({
                   {headerConfig.customActions}
                 </div>
               );
+            case 'active-filters':
+              return renderActiveFilters('inline');
+            case 'filter-button':
+              return headerConfig?.filterButton !== false && (
+                <Button
+                  key="filter-btn"
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 px-2"
+                  aria-label={locale.filterPanel.title}
+                  aria-pressed={filterPanelOpen}
+                  onClick={() => setFilterPanelOpen((open) => !open)}
+                >
+                  <Filter className="h-4 w-4" />
+                  <span className="ml-1.5 hidden sm:inline">{locale.filterPanel.title}</span>
+                </Button>
+              );
+            case 'density-button':
+              return showDensity ? densityButton : null;
             case 'columns-button':
               return headerConfig?.columnsButton !== false && (
                 <Popover key="columns-btn">
                   <PopoverTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-8 px-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 px-2"
+                      aria-label={locale.toolbar.columns}
+                    >
                       <Columns className="h-4 w-4" />
                       <span className="ml-1.5 hidden sm:inline">{locale.toolbar.columns}</span>
                     </Button>
@@ -234,6 +341,7 @@ export function GridToolbar<T>({
                   size="sm"
                   className="h-8 px-2"
                   onClick={handleCopy}
+                  aria-label={copied ? locale.toolbar.copied : locale.toolbar.copy}
                 >
                   {copied ? (
                     <Check className="h-4 w-4 text-green-500" />
@@ -251,6 +359,7 @@ export function GridToolbar<T>({
                   size="sm"
                   className="h-8 px-2"
                   onClick={handleExport}
+                  aria-label={locale.toolbar.export}
                 >
                   <Download className="h-4 w-4" />
                   <span className="ml-1.5 hidden sm:inline">{locale.toolbar.export}</span>
@@ -264,6 +373,7 @@ export function GridToolbar<T>({
                   size="sm"
                   className="h-8 px-2"
                   onClick={handleRefresh}
+                  aria-label={locale.toolbar.refresh}
                 >
                   <RefreshCw className="h-4 w-4" />
                 </Button>
@@ -272,12 +382,22 @@ export function GridToolbar<T>({
               return null;
           }
         })}
+        {showDensity && !layoutIncludesDensity && densityButton}
         {selectedCount > 0 && (
           <div className="text-sm text-muted-foreground px-2 py-1 bg-primary/10 rounded ml-2">
             {locale.toolbar.selectedCount(selectedCount, totalCount)}
           </div>
         )}
       </div>
+      {filterPanelOpen && (
+        <FilterPanel
+          columns={columns}
+          filterModel={filterModel}
+          onClose={() => setFilterPanelOpen(false)}
+          onFilterChange={handlePanelFilterChange}
+          onClearAllFilters={() => api.setFilterModel([])}
+        />
+      )}
     </div>
   );
 }

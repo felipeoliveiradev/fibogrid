@@ -18,6 +18,7 @@ export function VirtualFilterList({
 }: VirtualFilterListProps) {
   const [scrollTop, setScrollTop] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const rafIdRef = useRef<number | null>(null);
   const totalHeight = values.length * itemHeight;
   const visibleCount = Math.ceil(height / itemHeight);
   const startIndex = Math.max(0, Math.floor(scrollTop / itemHeight) - overscan);
@@ -25,7 +26,21 @@ export function VirtualFilterList({
   const visibleItems = values.slice(startIndex, endIndex);
   const offsetY = startIndex * itemHeight;
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-    setScrollTop(e.currentTarget.scrollTop);
+    const nextScrollTop = e.currentTarget.scrollTop;
+    if (rafIdRef.current !== null) {
+      cancelAnimationFrame(rafIdRef.current);
+    }
+    rafIdRef.current = requestAnimationFrame(() => {
+      setScrollTop(nextScrollTop);
+      rafIdRef.current = null;
+    });
+  }, []);
+  useEffect(() => {
+    return () => {
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+      }
+    };
   }, []);
   return (
     <div

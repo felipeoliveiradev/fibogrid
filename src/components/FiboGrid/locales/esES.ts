@@ -8,6 +8,7 @@ export const esES: FiboGridLocale = {
         copy: 'Copiar',
         copied: '¡Copiado!',
         export: 'Exportar',
+        refresh: 'Actualizar',
         activeFilters: 'Filtros activos:',
         resetAll: 'Restablecer todo',
         toggleColumns: 'Alternar columnas',
@@ -20,6 +21,10 @@ export const esES: FiboGridLocale = {
         pageInfo: (start, end, total) => `${start}-${end} de ${total}`,
         zeroRows: '0 filas',
         pageOf: (current, total) => `Página ${current} de ${total}`,
+        firstPage: 'Primera página',
+        previousPage: 'Página anterior',
+        nextPage: 'Página siguiente',
+        lastPage: 'Última página',
     },
     statusBar: {
         rows: 'filas',
@@ -78,5 +83,41 @@ export const esES: FiboGridLocale = {
     overlay: {
         loading: 'Cargando...',
         noRows: 'No hay filas para mostrar',
+    },
+    header: {
+        density: {
+            compact: 'Compacta',
+            normal: 'Normal',
+            comfortable: 'Cómoda',
+            label: 'Densidad',
+        },
+    },
+    contextMenu: {
+        copy: 'Copiar',
+        exportCsv: 'Exportar CSV',
+        deleteSelected: 'Eliminar seleccionados',
+    },
+    aria: {
+        selectRow: 'Seleccionar fila',
+        selectAllRows: 'Seleccionar todas las filas',
+        addChildRow: 'Añadir fila hija',
+        close: 'Cerrar',
+        removeFilter: 'Quitar filtro',
+        clearSearch: 'Borrar búsqueda',
+        selectGroup: 'Seleccionar grupo',
+        expandGroup: 'Expandir grupo',
+    },
+    columnPanel: {
+        search: 'Buscar columnas...',
+        pinLeft: 'Fijar a la izquierda',
+        unpin: 'Desfijar',
+    },
+    filterPanel: {
+        title: 'Filtros',
+    },
+    groups: {
+        expandAll: 'Expandir grupos',
+        collapseAll: 'Contraer grupos',
+        itemCount: (count) => `${count} elementos`,
     },
 };

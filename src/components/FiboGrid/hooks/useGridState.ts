@@ -12,6 +12,7 @@ import {
   useGridApi
 } from './grid-state';
 import { useGrouping } from './useGrouping';
+import { flattenGroupedRows } from '../utils/grouping';
 export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number) {
   const events = useGridEventSystem(props.gridId);
   const apiRef = useRef<GridApi<T>>();
@@ -32,30 +33,48 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
     rowsRef,
     displayedRowsRef
   });
-  const pagination = useGridPaginationInfo(
-    props,
-    paginationState,
-    setPaginationState,
-    rows.totalRows,
-    events,
-    apiRef
-  );
   useEffect(() => {
     if (!props.infiniteScroll) return;
     setPaginationState((prev) => (prev.currentPage === 0 ? prev : { ...prev, currentPage: 0 }));
   }, [sortFilter.sortModel, sortFilter.filterModel, sortFilter.quickFilter, paginationState.pageSize, props.infiniteScroll, setPaginationState]);
+  const isServerDataset = props.paginationMode === 'server' || props.serverSideDataSource != null;
   const grouping = useGrouping({
-    rows: rows.displayedRows,
+    rows: isServerDataset ? rows.displayedRows : rows.sortedRows,
     groupByFields: props.groupByFields,
     splitByField: props.splitByField,
     aggregations: props.groupAggregations,
     getRowId: props.getRowId,
-    overrides: rows.overrides
+    overrides: rows.overrides,
+    getChildRows: props.getChildRows,
+    skipFullFlatten: !isServerDataset && (props.groupByFields?.length ?? 0) > 0 && Boolean(props.pagination),
   });
-  const isGrouped = props.groupByFields?.length > 0 || !!props.splitByField || grouping.hasChildren;
-  const finalDisplayedRows = isGrouped ? grouping.displayRows : rows.displayedRows;
+  const isGrouped = (props.groupByFields?.length ?? 0) > 0 || !!props.splitByField || grouping.hasChildren;
+  const clientGroups = !isServerDataset && grouping.groupByFields.length > 0;
+  const finalDisplayedRows = !isGrouped
+    ? rows.displayedRows
+    : isServerDataset || !props.pagination
+      ? grouping.displayRows
+      : clientGroups
+        ? flattenGroupedRows(
+            sliceGroupedPage(grouping.groupedRows, paginationState.pageSize, paginationState.currentPage),
+            grouping.expandedGroups,
+          )
+        : sliceGroupedPage(grouping.displayRows, paginationState.pageSize, paginationState.currentPage);
+  displayedRowsRef.current = finalDisplayedRows;
   const finalDisplayedRowsRef = useRef<RowNode<T>[]>(finalDisplayedRows);
   finalDisplayedRowsRef.current = finalDisplayedRows;
+  const pagination = useGridPaginationInfo(
+    props,
+    paginationState,
+    setPaginationState,
+    clientGroups
+      ? grouping.groupedRows.length
+      : isGrouped && !isServerDataset
+        ? grouping.displayRows.length
+        : rows.totalRows,
+    events,
+    apiRef
+  );
   const editing = useGridEditing(finalDisplayedRowsRef, columns.processedColumns, rows.setOverrides, events, apiRef);
   const { api, internalApi } = useGridApi({
     props,
@@ -101,4 +120,10 @@ export function useGridState<T>(props: FiboGridProps<T>, containerWidth: number)
     grouping,
     finalDisplayedRows
   };
+}
+function sliceGroupedPage<T>(items: T[], pageSize: number, currentPage: number): T[] {
+  const totalPages = Math.ceil(items.length / pageSize) || 1;
+  const page = Math.min(currentPage, Math.max(totalPages - 1, 0));
+  const start = page * pageSize;
+  return items.slice(start, start + pageSize);
 }

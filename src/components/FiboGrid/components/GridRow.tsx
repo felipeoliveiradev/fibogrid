@@ -1,19 +1,34 @@
-import React, { memo, useMemo } from 'react';
+import React, { memo, useEffect, useMemo } from 'react';
 import { ProcessedColumn, RowNode, EditingCell, GridApi, RowClassParams } from '../types';
 import { GridCell } from './GridCell';
 import { cn } from '@/lib/utils';
 import { GripVertical, Plus } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
+import { useGridContext } from '../context/GridContext';
+
+const rowFocusCache = new Map<string, string | null>();
+
+function focusedFieldForRow(
+  isCellFocused: ((rowId: string, field: string) => boolean) | undefined,
+  rowId: string,
+  columns: { field: string }[],
+): string | null {
+  if (!isCellFocused) return null;
+  for (let i = 0; i < columns.length; i++) {
+    if (isCellFocused(rowId, columns[i].field)) return columns[i].field;
+  }
+  return null;
+}
 interface GridRowProps<T> {
   row: RowNode<T>;
   columns: ProcessedColumn<T>[];
   rowHeight: number;
   isSelected: boolean;
-  onRowClick: (e: React.MouseEvent) => void;
-  onRowDoubleClick: (e: React.MouseEvent) => void;
-  onContextMenu?: (e: React.MouseEvent) => void;
-  onCellClick: (column: ProcessedColumn<T>, e: React.MouseEvent) => void;
+  onRowClick: (rowId: string, e: React.MouseEvent) => void;
+  onRowDoubleClick: (rowId: string, e: React.MouseEvent) => void;
+  onContextMenu?: (rowId: string, e: React.MouseEvent) => void;
+  onCellClick: (rowId: string, column: ProcessedColumn<T>, e: React.MouseEvent) => void;
   onCellDoubleClick: (column: ProcessedColumn<T>, e: React.MouseEvent) => void;
   showCheckboxColumn?: boolean;
   onCheckboxChange?: (checked: boolean) => void;
@@ -91,6 +106,19 @@ function GridRowInner<T>({
   onRowRangeMouseEnter,
   getRowClass,
 }: GridRowProps<T>) {
+  const locale = useGridContext()?.locale;
+  const selectRowLabel = locale?.aria.selectRow ?? 'Select row';
+  const addChildRowLabel = locale?.aria.addChildRow ?? 'Add child row';
+  const focusedField = focusedFieldForRow(isCellFocused, row.id, columns);
+  useEffect(() => {
+    rowFocusCache.set(row.id, focusedField);
+  }, [row.id, focusedField]);
+  useEffect(() => {
+    const rowId = row.id;
+    return () => {
+      rowFocusCache.delete(rowId);
+    };
+  }, [row.id]);
   const visibleColumns = useMemo(() => columns.filter((col) => !col.hide), [columns]);
   const indentWidth = level * 20;
   const isChildRow = (row as any).isChildRow;
@@ -151,6 +179,7 @@ function GridRowInner<T>({
     return (
       <div
         key={column.field}
+        role="none"
         className={cn(
           'h-full',
           isPinned && 'sticky z-[2]',
@@ -177,7 +206,7 @@ function GridRowInner<T>({
           onStartEdit={() => onStartEdit(column.field)}
           onEditChange={onEditChange}
           onStopEdit={onStopEdit}
-          onClick={(e) => onCellClick(column, e)}
+          onClick={(e) => onCellClick(row.id, column, e)}
           onDoubleClick={(e) => onCellDoubleClick(column, e)}
           isSelected={cellSelected}
           isFocused={cellFocused}
@@ -198,8 +227,11 @@ function GridRowInner<T>({
   };
   return (
     <div
+      role="row"
+      aria-selected={showCheckboxColumn || onCheckboxChange ? isSelected : undefined}
+      aria-rowindex={row.rowIndex + 1}
       className={cn(
-        'flex border-b border-border group/row text-sm',
+        'fibogrid-row flex border-b border-border group/row text-sm',
         'transition-[background-color] duration-150',
         'fibogrid-row-hover',
         isSelected && 'fibogrid-row-selected',
@@ -212,9 +244,9 @@ function GridRowInner<T>({
         isChildRow && 'fibogrid-row-child'
       )}
       style={{ height: `${rowHeight}px` }}
-      onClick={onRowClick}
-      onDoubleClick={onRowDoubleClick}
-      onContextMenu={onContextMenu}
+      onClick={(e) => onRowClick(row.id, e)}
+      onDoubleClick={(e) => onRowDoubleClick(row.id, e)}
+      onContextMenu={onContextMenu ? (e) => onContextMenu(row.id, e) : undefined}
       draggable={rowDragEnabled}
       onDragStart={onRowDragStart}
       onDragOver={onRowDragOver}
@@ -262,7 +294,7 @@ function GridRowInner<T>({
               onCheckboxChange?.(!!checked);
             }}
             className="translate-y-[1px]"
-            aria-label="Select row"
+            aria-label={selectRowLabel}
             onClick={(e) => e.stopPropagation()}
           />
         </div>
@@ -279,7 +311,8 @@ function GridRowInner<T>({
             e.stopPropagation();
             onAddChildRow(row.id);
           }}
-          title="Add child row"
+          title={addChildRowLabel}
+          aria-label={addChildRowLabel}
         >
           <Plus className="h-3 w-3" />
         </Button>
@@ -299,6 +332,11 @@ export const GridRow = memo(GridRowInner, (prevProps, nextProps) => {
   const prevEdit = prevProps.editingCell;
   const nextEdit = nextProps.editingCell;
   if (prevEdit?.rowId !== nextEdit?.rowId || prevEdit?.field !== nextEdit?.field || prevEdit?.value !== nextEdit?.value) return false;
+  const nextFocus = focusedFieldForRow(nextProps.isCellFocused, nextProps.row.id, nextProps.columns);
+  const prevFocus = prevProps.isCellFocused === nextProps.isCellFocused
+    ? (rowFocusCache.get(nextProps.row.id) ?? null)
+    : focusedFieldForRow(prevProps.isCellFocused, prevProps.row.id, prevProps.columns);
+  if (prevFocus !== nextFocus) return false;
   if (prevProps.columns !== nextProps.columns) {
     if (prevProps.columns.length !== nextProps.columns.length) return false;
     for (let i = 0; i < prevProps.columns.length; i++) {

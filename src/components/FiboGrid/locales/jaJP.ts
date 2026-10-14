@@ -8,6 +8,7 @@ export const jaJP: FiboGridLocale = {
         copy: 'コピー',
         copied: 'コピーしました！',
         export: 'エクスポート',
+        refresh: '更新',
         activeFilters: 'アクティブなフィルター：',
         resetAll: 'すべてリセット',
         toggleColumns: '列の切り替え',
@@ -20,6 +21,10 @@ export const jaJP: FiboGridLocale = {
         pageInfo: (start, end, total) => `${total}件中${start}-${end}件`,
         zeroRows: '0行',
         pageOf: (current, total) => `${total}ページ中${current}ページ`,
+        firstPage: '最初のページ',
+        previousPage: '前のページ',
+        nextPage: '次のページ',
+        lastPage: '最後のページ',
     },
     statusBar: {
         rows: '行',
@@ -78,5 +83,41 @@ export const jaJP: FiboGridLocale = {
     overlay: {
         loading: '読み込み中...',
         noRows: '表示する行がありません',
+    },
+    header: {
+        density: {
+            compact: 'コンパクト',
+            normal: '標準',
+            comfortable: 'ゆったり',
+            label: '行の高さ',
+        },
+    },
+    contextMenu: {
+        copy: 'コピー',
+        exportCsv: 'CSVをエクスポート',
+        deleteSelected: '選択行を削除',
+    },
+    aria: {
+        selectRow: '行を選択',
+        selectAllRows: 'すべての行を選択',
+        addChildRow: '子行を追加',
+        close: '閉じる',
+        removeFilter: 'フィルターを解除',
+        clearSearch: '検索をクリア',
+        selectGroup: 'グループを選択',
+        expandGroup: 'グループを展開',
+    },
+    columnPanel: {
+        search: '列を検索...',
+        pinLeft: '左に固定',
+        unpin: '固定を解除',
+    },
+    filterPanel: {
+        title: 'フィルター',
+    },
+    groups: {
+        expandAll: 'グループを展開',
+        collapseAll: 'グループを折りたたむ',
+        itemCount: (count) => `${count} 件`,
     },
 };

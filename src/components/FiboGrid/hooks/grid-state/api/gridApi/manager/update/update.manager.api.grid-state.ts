@@ -11,6 +11,9 @@ export function updateManager<T>(
         console.warn('Grid Manager: update() requires a non-empty array of rows.');
         return managerBuilder;
     }
+    if (idKey) {
+        state.idKey = idKey;
+    }
     rows.forEach(row => {
         let id: string | undefined;
         if (idKey) {

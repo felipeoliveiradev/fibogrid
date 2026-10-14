@@ -41,7 +41,10 @@ export function useGridApi<T>(props: UseGridApiProps<T>): { api: GridApi<T>, int
                     managerBuilderInstance = mb;
                     return mb;
                 });
-                return managerBuilderInstance!;
+                if (managerBuilderInstance === undefined) {
+                    throw new Error('Grid manager builder was not created. createGridApiBuilder().gridManager() did not provide an instance.');
+                }
+                return managerBuilderInstance;
             }
         } as unknown as GridApi<T>;
         const createSecureProxy = (targetApi: GridApi<T>, id: string | undefined): GridApi<T> => {

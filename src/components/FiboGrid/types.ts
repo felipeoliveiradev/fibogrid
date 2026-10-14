@@ -157,6 +157,7 @@ export interface ServerSideDataSourceRequest {
   sortModel: SortModel[];
   filterModel: FilterModel[];
   quickFilterText?: string;
+  signal?: AbortSignal;
 }
 export interface ServerSideDataSourceResponse<T = any> {
   data: T[];
@@ -259,6 +260,8 @@ export interface GridApi<T = any> {
   events: () => EventBuilder<T>;
   connect: (sourceId: string) => GridApi<T>;
   addChildToRow: (parentId: string, data: T[]) => void;
+  expandAllGroups: () => void;
+  collapseAllGroups: () => void;
   setRowData: (data: T[]) => void;
   getRowData: () => T[];
   getDisplayedRows: () => RowNode<T>[];
@@ -330,6 +333,8 @@ export interface GridApiBuilder<T = any> {
   resetCell: (rowId: string, field: string) => GridApiBuilder<T>;
   resetRow: (rowId: string) => GridApiBuilder<T>;
   gridManager: (callback: (manager: GridManagerBuilder<T>) => GridManagerBuilder<T>) => GridApiBuilder<T>;
+  expandAllGroups: () => GridApiBuilder<T>;
+  collapseAllGroups: () => GridApiBuilder<T>;
   execute: () => void;
 }
 export interface GridManagerBuilder<T = any> {
@@ -555,6 +560,7 @@ export interface FiboGridProps<T = any> extends GridEvents<T> {
   rowBuffer?: number;
   className?: string;
   theme?: 'light' | 'dark' | 'auto';
+  appearance?: 'default' | 'uber' | 'material' | 'apple' | 'excel';
   height?: number | string;
   minHeight?: number | string;
   loading?: boolean;

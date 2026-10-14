@@ -292,6 +292,7 @@ export default function Demo() {
         }
     }, []);
     const [configs, setConfigs] = useState<FiboGridConfigs>({
+        compact: true,
         header: {
             show: true,
             search: true,
@@ -382,6 +383,7 @@ export default function Demo() {
                             getRowId={getRowId}
                             showRowNumbers={showRowNumbers}
                             groupByField={groupByField}
+
                             setGridApi={setGridApi}
                             onValueChangeStock={onValueChangeStock}
                             onRowClickStock={onRowClickStock}

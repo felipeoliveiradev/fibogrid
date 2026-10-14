@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
+import type { CellRendererParams, ColumnDef, GridApi } from '../types';
 interface CellPosition {
   rowId: string;
   field: string;
@@ -7,10 +8,37 @@ interface FillRange {
   start: CellPosition;
   end: CellPosition;
 }
+interface FillColumn<T> {
+  field: string;
+  editable?: ColumnDef<T>['editable'];
+}
 interface UseFillHandleOptions<T> {
   rows: { id: string; data: T }[];
-  columns: { field: string }[];
+  columns: FillColumn<T>[];
   onFill: (changes: { rowId: string; field: string; value: any }[]) => void;
+  /** Required when column.editable is a function that gates on api/permissions. */
+  api?: GridApi<T>;
+}
+function isFillTargetEditable<T>(
+  col: FillColumn<T>,
+  row: { id: string; data: T },
+  rowIndex: number,
+  api: GridApi<T> | undefined,
+): boolean {
+  if (col.editable === false) return false;
+  if (typeof col.editable !== 'function') return true;
+  // Fail closed: permission-aware editable() without a real api must not allow fill.
+  if (!api) return false;
+  const params = {
+    value: (row.data as any)[col.field],
+    data: row.data,
+    rowIndex,
+    colDef: col,
+    column: col,
+    api,
+    rowNode: { id: row.id, data: row.data, rowIndex, selected: false },
+  } as CellRendererParams<T>;
+  return col.editable(params) === true;
 }
 interface UseFillHandleResult {
   fillRange: FillRange | null;
@@ -24,6 +52,7 @@ export function useFillHandle<T>({
   rows,
   columns,
   onFill,
+  api,
 }: UseFillHandleOptions<T>): UseFillHandleResult {
   const [fillRange, setFillRange] = useState<FillRange | null>(null);
   const [isFilling, setIsFilling] = useState(false);
@@ -81,6 +110,7 @@ export function useFillHandle<T>({
               col.field === sourcePositionRef.current.field) {
             continue;
           }
+          if (!isFillTargetEditable(col, row, r, api)) continue;
           changes.push({
             rowId: row.id,
             field: col.field,
@@ -96,7 +126,7 @@ export function useFillHandle<T>({
     setFillRange(null);
     sourceValueRef.current = null;
     sourcePositionRef.current = null;
-  }, [fillRange, rows, columns, getRowIndex, getColumnIndex, onFill]);
+  }, [fillRange, rows, columns, getRowIndex, getColumnIndex, onFill, api]);
   const getFillHandlePosition = useCallback((selectedRange: FillRange | null): CellPosition | null => {
     if (!selectedRange) return null;
     return selectedRange.end;

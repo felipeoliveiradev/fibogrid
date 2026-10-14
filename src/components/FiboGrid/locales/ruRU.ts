@@ -8,6 +8,7 @@ export const ruRU: FiboGridLocale = {
         copy: 'Копировать',
         copied: 'Скопировано!',
         export: 'Экспорт',
+        refresh: 'Обновить',
         activeFilters: 'Активные фильтры:',
         resetAll: 'Сбросить все',
         toggleColumns: 'Переключить столбцы',
@@ -20,6 +21,10 @@ export const ruRU: FiboGridLocale = {
         pageInfo: (start, end, total) => `${start}-${end} из ${total}`,
         zeroRows: '0 строк',
         pageOf: (current, total) => `Страница ${current} из ${total}`,
+        firstPage: 'Первая страница',
+        previousPage: 'Предыдущая страница',
+        nextPage: 'Следующая страница',
+        lastPage: 'Последняя страница',
     },
     statusBar: {
         rows: 'строк',
@@ -78,5 +83,41 @@ export const ruRU: FiboGridLocale = {
     overlay: {
         loading: 'Загрузка...',
         noRows: 'Нет строк для отображения',
+    },
+    header: {
+        density: {
+            compact: 'Компактный',
+            normal: 'Обычный',
+            comfortable: 'Комфортный',
+            label: 'Плотность',
+        },
+    },
+    contextMenu: {
+        copy: 'Копировать',
+        exportCsv: 'Экспорт CSV',
+        deleteSelected: 'Удалить выбранные',
+    },
+    aria: {
+        selectRow: 'Выбрать строку',
+        selectAllRows: 'Выбрать все строки',
+        addChildRow: 'Добавить дочернюю строку',
+        close: 'Закрыть',
+        removeFilter: 'Удалить фильтр',
+        clearSearch: 'Очистить поиск',
+        selectGroup: 'Выбрать группу',
+        expandGroup: 'Развернуть группу',
+    },
+    columnPanel: {
+        search: 'Поиск столбцов...',
+        pinLeft: 'Закрепить слева',
+        unpin: 'Открепить',
+    },
+    filterPanel: {
+        title: 'Фильтры',
+    },
+    groups: {
+        expandAll: 'Развернуть группы',
+        collapseAll: 'Свернуть группы',
+        itemCount: (count) => `${count} элементов`,
     },
 };

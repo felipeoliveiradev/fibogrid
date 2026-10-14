@@ -7,6 +7,7 @@ export interface FiboGridLocale {
         copy: string;
         copied: string;
         export: string;
+        refresh: string;
         activeFilters: string;
         resetAll: string;
         toggleColumns: string;
@@ -19,6 +20,10 @@ export interface FiboGridLocale {
         pageInfo: (start: number, end: number, total: number) => string;
         zeroRows: string;
         pageOf: (current: number, total: number) => string;
+        firstPage: string;
+        previousPage: string;
+        nextPage: string;
+        lastPage: string;
     };
     statusBar: {
         rows: string;
@@ -77,5 +82,41 @@ export interface FiboGridLocale {
     overlay: {
         loading: string;
         noRows: string;
+    };
+    header: {
+        density: {
+            compact: string;
+            normal: string;
+            comfortable: string;
+            label: string;
+        };
+    };
+    contextMenu: {
+        copy: string;
+        exportCsv: string;
+        deleteSelected: string;
+    };
+    aria: {
+        selectRow: string;
+        selectAllRows: string;
+        addChildRow: string;
+        close: string;
+        removeFilter: string;
+        clearSearch: string;
+        selectGroup: string;
+        expandGroup: string;
+    };
+    groups: {
+        expandAll: string;
+        collapseAll: string;
+        itemCount: (count: number) => string;
+    };
+    columnPanel: {
+        search: string;
+        pinLeft: string;
+        unpin: string;
+    };
+    filterPanel: {
+        title: string;
     };
 }

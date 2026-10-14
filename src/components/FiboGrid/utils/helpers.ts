@@ -86,8 +86,8 @@ export function mergeUnique<T>(
   incoming: T[] | T,
   compareKey: keyof T,
 ): T[] {
-  const originalArray = this.toArray(original);
-  const incomingArray = this.toArray(incoming);
+  const originalArray = toArray(original);
+  const incomingArray = toArray(incoming);
   if (!incomingArray.length) return originalArray;
   if (!originalArray.length) return incomingArray;
   const filteredOriginal = originalArray.filter(
@@ -132,12 +132,71 @@ export function sortRows<T>(
   });
   return result;
 }
+const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?)?$/;
+const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const NUMERIC_STRING_PATTERN = /^[+-]?\d+(?:\.\d+)?$/;
+const PLAIN_NUMBER_REST = /^(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?$/;
+function isIsoDateString(value: unknown): value is string {
+  return typeof value === 'string'
+    && Number.isNaN(Number(value))
+    && ISO_DATE_PATTERN.test(value)
+    && Number.isFinite(Date.parse(value));
+}
+function timestampOf(value: unknown): number | null {
+  if (value instanceof Date) return value.getTime();
+  if (isIsoDateString(value)) return Date.parse(value);
+  return null;
+}
+function isNumericString(value: unknown): value is string {
+  return typeof value === 'string' && NUMERIC_STRING_PATTERN.test(value);
+}
+function compareAsNumbers(a: string, b: string): number {
+  const left = Number(a);
+  const right = Number(b);
+  if (left === right) return 0;
+  return left < right ? -1 : 1;
+}
+function calendarDayKey(value: unknown): string | null {
+  if (typeof value === 'string' && DATE_ONLY_PATTERN.test(value)) return value;
+  const time = timestampOf(value);
+  if (time == null || !Number.isFinite(time)) return null;
+  const date = new Date(time);
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${date.getFullYear()}-${month}-${day}`;
+}
+function endOfLocalDayMs(dateOnly: string): number {
+  const year = Number(dateOnly.slice(0, 4));
+  const month = Number(dateOnly.slice(5, 7));
+  const day = Number(dateOnly.slice(8, 10));
+  return new Date(year, month - 1, day, 23, 59, 59, 999).getTime();
+}
+function isBlankOrNaN(value: unknown): boolean {
+  return value == null || (typeof value === 'number' && Number.isNaN(value));
+}
+function finiteNumber(value: unknown): number | null {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  if (isNumericString(value)) return Number(value);
+  return null;
+}
 export function fastComparator(a: unknown, b: unknown): number {
   if (a === b) return 0;
   if (a == null) return -1;
   if (b == null) return 1;
   if (typeof a === 'number' && typeof b === 'number') {
     return a - b;
+  }
+  const timeA = timestampOf(a);
+  const timeB = timestampOf(b);
+  if (
+    timeA != null && timeB != null
+    && Number.isFinite(timeA) && Number.isFinite(timeB)
+    && (a instanceof Date || b instanceof Date)
+  ) {
+    return timeA - timeB;
+  }
+  if (isNumericString(a) && isNumericString(b)) {
+    return compareAsNumbers(a, b);
   }
   return String(a).localeCompare(String(b));
 }
@@ -150,6 +209,9 @@ export function defaultComparator(a: any, b: any): number {
   }
   if (a instanceof Date && b instanceof Date) {
     return a.getTime() - b.getTime();
+  }
+  if (isNumericString(a) && isNumericString(b)) {
+    return compareAsNumbers(a, b);
   }
   return String(a).localeCompare(String(b));
 }
@@ -167,11 +229,15 @@ export function filterRows<T>(
   }
   const filterFns = filterModel.map(filter => {
     const column = columnMap.get(filter.field);
+    const selected = Array.isArray(filter.value)
+      ? new Set(filter.value.map((entry: unknown) => String(entry)))
+      : null;
     return {
       field: filter.field,
       filter,
       column,
       customFn: column?.filterComparator,
+      selected,
     };
   });
   const result: RowNode<T>[] = [];
@@ -180,10 +246,12 @@ export function filterRows<T>(
     const data = row.data as Record<string, unknown>;
     let passes = true;
     for (let j = 0; j < filterFns.length && passes; j++) {
-      const { field, filter, customFn } = filterFns[j];
+      const { field, filter, customFn, selected } = filterFns[j];
       const value = getValueFromPath(data, field);
       if (customFn) {
         passes = customFn(filter.value, value);
+      } else if (selected && filter.filterType === 'select') {
+        passes = selected.size > 0 && selected.has(String(value));
       } else {
         passes = defaultFilterComparator(filter, value);
       }
@@ -194,12 +262,16 @@ export function filterRows<T>(
   }
   if (quickFilterText) {
     const lowerFilter = quickFilterText.toLowerCase();
+    const searchColumns: ProcessedColumn<T>[] = [];
+    for (let c = 0; c < columns.length; c++) {
+      if (!columns[c].hide) searchColumns.push(columns[c]);
+    }
     const quickFiltered: RowNode<T>[] = [];
     for (let i = 0; i < result.length; i++) {
       const row = result[i];
       const data = row.data as Record<string, unknown>;
-      for (let j = 0; j < columns.length; j++) {
-        const value = getValueFromPath(data, columns[j].field);
+      for (let j = 0; j < searchColumns.length; j++) {
+        const value = getValueFromPath(data, searchColumns[j].field);
         if (value != null && String(value).toLowerCase().includes(lowerFilter)) {
           quickFiltered.push(row);
           break;
@@ -209,6 +281,59 @@ export function filterRows<T>(
     return quickFiltered;
   }
   return result;
+}
+function shouldCompareByTimestamp(...candidates: unknown[]): boolean {
+  for (let i = 0; i < candidates.length; i++) {
+    const candidate = candidates[i];
+    if (candidate instanceof Date || isIsoDateString(candidate)) return true;
+  }
+  return false;
+}
+function toCompareNumber(value: unknown, byTimestamp: boolean): number {
+  if (byTimestamp) {
+    if (value instanceof Date) return value.getTime();
+    if (isIsoDateString(value)) return Date.parse(value);
+    if (typeof value === 'number') return value;
+    return Number.NaN;
+  }
+  return Number(value);
+}
+function compareOrdered(left: unknown, right: unknown, direction: 'gt' | 'lt'): boolean {
+  const byTimestamp = shouldCompareByTimestamp(left, right);
+  const leftNumber = toCompareNumber(left, byTimestamp);
+  const rightNumber = toCompareNumber(right, byTimestamp);
+  if (Number.isNaN(leftNumber) || Number.isNaN(rightNumber)) return false;
+  return direction === 'gt' ? leftNumber > rightNumber : leftNumber < rightNumber;
+}
+function lowerBoundMatches(value: unknown, bound: unknown): boolean {
+  if (bound instanceof Date || isIsoDateString(bound)) {
+    const current = timestampOf(value);
+    const limit = timestampOf(bound);
+    if (current == null || limit == null || !Number.isFinite(current) || !Number.isFinite(limit)) return false;
+    return current >= limit;
+  }
+  const currentNumber = finiteNumber(value);
+  const boundNumber = finiteNumber(bound);
+  if (currentNumber != null && boundNumber != null) return currentNumber >= boundNumber;
+  return String(value) >= String(bound);
+}
+function upperBoundMatches(value: unknown, bound: unknown): boolean {
+  if (bound instanceof Date || isIsoDateString(bound)) {
+    const current = timestampOf(value);
+    const limit = typeof bound === 'string' && DATE_ONLY_PATTERN.test(bound)
+      ? endOfLocalDayMs(bound)
+      : timestampOf(bound);
+    if (current == null || limit == null || !Number.isFinite(current) || !Number.isFinite(limit)) return false;
+    return current <= limit;
+  }
+  const currentNumber = finiteNumber(value);
+  const boundNumber = finiteNumber(bound);
+  if (currentNumber != null && boundNumber != null) return currentNumber <= boundNumber;
+  return String(value) <= String(bound);
+}
+function compareBetween(value: unknown, low: unknown, high: unknown): boolean {
+  if (isBlankOrNaN(value) || isBlankOrNaN(low) || isBlankOrNaN(high)) return false;
+  return lowerBoundMatches(value, low) && upperBoundMatches(value, high);
 }
 export function defaultFilterComparator(filter: FilterModel, value: any): boolean {
   const filterValue = filter.value;
@@ -222,8 +347,12 @@ export function defaultFilterComparator(filter: FilterModel, value: any): boolea
   }
   if (filterValue == null || filterValue === '') return true;
   switch (filter.operator || 'contains') {
-    case 'equals':
+    case 'equals': {
+      const leftDay = calendarDayKey(value);
+      const rightDay = calendarDayKey(filterValue);
+      if (leftDay != null && rightDay != null) return leftDay === rightDay;
       return String(value) === String(filterValue);
+    }
     case 'contains':
       return String(value).toLowerCase().includes(String(filterValue).toLowerCase());
     case 'startsWith':
@@ -231,30 +360,53 @@ export function defaultFilterComparator(filter: FilterModel, value: any): boolea
     case 'endsWith':
       return String(value).toLowerCase().endsWith(String(filterValue).toLowerCase());
     case 'greaterThan':
-      return Number(value) > Number(filterValue);
+      return compareOrdered(value, filterValue, 'gt');
     case 'lessThan':
-      return Number(value) < Number(filterValue);
+      return compareOrdered(value, filterValue, 'lt');
     case 'between':
       if (Array.isArray(filterValue) && filterValue.length === 2) {
-        return Number(value) >= Number(filterValue[0]) && Number(value) <= Number(filterValue[1]);
+        return compareBetween(value, filterValue[0], filterValue[1]);
       }
-      return true;
+      return false;
     default:
       return true;
   }
 }
+const valuePathCache = new Map<string, string[]>();
 export function getValueFromPath(obj: any, path: string): any {
-  return path.split('.').reduce((current, key) => current?.[key], obj);
-}
-export function setValueAtPath(obj: any, path: string, value: any): any {
-  const keys = path.split('.');
-  const result = { ...obj };
-  let current = result;
-  for (let i = 0; i < keys.length - 1; i++) {
-    current[keys[i]] = { ...current[keys[i]] };
+  if (path.indexOf('.') === -1) {
+    return obj?.[path];
+  }
+  let keys = valuePathCache.get(path);
+  if (!keys) {
+    keys = path.split('.');
+    valuePathCache.set(path, keys);
+  }
+  let current = obj;
+  for (let i = 0; i < keys.length; i++) {
+    if (current == null) return undefined;
     current = current[keys[i]];
   }
-  current[keys[keys.length - 1]] = value;
+  return current;
+}
+export function setValueAtPath(obj: any, path: string, value: any): any {
+  if (path.indexOf('.') === -1) {
+    return { ...obj, [path]: value };
+  }
+  let keys = valuePathCache.get(path);
+  if (!keys) {
+    keys = path.split('.');
+    valuePathCache.set(path, keys);
+  }
+  const result = { ...obj };
+  let current = result;
+  const last = keys.length - 1;
+  for (let i = 0; i < last; i++) {
+    const child = { ...current[keys[i]] };
+    current[keys[i]] = child;
+    current = child;
+  }
+  current[keys[last]] = value;
   return result;
 }
 export function paginateRows<T>(
@@ -289,11 +441,23 @@ export function exportToCsv<T>(
   }
   downloadCSV(csv, fileName);
 }
-function escapeCSV(value: string): string {
-  if (value.includes(',') || value.includes('"') || value.includes('\n')) {
-    return `"${value.replace(/"/g, '""')}"`;
+function neutralizeFormula(value: string): string {
+  if (value.length === 0) return value;
+  const first = value.charAt(0);
+  if (first === '=' || first === '@' || first === '\t' || first === '\r') {
+    return `'${value}`;
+  }
+  if ((first === '+' || first === '-') && !PLAIN_NUMBER_REST.test(value.slice(1))) {
+    return `'${value}`;
   }
   return value;
+}
+function escapeCSV(value: string): string {
+  const safe = neutralizeFormula(value);
+  if (safe.includes(',') || safe.includes('"') || safe.includes('\n')) {
+    return `"${safe.replace(/"/g, '""')}"`;
+  }
+  return safe;
 }
 function downloadCSV(content: string, fileName: string): void {
   const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
@@ -316,7 +480,8 @@ export async function copyToClipboard<T>(
   for (const row of rows) {
     const values = visibleColumns.map((col) => {
       const value = getValueFromPath(row.data, col.field);
-      return col.valueFormatter ? col.valueFormatter(value, row.data) : String(value ?? '');
+      const formatted = col.valueFormatter ? col.valueFormatter(value, row.data) : value;
+      return neutralizeFormula(String(formatted ?? ''));
     });
     text += values.join('\t') + '\n';
   }
@@ -334,18 +499,28 @@ export function calculateAggregate(values: any[], aggFunc: string | ((values: an
   if (typeof aggFunc === 'function') {
     return aggFunc(values);
   }
-  const numericValues = values.filter((v) => typeof v === 'number' && !isNaN(v));
   switch (aggFunc) {
     case 'sum':
-      return numericValues.reduce((a, b) => a + b, 0);
     case 'avg':
-      return numericValues.length > 0
-        ? numericValues.reduce((a, b) => a + b, 0) / numericValues.length
-        : 0;
     case 'min':
-      return Math.min(...numericValues);
-    case 'max':
-      return Math.max(...numericValues);
+    case 'max': {
+      let sum = 0;
+      let count = 0;
+      let min = Infinity;
+      let max = -Infinity;
+      for (let i = 0; i < values.length; i++) {
+        const value = values[i];
+        if (typeof value !== 'number' || !Number.isFinite(value)) continue;
+        count++;
+        sum += value;
+        if (value < min) min = value;
+        if (value > max) max = value;
+      }
+      if (aggFunc === 'sum') return sum;
+      if (aggFunc === 'avg') return count > 0 ? sum / count : 0;
+      if (aggFunc === 'min') return min;
+      return max;
+    }
     case 'count':
       return values.length;
     default:
@@ -375,6 +550,9 @@ export function throttle<T extends (...args: any[]) => any>(
     }
   };
 }
+function isBlockedMergeKey(key: string): boolean {
+  return key === '__proto__' || key === 'prototype' || key === 'constructor';
+}
 export function deepMerge(target: any, source: any): any {
   if (typeof target !== 'object' || target === null || typeof source !== 'object' || source === null) {
     return source;
@@ -382,8 +560,13 @@ export function deepMerge(target: any, source: any): any {
   if (Array.isArray(source)) {
     return [...source];
   }
-  const result = { ...target };
+  const result: any = {};
+  Object.keys(target).forEach(key => {
+    if (isBlockedMergeKey(key)) return;
+    result[key] = target[key];
+  });
   Object.keys(source).forEach(key => {
+    if (isBlockedMergeKey(key)) return;
     const sourceValue = source[key];
     const targetValue = result[key];
     if (typeof sourceValue === 'object' && sourceValue !== null && targetValue && typeof targetValue === 'object' && !Array.isArray(sourceValue)) {

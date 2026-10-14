@@ -1,0 +1,30 @@
+{
+    "name": "fibogrid-mcp-server",
+    "version": "1.0.0",
+    "description": "MCP Server for FiboGrid - Provides documentation, types, and examples",
+    "type": "module",
+    "main": "dist/index.js",
+    "bin": {
+        "fibogrid-mcp": "dist/index.js"
+    },
+    "scripts": {
+        "build": "tsc",
+        "dev": "tsc --watch",
+        "start": "node dist/index.js"
+    },
+    "keywords": [
+        "mcp",
+        "fibogrid",
+        "documentation",
+        "model-context-protocol"
+    ],
+    "author": "Felipe Oliveira",
+    "license": "MIT",
+    "dependencies": {
+        "@modelcontextprotocol/sdk": "^1.0.4"
+    },
+    "devDependencies": {
+        "@types/node": "^22.0.0",
+        "typescript": "^5.8.0"
+    }
+}

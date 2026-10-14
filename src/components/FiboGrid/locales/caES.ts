@@ -8,6 +8,7 @@ export const caES: FiboGridLocale = {
         copy: 'Copiar',
         copied: 'Copiat!',
         export: 'Exportar',
+        refresh: 'Actualitzar',
         activeFilters: 'Filtres actius:',
         resetAll: 'Restablir tot',
         toggleColumns: 'Alternar columnes',
@@ -20,6 +21,10 @@ export const caES: FiboGridLocale = {
         pageInfo: (start, end, total) => `${start}-${end} de ${total}`,
         zeroRows: '0 files',
         pageOf: (current, total) => `Pàgina ${current} de ${total}`,
+        firstPage: 'Primera pàgina',
+        previousPage: 'Pàgina anterior',
+        nextPage: 'Pàgina següent',
+        lastPage: 'Última pàgina',
     },
     statusBar: {
         rows: 'files',
@@ -78,5 +83,41 @@ export const caES: FiboGridLocale = {
     overlay: {
         loading: 'Carregant...',
         noRows: 'No hi ha files per mostrar',
+    },
+    header: {
+        density: {
+            compact: 'Compacta',
+            normal: 'Normal',
+            comfortable: 'Còmoda',
+            label: 'Densitat',
+        },
+    },
+    contextMenu: {
+        copy: 'Copiar',
+        exportCsv: 'Exportar CSV',
+        deleteSelected: 'Eliminar els seleccionats',
+    },
+    aria: {
+        selectRow: 'Seleccionar fila',
+        selectAllRows: 'Seleccionar totes les files',
+        addChildRow: 'Afegir fila filla',
+        close: 'Tancar',
+        removeFilter: 'Treure el filtre',
+        clearSearch: 'Esborrar la cerca',
+        selectGroup: 'Seleccionar grup',
+        expandGroup: 'Expandir grup',
+    },
+    columnPanel: {
+        search: 'Cercar columnes...',
+        pinLeft: 'Fixar a l\'esquerra',
+        unpin: 'Desfixar',
+    },
+    filterPanel: {
+        title: 'Filtres',
+    },
+    groups: {
+        expandAll: 'Expandir grups',
+        collapseAll: 'Replegar grups',
+        itemCount: (count) => `${count} elements`,
     },
 };

@@ -6,15 +6,15 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { 
-  Zap, 
-  Filter, 
-  ArrowUpDown, 
-  Columns, 
-  CheckSquare, 
-  Move, 
-  Edit3, 
-  Download, 
+import {
+  Zap,
+  Filter,
+  ArrowUpDown,
+  Columns,
+  CheckSquare,
+  Move,
+  Edit3,
+  Download,
   Pin,
   Search,
   Layers,
@@ -38,19 +38,19 @@ const FiboLogo = ({ className = "h-8 w-8" }: { className?: string }) => (
         <stop offset="100%" stopColor="hsl(38 60% 35%)" />
       </linearGradient>
     </defs>
-    <rect x="10" y="10" width="34" height="34" stroke="url(#goldGradient)" strokeWidth="2" fill="none" rx="2"/>
-    <rect x="44" y="10" width="21" height="21" stroke="url(#goldGradient)" strokeWidth="2" fill="none" rx="1"/>
-    <rect x="44" y="31" width="13" height="13" stroke="url(#goldGradient)" strokeWidth="2" fill="none" rx="1"/>
-    <rect x="57" y="31" width="8" height="8" stroke="url(#goldGradient)" strokeWidth="2" fill="none" rx="1"/>
-    <rect x="57" y="39" width="5" height="5" stroke="url(#goldGradient)" strokeWidth="2" fill="none" rx="0.5"/>
-    <rect x="10" y="50" width="55" height="40" stroke="url(#goldGradient)" strokeWidth="2" fill="none" rx="3"/>
-    <line x1="10" y1="60" x2="65" y2="60" stroke="url(#goldGradient)" strokeWidth="1.5"/>
-    <line x1="10" y1="70" x2="65" y2="70" stroke="url(#goldGradient)" strokeWidth="1"/>
-    <line x1="10" y1="80" x2="65" y2="80" stroke="url(#goldGradient)" strokeWidth="1"/>
-    <line x1="30" y1="50" x2="30" y2="90" stroke="url(#goldGradient)" strokeWidth="1"/>
-    <line x1="50" y1="50" x2="50" y2="90" stroke="url(#goldGradient)" strokeWidth="1"/>
-    <circle cx="80" cy="70" r="12" stroke="url(#goldGradient)" strokeWidth="2" fill="none"/>
-    <circle cx="80" cy="70" r="7" stroke="url(#goldGradient)" strokeWidth="1.5" fill="hsl(40 65% 45% / 0.2)"/>
+    <rect x="10" y="10" width="34" height="34" stroke="url(#goldGradient)" strokeWidth="2" fill="none" rx="2" />
+    <rect x="44" y="10" width="21" height="21" stroke="url(#goldGradient)" strokeWidth="2" fill="none" rx="1" />
+    <rect x="44" y="31" width="13" height="13" stroke="url(#goldGradient)" strokeWidth="2" fill="none" rx="1" />
+    <rect x="57" y="31" width="8" height="8" stroke="url(#goldGradient)" strokeWidth="2" fill="none" rx="1" />
+    <rect x="57" y="39" width="5" height="5" stroke="url(#goldGradient)" strokeWidth="2" fill="none" rx="0.5" />
+    <rect x="10" y="50" width="55" height="40" stroke="url(#goldGradient)" strokeWidth="2" fill="none" rx="3" />
+    <line x1="10" y1="60" x2="65" y2="60" stroke="url(#goldGradient)" strokeWidth="1.5" />
+    <line x1="10" y1="70" x2="65" y2="70" stroke="url(#goldGradient)" strokeWidth="1" />
+    <line x1="10" y1="80" x2="65" y2="80" stroke="url(#goldGradient)" strokeWidth="1" />
+    <line x1="30" y1="50" x2="30" y2="90" stroke="url(#goldGradient)" strokeWidth="1" />
+    <line x1="50" y1="50" x2="50" y2="90" stroke="url(#goldGradient)" strokeWidth="1" />
+    <circle cx="80" cy="70" r="12" stroke="url(#goldGradient)" strokeWidth="2" fill="none" />
+    <circle cx="80" cy="70" r="7" stroke="url(#goldGradient)" strokeWidth="1.5" fill="hsl(40 65% 45% / 0.2)" />
   </svg>
 );
 
@@ -59,7 +59,7 @@ const generateDemoData = (count: number) => {
   const products = ['Laptop Pro', 'Wireless Mouse', 'USB-C Hub', 'Monitor 27"', 'Keyboard', 'Webcam HD', 'Headphones', 'SSD 1TB'];
   const categories = ['Electronics', 'Accessories', 'Storage', 'Audio', 'Peripherals'];
   const statuses = ['In Stock', 'Low Stock', 'Out of Stock'];
-  
+
   return Array.from({ length: count }, (_, i) => ({
     id: `prod-${i + 1}`,
     name: products[i % products.length] + ` ${i + 1}`,
@@ -99,43 +99,43 @@ export default function Home() {
   const [, setGridApi] = useState<GridApi<any> | null>(null);
 
   const columns: ColumnDef<any>[] = useMemo(() => [
-    { 
-      field: 'name', 
-      headerName: 'Product Name', 
-      width: 200, 
-      sortable: true, 
+    {
+      field: 'name',
+      headerName: 'Product Name',
+      width: 200,
+      sortable: true,
       filterable: true,
       pinned: 'left',
       cellRenderer: (params) => (
         <span className="font-medium text-foreground">{params.value}</span>
       ),
     },
-    { 
-      field: 'category', 
-      headerName: 'Category', 
-      width: 250, 
-      sortable: true, 
+    {
+      field: 'category',
+      headerName: 'Category',
+      width: 250,
+      sortable: true,
       filterable: true,
     },
-    { 
-      field: 'price', 
-      headerName: 'Price', 
-      width: 200, 
+    {
+      field: 'price',
+      headerName: 'Price',
+      width: 200,
       sortable: true,
       valueFormatter: (v) => `$${v.toFixed(2)}`,
       cellRenderer: (params) => (
         <span className="font-mono">${(params.value as number).toFixed(2)}</span>
       ),
     },
-    { 
-      field: 'stock', 
-      headerName: 'Stock', 
-      width: 180, 
+    {
+      field: 'stock',
+      headerName: 'Stock',
+      width: 180,
       sortable: true,
     },
-    { 
-      field: 'status', 
-      headerName: 'Status', 
+    {
+      field: 'status',
+      headerName: 'Status',
       width: 200,
       cellRenderer: (params) => {
         const colors: Record<string, string> = {
@@ -150,17 +150,17 @@ export default function Home() {
         );
       },
     },
-    { 
-      field: 'rating', 
-      headerName: 'Rating', 
+    {
+      field: 'rating',
+      headerName: 'Rating',
       width: 180,
       cellRenderer: (params) => (
         <span className="text-primary">★ {params.value}</span>
       ),
     },
-    { 
-      field: 'sales', 
-      headerName: 'Sales', 
+    {
+      field: 'sales',
+      headerName: 'Sales',
       width: 200,
       sortable: true,
       pinned: 'right',
@@ -208,16 +208,16 @@ export default function Home() {
               <Hexagon className="h-3 w-3 mr-2" />
               The Renaissance of Data Grids
             </Badge>
-            
+
             <h1 className="text-5xl md:text-7xl lg:text-8xl font-display font-bold tracking-tight mb-8 leading-[0.95]">
               <span className="text-gradient-gold">FiboGrid</span>
             </h1>
-            
+
             <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto mb-10 font-body leading-relaxed">
-              A high-performance React data grid inspired by Da Vinci's pursuit of perfection. 
+              A high-performance React data grid inspired by Da Vinci's pursuit of perfection.
               Handle <span className="text-primary font-semibold">100,000+ rows</span> with mathematical elegance.
             </p>
-            
+
             <div className="flex items-center justify-center gap-4 flex-wrap">
               <Button size="lg" className="bg-gradient-gold text-primary-foreground shadow-gold hover:shadow-gold-lg transition-shadow font-body" asChild>
                 <Link to="/demo">
@@ -247,7 +247,6 @@ export default function Home() {
               rowData={demoData}
               columnDefs={columns}
               getRowId={(d) => d.id}
-              rowSelection="multiple"
               height={400}
               showToolbar={false}
               showStatusBar={false}
@@ -263,15 +262,15 @@ export default function Home() {
           <div className="text-center mb-20">
             <h2 className="text-4xl md:text-5xl font-display font-bold mb-6">Crafted with Precision</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto font-body">
-              Every feature engineered with the precision of a Renaissance master. 
+              Every feature engineered with the precision of a Renaissance master.
               No detail overlooked, no performance compromised.
             </p>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {features.map((feature, i) => (
-              <Card 
-                key={i} 
+              <Card
+                key={i}
                 className="group paper-aged border-primary/10 hover:border-primary/30 transition-all duration-300 hover:shadow-gold animate-fade-up"
                 style={{ animationDelay: `${i * 50}ms` }}
               >
@@ -297,7 +296,7 @@ export default function Home() {
               </Badge>
               <h2 className="text-4xl md:text-5xl font-display font-bold mb-8">Built for Scale</h2>
               <p className="text-lg text-muted-foreground mb-10 font-body leading-relaxed">
-                Like Da Vinci's flying machines, FiboGrid was designed for what seems impossible. 
+                Like Da Vinci's flying machines, FiboGrid was designed for what seems impossible.
                 Smooth 60fps scrolling with 100,000+ rows. Real-time updates without breaking a sweat.
               </p>
               <ul className="space-y-5">
@@ -334,17 +333,17 @@ export default function Home() {
               <div className="absolute inset-0 bg-gradient-gold rounded-2xl blur-3xl opacity-20" />
               <div className="relative paper-aged rounded-xl border border-primary/20 p-8 font-mono text-sm shadow-parchment">
                 <div className="text-muted-foreground mb-4 font-body italic">
-                <div className="space-y-2">
-                  <div><span className="text-primary">import</span> {'{'} DataGrid {'}'} <span className="text-primary">from</span> <span className="text-accent">'fibogrid'</span>;</div>
-                  <div className="mt-6"><span className="text-accent">{'<FiboGrid'}</span></div>
-                  <div className="pl-4"><span className="text-primary">rowData</span>={'{data}'}</div>
-                  <div className="pl-4"><span className="text-primary">columnDefs</span>={'{columns}'}</div>
-                  <div className="pl-4"><span className="text-primary">rowSelection</span>=<span className="text-accent">"multiple"</span></div>
-                  <div className="pl-4"><span className="text-primary">pagination</span></div>
-                  <div className="pl-4"><span className="text-primary">height</span>={'{600}'}</div>
-                  <div><span className="text-accent">{'/>'}</span></div>
+                  <div className="space-y-2">
+                    <div><span className="text-primary">import</span> {'{'} DataGrid {'}'} <span className="text-primary">from</span> <span className="text-accent">'fibogrid'</span>;</div>
+                    <div className="mt-6"><span className="text-accent">{'<FiboGrid'}</span></div>
+                    <div className="pl-4"><span className="text-primary">rowData</span>={'{data}'}</div>
+                    <div className="pl-4"><span className="text-primary">columnDefs</span>={'{columns}'}</div>
+                    <div className="pl-4"><span className="text-primary">rowSelection</span>=<span className="text-accent">"multiple"</span></div>
+                    <div className="pl-4"><span className="text-primary">pagination</span></div>
+                    <div className="pl-4"><span className="text-primary">height</span>={'{600}'}</div>
+                    <div><span className="text-accent">{'/>'}</span></div>
+                  </div>
                 </div>
-              </div>
               </div>
             </div>
           </div>

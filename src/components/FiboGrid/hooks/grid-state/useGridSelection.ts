@@ -23,8 +23,24 @@ export function useGridSelection<T>(
         lastSelectedIndex: null,
         anchorIndex: null,
     });
+    const rowsIndexRef = useRef<{ rows: readonly RowNode<T>[]; map: Map<string, RowNode<T>> } | null>(null);
     const selectionRef = useRef(selection);
     selectionRef.current = selection;
+    const selectedNodes = useCallback((ids: Iterable<string>) => {
+    const rows = rowsRef.current;
+    if (rowsIndexRef.current?.rows !== rows) {
+      const map = new Map<string, RowNode<T>>();
+      for (let i = 0; i < rows.length; i++) map.set(rows[i].id, rows[i]);
+      rowsIndexRef.current = { rows, map };
+    }
+    const map = rowsIndexRef.current.map;
+    const found: RowNode<T>[] = [];
+    for (const id of ids) {
+      const row = map.get(id);
+      if (row) found.push(row);
+    }
+    return found;
+  }, [rowsRef]);
     const selectRow = useCallback(
         (rowId: string, selected: boolean, shift = false, ctrl = false) => {
             if (!rowSelection) return;
@@ -79,15 +95,17 @@ export function useGridSelection<T>(
             if (apiRef.current) {
                 events.fireEvent('selectionChanged', {
                     api: apiRef.current,
-                    selectedRows: Array.from(newSelected).map(id => rowsRef.current.find(r => r.id === id)!)
+                    selectedRows: selectedNodes(newSelected),
                 });
             }
         },
-        [rowSelection, events, apiRef, rowsRef, displayedRowsRef]
+        [rowSelection, events, apiRef, rowsRef, displayedRowsRef, selectedNodes]
     );
     const selectAll = useCallback(() => {
         if (rowSelection !== 'multiple') return;
-        const allIds = displayedRowsRef.current.map((r) => r.id);
+        const clientRows = rowsRef.current;
+        const source = clientRows.length > 0 ? clientRows : displayedRowsRef.current;
+        const allIds = source.map((r) => r.id);
         const prev = selectionRef.current;
         if (prev.selectedRows.size === allIds.length) {
             let allMatch = true;
@@ -106,9 +124,9 @@ export function useGridSelection<T>(
         selectionRef.current = nextSelection;
         setSelection(nextSelection);
         if (apiRef.current) {
-            events.fireEvent('selectionChanged', { api: apiRef.current, selectedRows: displayedRowsRef.current });
+            events.fireEvent('selectionChanged', { api: apiRef.current, selectedRows: source });
         }
-    }, [rowSelection, events, apiRef, displayedRowsRef]);
+    }, [rowSelection, events, apiRef, displayedRowsRef, rowsRef]);
     const deselectAll = useCallback(() => {
         const prev = selectionRef.current;
         if (prev.selectedRows.size === 0) return;
@@ -135,10 +153,10 @@ export function useGridSelection<T>(
         if (apiRef.current) {
             events.fireEvent('selectionChanged', {
                 api: apiRef.current,
-                selectedRows: Array.from(newSelected).map(id => rowsRef.current.find(r => r.id === id)!)
+                selectedRows: selectedNodes(newSelected),
             });
         }
-    }, [events, apiRef, rowsRef]);
+    }, [events, apiRef, selectedNodes]);
     return {
         selection,
         setSelection,

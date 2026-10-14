@@ -5,6 +5,46 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.31] - 2026-10-14
+
+### Added
+- **Infinite scroll (server)** - Lazy page loading for server-side data sources, with LRU page cache, prefetch, and abortable fetches.
+- **`AbortSignal` on server requests** - `ServerSideDataSourceRequest.signal` is passed on main, prefetch, background refresh, and append `getRows` calls so cancelled pages can abort the network request.
+- **Cell undo entries** - Cell commits push a lightweight `{ kind: 'cell', rowId, field, previous, hadField }` history entry instead of cloning the full row array; paste still uses full snapshots.
+- **Filter value virtualization by default** - `enableFilterValueVirtualization` defaults to `true`; unique filter values are scanned in idle chunks when opening a column filter.
+- **In-repo docs tree** - Structured docs under `docs/` (`01`–`11`) plus `docs/guides/usage.md` and `docs/guides/theming.md`.
+- **Vitest suite** - Unit tests for helpers, infinite scroll, and lazy page cache (`npm test`).
+
+### Changed
+- **Performance — data signature** - Source sync uses array reference equality; no deep cell walk on every infinite-scroll page append.
+- **Performance — grouping** - Paginated client groups skip the full-tree flatten; only the visible page is flattened on expand/collapse.
+- **Performance — selection** - Selected-row resolution uses a cached `Map<id, RowNode>` while the rows identity is stable.
+- **Performance — column resize** - Width updates are coalesced with `requestAnimationFrame` and flushed on mouseup.
+- **Performance — quick filter** - Client filtering uses `useDeferredValue`, skips hidden columns, and lowercases the needle once; select filters use a `Set` for membership.
+- **Performance — cell commit** - Row nodes are patched only for overridden ids; filter/sort are reused when the edited field is outside the active models.
+- **Excel export** - SheetJS is loaded via dynamic `import('xlsx')` so it is not in the main ES bundle until export runs.
+- **SheetJS dependency** - Upgraded from vulnerable `xlsx@0.18.5` (npm) to **SheetJS CE 0.20.3** via the official CDN tarball (`https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz`).
+- **Fill handle** - `editable` functions fail closed without a real `GridApi`; pass `api` in `useFillHandle` options for permission-aware columns.
+- **Grid API row ids** - Without `getRowId`, mutations require a non-empty `row.id` (no empty-string fallback that could corrupt updates).
+- **MCP server paths** - Docs and scripts use portable paths; `configure-claude.sh` / `test-server.sh` resolve relative to the script directory.
+- **Repo hygiene** - `.gitignore` / `.npmignore` ignore agent tooling, backups, and alternate lockfiles; dual `bun.lockb` removed in favour of npm.
+
+### Fixed
+- Clipboard copy now runs the same formula neutralization as CSV/Excel export (`=`, `@`, tab/CR, and non-numeric `+`/`-` prefixes).
+- Stale cell overrides are dropped only when the source row array identity changes and overrides exist.
+- Group expand/collapse no longer flattens the entire grouped dataset when client pagination is on.
+- Cancelling a server page no longer only discards the response — the request receives an abort signal.
+
+### Security
+- Closed medium findings from the FiboGrid security audit: clipboard formula injection, misplaced Portainer `tools.yaml`, row-id collision on mutations, fill-handle editable bypass, and SheetJS CVEs (prototype pollution / ReDoS fixed in 0.20.3).
+- Removed Portainer control-plane `tools.yaml` from the repository root.
+- Removed local agent config (`.claude/`) and absolute machine paths from MCP documentation.
+
+### Removed
+- Root-level `THEMING.md` and `USAGE.md` (moved to `docs/guides/`).
+- `EventBuilder.ts.backup`, orphan `scripts/` favicon stub, `.DS_Store` clutter.
+- Static top-level `import 'xlsx'` in the Excel export module.
+
 ## [1.0.16] - 2025-12-11
 
 ### Added

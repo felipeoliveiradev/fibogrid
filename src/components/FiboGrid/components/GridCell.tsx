@@ -193,7 +193,8 @@ export function GridCell<T>({
           <input
             ref={inputRef}
             type="number"
-            defaultValue={editValue ?? ''}
+            value={editValue ?? ''}
+            onChange={(e) => onEditChange(e.target.value)}
             onBlur={handleBlur}
             onKeyDown={handleKeyDown}
             className="w-full h-full bg-background border-none outline-none px-1"
@@ -205,7 +206,8 @@ export function GridCell<T>({
           <input
             ref={inputRef}
             type="date"
-            defaultValue={editValue ?? ''}
+            value={editValue ?? ''}
+            onChange={(e) => onEditChange(e.target.value)}
             onBlur={handleBlur}
             onKeyDown={handleKeyDown}
             className="w-full h-full bg-background border-none outline-none px-1"
@@ -235,7 +237,8 @@ export function GridCell<T>({
           <input
             ref={inputRef}
             type="text"
-            defaultValue={editValue ?? ''}
+            value={editValue ?? ''}
+            onChange={(e) => onEditChange(e.target.value)}
             onBlur={handleBlur}
             onKeyDown={handleKeyDown}
             className="w-full h-full bg-background border-none outline-none px-1"
@@ -246,6 +249,7 @@ export function GridCell<T>({
   };
   return (
     <div
+      role="gridcell"
       className={cn(
         'flex items-center px-3 overflow-hidden text-sm flex-shrink-0 whitespace-nowrap min-w-0',
         !isLastCenterBeforeRight && 'border-r border-border',

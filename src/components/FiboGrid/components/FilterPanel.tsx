@@ -5,11 +5,13 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { X, Search, Filter, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useGridContext } from '../context/GridContext';
+import { enUS } from '../locales/enUS';
 interface FilterPanelProps<T> {
   columns: ProcessedColumn<T>[];
   filterModel: FilterModel[];
   onClose: () => void;
-  onFilterChange: (filter: FilterModel | null) => void;
+  onFilterChange: (field: string, model: FilterModel | null) => void;
   onClearAllFilters: () => void;
 }
 export function FilterPanel<T>({
@@ -19,6 +21,7 @@ export function FilterPanel<T>({
   onFilterChange,
   onClearAllFilters,
 }: FilterPanelProps<T>) {
+  const locale = useGridContext<T>()?.locale ?? enUS;
   const [searchTerm, setSearchTerm] = useState('');
   const filterableColumns = columns.filter(
     col => col.filterable !== false && !col.hide
@@ -35,14 +38,14 @@ export function FilterPanel<T>({
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
         <div className="flex items-center gap-2">
           <Filter className="h-4 w-4" />
-          <h3 className="font-semibold">Filters</h3>
+          <h3 className="font-semibold">{locale.filterPanel.title}</h3>
           {filterModel.length > 0 && (
             <span className="px-1.5 py-0.5 text-xs bg-primary text-primary-foreground rounded-full">
               {filterModel.length}
             </span>
           )}
         </div>
-        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={onClose}>
+        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={onClose} aria-label={locale.aria.close}>
           <X className="h-4 w-4" />
         </Button>
       </div>
@@ -51,7 +54,8 @@ export function FilterPanel<T>({
         <div className="relative">
           <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search columns..."
+            placeholder={locale.columnPanel.search}
+            aria-label={locale.columnPanel.search}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-8 h-8"
@@ -62,14 +66,14 @@ export function FilterPanel<T>({
       {filterModel.length > 0 && (
         <div className="p-3 border-b border-border">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium">Active Filters</span>
+            <span className="text-sm font-medium">{locale.toolbar.activeFilters}</span>
             <Button
               variant="ghost"
               size="sm"
               className="h-6 text-xs"
               onClick={onClearAllFilters}
             >
-              Clear All
+              {locale.toolbar.resetAll}
             </Button>
           </div>
           <div className="space-y-1">
@@ -84,7 +88,9 @@ export function FilterPanel<T>({
                     {column?.filterLabel || column?.headerName}: {String(filter.value).substring(0, 15)}
                   </span>
                   <button
-                    onClick={() => onFilterChange(null)}
+                    type="button"
+                    aria-label={locale.aria.removeFilter}
+                    onClick={() => onFilterChange(filter.field, null)}
                     className="ml-2 p-0.5 hover:bg-muted-foreground/20 rounded"
                   >
                     <X className="h-3 w-3" />
@@ -117,7 +123,9 @@ export function FilterPanel<T>({
                 </span>
                 {filter && (
                   <button
-                    onClick={() => onFilterChange(null)}
+                    type="button"
+                    aria-label={locale.aria.removeFilter}
+                    onClick={() => onFilterChange(column.field, null)}
                     className="p-1 hover:bg-muted-foreground/20 rounded"
                   >
                     <Trash2 className="h-3 w-3 text-destructive" />
