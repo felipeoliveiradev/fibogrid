@@ -31,12 +31,14 @@ export function FilterPopover<T>({
   onSort,
   anchorRect,
   containerRef,
-  enableVirtualization = false,
+  enableVirtualization = true,
   className,
 }: FilterPopoverProps<T>) {
   const { locale } = useGridContext<T>()!;
   const popoverRef = useRef<HTMLDivElement>(null);
-  const [value, setValue] = useState(currentFilter?.value ?? '');
+  const firstFieldRef = useRef<HTMLInputElement>(null);
+  const [value, setValue] = useState(() => scalarFilterValue(currentFilter?.value));
+  const [betweenRange, setBetweenRange] = useState<[string, string]>(() => betweenFilterValue(currentFilter?.value));
   const [operator, setOperator] = useState<string>(currentFilter?.operator ?? 'contains');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedValues, setSelectedValues] = useState<Set<string>>(() => new Set());
@@ -55,14 +57,13 @@ export function FilterPopover<T>({
   }, [allValues]);
   const filteredValues = useMemo(() => {
     if (!searchTerm) return uniqueValues;
-    return uniqueValues.filter(v =>
-      v.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const needle = searchTerm.toLowerCase();
+    return uniqueValues.filter(v => v.toLowerCase().includes(needle));
   }, [uniqueValues, searchTerm]);
   useEffect(() => {
     if (uniqueValues.length === 0) return;
     if (!isInitialized) {
-      if (currentFilter?.value && Array.isArray(currentFilter.value)) {
+      if (currentFilter?.operator !== 'between' && currentFilter?.value && Array.isArray(currentFilter.value)) {
         setSelectedValues(new Set(currentFilter.value.map(String)));
         setSelectAll(currentFilter.value.length === uniqueValues.length);
       } else {
@@ -86,7 +87,35 @@ export function FilterPopover<T>({
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [onClose]);
+  useEffect(() => {
+    firstFieldRef.current?.focus();
+  }, []);
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      event.stopPropagation();
+      onClose();
+    };
+    document.addEventListener('keydown', handleEscape, true);
+    return () => document.removeEventListener('keydown', handleEscape, true);
+  }, [onClose]);
   const handleApplyCondition = () => {
+    if (operator === 'between') {
+      const low = betweenRange[0].trim();
+      const high = betweenRange[1].trim();
+      if (low === '' || high === '') {
+        return;
+      }
+      onFilterChange({
+        field: column.field,
+        filterType,
+        value: [coerceBetweenBound(filterType, low), coerceBetweenBound(filterType, high)],
+        operator: 'between',
+      });
+      onClose();
+      return;
+    }
     if (value === '' || value == null) {
       onFilterChange(null);
     } else {
@@ -105,13 +134,9 @@ export function FilterPopover<T>({
     }
   };
   const handleApplyValues = () => {
-    console.log('Applying filter with selected values:', Array.from(selectedValues));
-    console.log('selectAll:', selectAll, 'uniqueValues.length:', uniqueValues.length, 'selectedValues.size:', selectedValues.size);
     if (selectAll) {
-      console.log('All selected, clearing filter');
       onFilterChange(null);
     } else if (selectedValues.size === 0) {
-      console.log('None selected, filtering all out');
       onFilterChange({
         field: column.field,
         filterType: 'select',
@@ -119,7 +144,6 @@ export function FilterPopover<T>({
         operator: 'equals',
       });
     } else {
-      console.log('Some selected, filtering to:', Array.from(selectedValues));
       onFilterChange({
         field: column.field,
         filterType: 'select',
@@ -131,6 +155,7 @@ export function FilterPopover<T>({
   };
   const handleClear = () => {
     setValue('');
+    setBetweenRange(['', '']);
     setSelectedValues(new Set(uniqueValues));
     setSelectAll(true);
     onFilterChange(null);
@@ -140,7 +165,6 @@ export function FilterPopover<T>({
     if (e) {
       e.stopPropagation();
     }
-    console.log('Toggling value:', val);
     setSelectedValues(prev => {
       const newSelected = new Set(prev);
       if (newSelected.has(val)) {
@@ -150,7 +174,6 @@ export function FilterPopover<T>({
       }
       const allSelected = newSelected.size === uniqueValues.length;
       setSelectAll(allSelected);
-      console.log('New selected values:', Array.from(newSelected), 'allSelected:', allSelected);
       return newSelected;
     });
   };
@@ -158,7 +181,6 @@ export function FilterPopover<T>({
     if (e) {
       e.stopPropagation();
     }
-    console.log('Toggle all, current selectAll:', selectAll);
     if (selectAll) {
       setSelectedValues(new Set());
       setSelectAll(false);
@@ -186,6 +208,8 @@ export function FilterPopover<T>({
   return (
     <div
       ref={popoverRef}
+      role="dialog"
+      aria-label={`${column.filterLabel || column.headerName}. ${locale.filter.advancedFilter}`}
       className="w-80 bg-popover border border-border rounded-lg shadow-xl fibogrid-z-filter-popover"
       style={style}
       onClick={(e) => e.stopPropagation()}
@@ -197,7 +221,7 @@ export function FilterPopover<T>({
             <Filter className="h-4 w-4 text-muted-foreground" />
             <span className="font-medium text-sm">{column.filterLabel || column.headerName}</span>
           </div>
-          <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={onClose}>
+          <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={onClose} aria-label={locale.aria.close}>
             <X className="h-4 w-4" />
           </Button>
         </div>
@@ -246,7 +270,9 @@ export function FilterPopover<T>({
               <div className="relative">
                 <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
+                  ref={firstFieldRef}
                   placeholder={locale.filter.searchPlaceholder}
+                  aria-label={locale.filter.searchPlaceholder}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   onKeyDown={(e) => e.stopPropagation()}
@@ -322,7 +348,9 @@ export function FilterPopover<T>({
                   ))}
                 </SelectContent>
               </Select>
-              {renderInput(filterType, value, setValue, handleKeyDown, locale, className)}
+              {operator === 'between'
+                ? renderBetweenInputs(filterType, betweenRange, setBetweenRange, handleKeyDown, locale)
+                : renderInput(filterType, value, setValue, handleKeyDown, locale, className)}
               <div className="flex gap-2 pt-2">
                 <Button variant="outline" className="flex-1" onClick={handleClear}>
                   {locale.filter.clear}
@@ -363,6 +391,62 @@ function getOperatorsForType(type: string, locale: import('../locales/types').Fi
       ];
   }
 }
+function scalarFilterValue(raw: unknown): any {
+  if (Array.isArray(raw)) return '';
+  return raw ?? '';
+}
+function betweenFilterValue(raw: unknown): [string, string] {
+  if (Array.isArray(raw) && raw.length === 2) {
+    return [raw[0] == null ? '' : String(raw[0]), raw[1] == null ? '' : String(raw[1])];
+  }
+  return ['', ''];
+}
+function coerceBetweenBound(filterType: string, raw: string): string | number {
+  if (filterType !== 'number') return raw;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) ? parsed : raw;
+}
+function renderBetweenInputs(
+  type: string,
+  range: [string, string],
+  onChange: (range: [string, string]) => void,
+  onKeyDown: (e: React.KeyboardEvent) => void,
+  locale: import('../locales/types').FiboGridLocale,
+) {
+  const inputType = type === 'number' ? 'number' : type === 'date' ? 'date' : 'text';
+  const placeholder = locale.filter.placeholder.value;
+  const update = (index: 0 | 1, next: string) => {
+    const nextRange: [string, string] = [range[0], range[1]];
+    nextRange[index] = next;
+    onChange(nextRange);
+  };
+  const handleKey = (e: React.KeyboardEvent) => {
+    e.stopPropagation();
+    onKeyDown(e);
+  };
+  return (
+    <div className="flex gap-2">
+      <Input
+        type={inputType}
+        placeholder={placeholder}
+        aria-label="Min"
+        value={range[0]}
+        onChange={(e) => update(0, e.target.value)}
+        onKeyDown={handleKey}
+        className="h-8"
+      />
+      <Input
+        type={inputType}
+        placeholder={placeholder}
+        aria-label="Max"
+        value={range[1]}
+        onChange={(e) => update(1, e.target.value)}
+        onKeyDown={handleKey}
+        className="h-8"
+      />
+    </div>
+  );
+}
 function renderInput(
   type: string,
   value: any,
@@ -376,7 +460,8 @@ function renderInput(
       return (
         <Input
           type="number"
-          placeholder="Enter value..."
+          placeholder={locale.filter.placeholder.value}
+          aria-label={locale.filter.placeholder.value}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={onKeyDown}
@@ -408,7 +493,8 @@ function renderInput(
     default:
       return (
         <Input
-          placeholder="Enter value..."
+          placeholder={locale.filter.placeholder.value}
+          aria-label={locale.filter.placeholder.value}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={(e) => {

@@ -1,9 +1,22 @@
-import { useState, MutableRefObject, Dispatch, SetStateAction } from 'react';
+import { useState, useRef, MutableRefObject, Dispatch, SetStateAction } from 'react';
 import { GridApi, EditingCell, RowNode, ProcessedColumn } from '../../types';
-import { getValueFromPath } from '../../utils/helpers';
+import { getValueFromPath, isEqual } from '../../utils/helpers';
 import { useGridEventSystem } from './useGridEventSystem';
+type GridApiWithUndo<T> = GridApi<T> & {
+    pushUndoSnapshot?: () => void;
+    pushCellUndo?: (rowId: string, field: string) => void;
+};
+function recordCellUndo<T>(api: GridApi<T> | undefined, rowId: string, field: string) {
+    const grid = api as GridApiWithUndo<T> | undefined;
+    if (grid?.pushCellUndo) {
+        grid.pushCellUndo(rowId, field);
+        return;
+    }
+    grid?.pushUndoSnapshot?.();
+}
 export interface UseGridEditingResult {
     editingCell: EditingCell | null;
+    editingCellRef: MutableRefObject<EditingCell | null>;
     setEditingCell: Dispatch<SetStateAction<EditingCell | null>>;
     startEditingCell: (rowId: string, field: string) => void;
     stopEditing: (cancel?: boolean) => void;
@@ -16,7 +29,11 @@ export function useGridEditing<T>(
     apiRef: MutableRefObject<GridApi<T> | undefined>
 ): UseGridEditingResult {
     const [editingCell, setEditingCell] = useState<EditingCell | null>(null);
+    const editingCellRef = useRef<EditingCell | null>(editingCell);
+    editingCellRef.current = editingCell;
     const startEditingCell = (rowId: string, field: string) => {
+        const api = apiRef.current;
+        if (!api) return;
         const row = displayedRowsRef.current.find((r) => r.id === rowId);
         const column = columns.find((c) => c.field === field);
         if (row && column) {
@@ -28,7 +45,7 @@ export function useGridEditing<T>(
                     rowIndex: row.rowIndex,
                     colDef: column,
                     column,
-                    api: apiRef.current!,
+                    api,
                     rowNode: row
                 });
             }
@@ -36,6 +53,9 @@ export function useGridEditing<T>(
                 if (column.editAction) {
                     const update = (newValue: any) => {
                         const oldValue = getValueFromPath(row.data, field);
+                        if (!isEqual(oldValue, newValue)) {
+                            recordCellUndo(apiRef.current, rowId, field);
+                        }
                         setOverrides((prev) => {
                             const next = { ...prev };
                             next[rowId] = { ...(next[rowId] || {}), [field]: newValue };
@@ -60,7 +80,7 @@ export function useGridEditing<T>(
                         rowIndex: row.rowIndex,
                         colDef: column,
                         column,
-                        api: apiRef.current!,
+                        api,
                         rowNode: row,
                         update,
                         stopEditing
@@ -73,8 +93,13 @@ export function useGridEditing<T>(
         }
     };
     const stopEditing = (cancel = false) => {
+        let recorded = false;
         setEditingCell((current) => {
             if (!cancel && current) {
+                if (!recorded && !isEqual(current.value, current.originalValue)) {
+                    recorded = true;
+                    recordCellUndo(apiRef.current, current.rowId, current.field);
+                }
                 setOverrides((prev) => {
                     const next = { ...prev };
                     next[current.rowId] = { ...(next[current.rowId] || {}), [current.field]: current.value };
@@ -98,6 +123,7 @@ export function useGridEditing<T>(
     };
     return {
         editingCell,
+        editingCellRef,
         setEditingCell,
         startEditingCell,
         stopEditing,

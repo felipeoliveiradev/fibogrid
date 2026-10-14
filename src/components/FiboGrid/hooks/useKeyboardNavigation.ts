@@ -1,6 +1,20 @@
 import { useCallback, useState, useMemo } from 'react';
 import { RowNode, ProcessedColumn, GridApi, ShortcutDef } from '../types';
 import { defaultShortcuts, isShortcutMatch } from '../utils/shortcuts';
+const INITIAL_FOCUS_KEYS = new Set([
+  'ArrowUp',
+  'ArrowDown',
+  'ArrowLeft',
+  'ArrowRight',
+  'Home',
+  'End',
+  'Enter',
+  'F2',
+]);
+const isInitialFocusKey = (event: React.KeyboardEvent | KeyboardEvent): boolean => {
+  if (event.ctrlKey || event.metaKey || event.altKey) return false;
+  return INITIAL_FOCUS_KEYS.has(event.key);
+};
 interface CellPosition {
   rowId: string;
   field: string;
@@ -14,6 +28,7 @@ interface UseKeyboardNavigationProps<T> {
   onStopEdit?: (cancel: boolean) => void;
   isEditing: boolean;
   shortcuts?: boolean | ShortcutDef<T>[];
+  onActiveCellChange?: (rowIndex: number, colIndex: number) => void;
 }
 export function useKeyboardNavigation<T>({
   containerRef,
@@ -24,6 +39,7 @@ export function useKeyboardNavigation<T>({
   onStopEdit,
   isEditing,
   shortcuts = true,
+  onActiveCellChange,
 }: UseKeyboardNavigationProps<T>) {
   const [focusedCell, setFocusedCell] = useState<CellPosition | null>(null);
   const visibleColumns = columns.filter((col) => !col.hide);
@@ -39,11 +55,12 @@ export function useKeyboardNavigation<T>({
     (rowIndex: number, colIndex: number) => {
       const row = displayedRows[rowIndex];
       const col = visibleColumns[colIndex];
-      if (row && col) {
-        setFocusedCell({ rowId: row.id, field: col.field });
-      }
+      if (!row || !col || col.hide) return;
+      if (focusedCell?.rowId === row.id && focusedCell.field === col.field) return;
+      setFocusedCell({ rowId: row.id, field: col.field });
+      onActiveCellChange?.(rowIndex, colIndex);
     },
-    [displayedRows, visibleColumns]
+    [displayedRows, visibleColumns, focusedCell, onActiveCellChange]
   );
   const focusCell = useCallback((rowId: string, field: string) => {
     setFocusedCell({ rowId, field });
@@ -62,6 +79,14 @@ export function useKeyboardNavigation<T>({
       if (isEditing) {
         return;
       }
+      if (!focusedCell && isInitialFocusKey(e)) {
+        const firstColIndex = visibleColumns.findIndex((col) => !col.hide);
+        if (displayedRows.length > 0 && firstColIndex >= 0) {
+          e.preventDefault();
+          navigateToCell(0, firstColIndex);
+          return;
+        }
+      }
       const currentState = {
         rowIndex: focusedCell ? getRowIndex(focusedCell.rowId) : -1,
         colIndex: focusedCell ? getColIndex(focusedCell.field) : -1,
@@ -74,9 +99,9 @@ export function useKeyboardNavigation<T>({
           event: e,
           api,
           focusRow: (idx) => {
-            const row = displayedRows[idx];
-            if (row && visibleColumns.length > 0) {
-              focusCell(row.id, visibleColumns[0].field);
+            const firstColIndex = visibleColumns.findIndex((col) => !col.hide);
+            if (firstColIndex >= 0) {
+              navigateToCell(idx, firstColIndex);
             }
           },
           focusCell: (rIndex, cIndex) => navigateToCell(rIndex, cIndex),
@@ -93,8 +118,7 @@ export function useKeyboardNavigation<T>({
       api,
       navigateToCell,
       displayedRows,
-      visibleColumns,
-      focusCell
+      visibleColumns
     ]
   );
   const isCellFocused = useCallback(

@@ -3,6 +3,8 @@ import { ChevronRight, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { GroupRowNode } from '../utils/grouping';
 import { ProcessedColumn } from '../types';
+import { useGridContext } from '../context/GridContext';
+import type { FiboGridLocale } from '../locales/types';
 interface GroupRowProps<T> {
   row: GroupRowNode<T>;
   columns: ProcessedColumn<T>[];
@@ -13,6 +15,26 @@ interface GroupRowProps<T> {
   allChildrenSelected?: boolean;
   someChildrenSelected?: boolean;
   onSelectAll?: (selected: boolean) => void;
+  locale?: FiboGridLocale;
+}
+function localeString(source: object | null | undefined, key: string): string | undefined {
+  if (source == null) return undefined;
+  const value = (source as Record<string, unknown>)[key];
+  return typeof value === 'string' && value.length > 0 ? value : undefined;
+}
+function groupCountLabel(count: number, locale: FiboGridLocale | undefined): string {
+  const format = locale?.groups?.itemCount;
+  if (typeof format === 'function') return format(count);
+  return `${count} items`;
+}
+function groupFieldText(groupValue: unknown, field: string): React.ReactNode {
+  if (groupValue == null) return '';
+  if (typeof groupValue === 'object') {
+    const fieldValue = (groupValue as Record<string, unknown>)[field];
+    if (fieldValue == null) return '';
+    return fieldValue as React.ReactNode;
+  }
+  return groupValue as React.ReactNode;
 }
 export function GroupRow<T>({
   row,
@@ -24,13 +46,21 @@ export function GroupRow<T>({
   allChildrenSelected,
   someChildrenSelected,
   onSelectAll,
+  locale: localeProp,
 }: GroupRowProps<T>) {
+  const contextLocale = useGridContext()?.locale;
+  const locale = localeProp ?? contextLocale;
+  const selectLabel = localeString(locale?.aria, 'selectGroup') ?? 'Select group';
+  const expandLabel = localeString(locale?.aria, 'expandGroup') ?? 'Expand group';
+  const collapseLabel = localeString(locale?.aria, 'collapseGroup') ?? 'Collapse group';
   const groupFields = row.groupField.split(',');
+  const aggregates = Object.entries(row.aggregatedValues ?? {}).filter(([, value]) => value != null);
   const totalWidth = columns.reduce((sum, col) => sum + col.computedWidth, 0) + (showCheckboxColumn ? 48 : 0);
   return (
     <div
+      role="row"
       className={cn(
-        'flex items-center border-b border-border bg-muted/70 hover:bg-muted cursor-pointer select-none',
+        'fibogrid-group-row flex items-center cursor-pointer select-none',
         'font-medium'
       )}
       style={{ height: `${rowHeight}px`, width: `${totalWidth}px` }}
@@ -49,13 +79,24 @@ export function GroupRow<T>({
             }}
             onChange={(e) => onSelectAll?.(e.target.checked)}
             className="h-4 w-4 rounded border-border"
+            aria-label={selectLabel}
           />
         </div>
       )}
       <div className="flex items-center px-3 flex-1">
         <button
+          type="button"
+          tabIndex={0}
+          aria-expanded={isExpanded}
+          aria-label={isExpanded ? collapseLabel : expandLabel}
           className="mr-2 p-0.5 rounded hover:bg-muted-foreground/20"
           onClick={(e) => {
+            e.stopPropagation();
+            onToggleExpand();
+          }}
+          onKeyDown={(e) => {
+            if (e.key !== 'Enter' && e.key !== ' ') return;
+            e.preventDefault();
             e.stopPropagation();
             onToggleExpand();
           }}
@@ -71,21 +112,18 @@ export function GroupRow<T>({
             <span key={field}>
               {i > 0 && ' / '}
               <span className="text-muted-foreground">{field}: </span>
-              <span className="font-semibold">
-                {typeof row.groupValue === 'object' 
-                  ? row.groupValue[field] 
-                  : row.groupValue}
+              <span className="fibogrid-group-label font-semibold">
+                {groupFieldText(row.groupValue, field)}
               </span>
             </span>
           ))}
-          <span className="ml-2 text-muted-foreground text-xs">
-            ({row.groupChildren.length} items)
+          <span className="fibogrid-group-count ml-2 text-muted-foreground text-xs">
+            ({groupCountLabel(row.groupChildren.length, locale)})
           </span>
         </span>
-        {}
-        {row.aggregatedValues && Object.keys(row.aggregatedValues).length > 0 && (
+        {aggregates.length > 0 && (
           <div className="ml-4 flex items-center gap-4 text-xs text-muted-foreground">
-            {Object.entries(row.aggregatedValues).map(([field, value]) => (
+            {aggregates.map(([field, value]) => (
               <span key={field}>
                 {field}: <span className="font-medium text-foreground">
                   {typeof value === 'number' ? value.toLocaleString() : String(value)}

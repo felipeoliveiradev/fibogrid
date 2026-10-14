@@ -23,11 +23,8 @@ export const splitManager = <T>(
         if ('ID' in newItem) (newItem as any).ID = newId;
     }
     if (options?.asChild && api.addChildToRow) {
-        console.log('[SplitManager] Adding as child', rowId, newItem);
         api.addChildToRow(rowId, [newItem]);
         return;
-    } else {
-        console.log('[SplitManager] Standard split', options, api.addChildToRow ? 'Has api method' : 'No api method');
     }
     const currentData = rows.map(r => r.data);
     currentData.splice(index + 1, 0, newItem);

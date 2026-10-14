@@ -155,6 +155,17 @@ export function GridHeader<T>({
     return (
       <div
         key={column.field}
+        role="columnheader"
+        aria-sort={sortDirection === 'asc' ? 'ascending' : sortDirection === 'desc' ? 'descending' : 'none'}
+        tabIndex={column.sortable !== false ? 0 : undefined}
+        onKeyDown={(e) => {
+          if (column.sortable === false) return;
+          if (e.key !== 'Enter' && e.key !== ' ') return;
+          if (e.target !== e.currentTarget) return;
+          e.preventDefault();
+          e.stopPropagation();
+          handleHeaderClick(column);
+        }}
         className={cn(
           'relative flex items-center px-3 select-none group fibogrid-header-container',
           !column.isLastCenterBeforeRight && 'border-r border-border',
@@ -296,6 +307,7 @@ export function GridHeader<T>({
   return (
     <div className="flex flex-col border-b border-border fibogrid-header-container">
       <div
+        role="row"
         className="flex"
         style={{ height: `${headerHeight}px` }}
       >
@@ -316,6 +328,7 @@ export function GridHeader<T>({
             <input
               type="checkbox"
               checked={allSelected}
+              aria-label={locale.aria.selectAllRows}
               ref={(el) => {
                 if (el) el.indeterminate = someSelected && !allSelected;
               }}

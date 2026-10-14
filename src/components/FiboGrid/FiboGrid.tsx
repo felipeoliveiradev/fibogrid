@@ -30,6 +30,8 @@ interface FilterState<T> {
   column: ProcessedColumn<T>;
   anchorRect: DOMRect;
 }
+const EMPTY_SELECTED_CELLS = new Set<string>();
+const NOOP = (_rowId: string, _event: React.MouseEvent) => {};
 export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
   const {
     rowHeight: rowHeightProp,
@@ -48,12 +50,13 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     loadingOverlayComponent,
     noRowsOverlayComponent,
     className,
+    theme,
     contextMenu = true,
     getContextMenuItems,
     showToolbar = true,
     showStatusBar = true,
     showRowNumbers = false,
-    enableFilterValueVirtualization = false,
+    enableFilterValueVirtualization = true,
     filterValues,
     height,
     gridId,
@@ -83,6 +86,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     onGlobalFilterChange,
     onFilterRemoved,
     onRowClickFallback,
+    quickFilterText,
     lang = enUS,
     configs,
     shortcuts = true,
@@ -99,12 +103,25 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
   const showBorders = configs?.center?.borders !== false;
   const showStripes = configs?.center?.stripes !== false;
   const containerRef = useRef<HTMLDivElement>(null);
+  const measureCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const restoreGridFocus = useCallback(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    requestAnimationFrame(() => {
+      const current = containerRef.current;
+      if (!current) return;
+      const active = document.activeElement;
+      if (active instanceof Node && current.contains(active)) return;
+      current.focus();
+    });
+  }, []);
   const cellContentRefs = useRef<Map<string, Map<string, HTMLElement>>>(new Map());
   const [containerWidth, setContainerWidth] = useState(0);
   const [containerHeight, setContainerHeight] = useState(0);
   const [filterState, setFilterState] = useState<FilterState<T> | null>(null);
   const [contextMenuPosition, setContextMenuPosition] = useState<{ x: number; y: number } | null>(null);
   const [contextMenuItems, setContextMenuItems] = useState<ContextMenuItem[]>([]);
+  const [systemPrefersDark, setSystemPrefersDark] = useState(false);
   const editingCellRef = useRef<{ rowId: string; field: string; value: any; originalValue: any } | null>(null);
   useEffect(() => {
     const container = containerRef.current;
@@ -119,6 +136,18 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     observer.observe(container);
     return () => observer.disconnect();
   }, []);
+  useEffect(() => {
+    if (theme !== 'auto') return;
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    setSystemPrefersDark(media.matches);
+    const onChange = (event: MediaQueryListEvent) => {
+      setSystemPrefersDark(event.matches);
+    };
+    media.addEventListener('change', onChange);
+    return () => media.removeEventListener('change', onChange);
+  }, [theme]);
+  const isDarkTheme = theme === 'dark' || (theme === 'auto' && systemPrefersDark);
+  const appearance = props.appearance;
   const {
     displayedRows,
     allRows,
@@ -151,9 +180,12 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
   } = useGridState(props, containerWidth);
   const isInitialServerLoad = serverSideLoading && finalDisplayedRows.length === 0;
   const isLoading = loading || (infiniteScroll ? isInitialServerLoad : serverSideLoading);
+  const isServerPagePending = serverSideLoading && finalDisplayedRows.length > 0;
   editingCellRef.current = editingCell;
   const selectionRef = useRef(selection);
   selectionRef.current = selection;
+  const displayedRowsRef = useRef(displayedRows);
+  displayedRowsRef.current = displayedRows;
   const {
     displayRows: groupedDisplayRows,
     groupedRows,
@@ -173,6 +205,10 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
   const { registerGrid: registerGlobal, unregisterGrid: unregisterGlobal } = useGridRegistry();
   const apiRef = useRef(api);
   apiRef.current = api;
+  const onGridReadyRef = useRef(onGridReady);
+  onGridReadyRef.current = onGridReady;
+  const readyFiredRef = useRef(false);
+  const appliedQuickFilterPropRef = useRef<string | undefined>(undefined);
   useEffect(() => {
     if (gridContext && gridId) {
       gridContext.registerGrid(gridId, apiRef.current);
@@ -186,8 +222,16 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     }
   }, [gridId, registerGlobal, unregisterGlobal, api]);
   useEffect(() => {
-    onGridReady?.({ api });
-  }, [api, onGridReady]);
+    if (readyFiredRef.current) return;
+    readyFiredRef.current = true;
+    onGridReadyRef.current?.({ api: apiRef.current });
+  }, []);
+  useEffect(() => {
+    if (quickFilterText === undefined) return;
+    if (appliedQuickFilterPropRef.current === quickFilterText) return;
+    appliedQuickFilterPropRef.current = quickFilterText;
+    setQuickFilter(quickFilterText);
+  }, [quickFilterText, setQuickFilter]);
   useGridEvent<T>(gridId, 'cellValueChanged', (event) => {
     onCellValueChanged?.(event);
   });
@@ -225,6 +269,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     totalHeight,
     offsetTop,
     handleScroll,
+    scrollToRow,
     containerRef: scrollContainerRef,
   } = useVirtualization(finalDisplayedRows as RowNode<T>[], {
     rowHeight,
@@ -276,21 +321,21 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
   const measureColumnContent = useCallback((field: string): number => {
     const columnCells = cellContentRefs.current.get(field);
     if (!columnCells || columnCells.size === 0) return 100;
+    const firstCell = columnCells.values().next().value as HTMLElement | undefined;
+    if (!firstCell) return 100;
+    const font = getComputedStyle(firstCell).font;
+    if (!measureCanvasRef.current) {
+      measureCanvasRef.current = document.createElement('canvas');
+    }
+    const context = measureCanvasRef.current.getContext('2d');
+    if (!context) return 100;
+    context.font = font;
     let maxWidth = 0;
     columnCells.forEach((cell) => {
-      const span = document.createElement('span');
-      span.style.visibility = 'hidden';
-      span.style.position = 'absolute';
-      span.style.whiteSpace = 'nowrap';
-      span.style.fontSize = getComputedStyle(cell).fontSize;
-      span.style.fontFamily = getComputedStyle(cell).fontFamily;
-      span.textContent = cell.textContent || '';
-      document.body.appendChild(span);
-      const width = span.offsetWidth;
-      document.body.removeChild(span);
+      const width = context.measureText(cell.textContent || '').width;
       if (width > maxWidth) maxWidth = width;
     });
-    return Math.max(80, maxWidth);
+    return Math.max(80, Math.ceil(maxWidth));
   }, []);
   const registerCellRef = useCallback((field: string, rowId: string, element: HTMLElement | null) => {
     if (!cellContentRefs.current.has(field)) {
@@ -335,14 +380,17 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
   } = useRowDrag<T>(
     (fromId, toId, position) => {
       if (rowDragManaged) {
-        api.updateRowData({
-          remove: [displayedRows.find((r) => r.id === fromId)?.data as T],
-        });
+        const draggedNode = displayedRows.find((r) => r.id === fromId);
+        if (draggedNode && draggedNode.data !== undefined) {
+          api.updateRowData({
+            remove: [draggedNode.data],
+          });
+        }
         const targetIndex = displayedRows.findIndex((r) => r.id === toId);
         const insertIndex = position === 'after' ? targetIndex + 1 : targetIndex;
-        const movedRow = displayedRows.find((r) => r.id === fromId)?.data;
+        const movedRow = draggedNode?.data;
         if (movedRow) {
-          const newData = [...props.rowData];
+          const newData = [...(props.rowData ?? [])];
           const fromIndex = newData.findIndex(
             (d, i) => (props.getRowId?.(d) ?? `row-${i}`) === fromId
           );
@@ -358,16 +406,16 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
   );
   const rangeSelectionHook = useRangeSelection();
   const {
-    isCellSelected,
     handleCellMouseDown: handleRangeMouseDown,
     handleCellMouseEnter,
     isSelecting,
   } = rangeCellSelection ? rangeSelectionHook : {
-    isCellSelected: () => false,
     handleCellMouseDown: () => { },
     handleCellMouseEnter: () => { },
     isSelecting: false,
   };
+  const selectedCellsRef = useRef(rangeSelectionHook.selectedCells);
+  selectedCellsRef.current = rangeCellSelection ? rangeSelectionHook.selectedCells : EMPTY_SELECTED_CELLS;
   const {
     isDraggingRows,
     handleRowMouseDown: handleRowRangeMouseDown,
@@ -375,17 +423,15 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
   } = useRowRangeSelection();
   const { detectClick: detectRowClick } = useClickDetector({ doubleClickDelay: 300 });
   const { detectClick: detectCellClick } = useClickDetector({ doubleClickDelay: 300 });
-  const {
-    focusedCell,
-    focusCell,
-    isCellFocused,
-    handleKeyDown,
-  } = useKeyboardNavigation({
+  const handleActiveCellChange = useCallback((rowIndex: number, _colIndex: number) => {
+    scrollToRow(rowIndex);
+  }, [scrollToRow]);
+  const keyboardNavigationProps = {
     containerRef,
     displayedRows,
     columns,
     api: internalApi,
-    onStartEdit: (rowId, field) => {
+    onStartEdit: (rowId: string, field: string) => {
       const rowNode = internalApi.getRowNode(rowId);
       const value = rowNode ? (rowNode.data as any)[field] : null;
       setEditingCell({ rowId, field, value, originalValue: value });
@@ -394,10 +440,42 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     onStopEdit: () => {
       setEditingCell(null);
       fireEvent('cellEditingStopped', {});
+      restoreGridFocus();
     },
     isEditing: !!editingCell,
     shortcuts,
-  });
+    onActiveCellChange: handleActiveCellChange,
+  };
+  const {
+    focusedCell,
+    focusCell,
+    handleKeyDown,
+  } = useKeyboardNavigation(keyboardNavigationProps);
+  const focusedCellRef = useRef(focusedCell);
+  focusedCellRef.current = focusedCell;
+  const isCellSelected = useCallback((rowIndex: number, colIndex: number) => {
+    return selectedCellsRef.current.has(`${rowIndex}-${colIndex}`);
+  }, []);
+  const isCellFocused = useCallback((rowId: string, field: string) => {
+    const cell = focusedCellRef.current;
+    return cell?.rowId === rowId && cell?.field === field;
+  }, []);
+  const handleContainerKeyDown = useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
+    const target = event.target as HTMLElement | null;
+    if (target && target !== event.currentTarget) {
+      const tag = target.tagName;
+      if (
+        tag === 'INPUT' ||
+        tag === 'TEXTAREA' ||
+        tag === 'SELECT' ||
+        tag === 'BUTTON' ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+    }
+    handleKeyDown(event);
+  }, [handleKeyDown]);
   const handleSort = useCallback(
     (field: string, direction?: 'asc' | 'desc') => {
       setSortModel((prev) => {
@@ -505,73 +583,174 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     }
     handleRangeMouseDown(rowIndex, colIndex, e);
   }, [displayedRows, columns, focusCell, handleRangeMouseDown]);
+  const rowEventRef = useRef({
+    rowSelection,
+    selectRow,
+    isRowDragging,
+    isDraggingRows,
+    onRowClickFallback,
+    onRowClicked,
+    onRowDoubleClicked,
+    onCellClicked,
+    detectRowClick,
+    detectCellClick,
+    api,
+    fireEvent,
+    focusCell,
+  });
+  rowEventRef.current.rowSelection = rowSelection;
+  rowEventRef.current.selectRow = selectRow;
+  rowEventRef.current.isRowDragging = isRowDragging;
+  rowEventRef.current.isDraggingRows = isDraggingRows;
+  rowEventRef.current.onRowClickFallback = onRowClickFallback;
+  rowEventRef.current.onRowClicked = onRowClicked;
+  rowEventRef.current.onRowDoubleClicked = onRowDoubleClicked;
+  rowEventRef.current.onCellClicked = onCellClicked;
+  rowEventRef.current.detectRowClick = detectRowClick;
+  rowEventRef.current.detectCellClick = detectCellClick;
+  rowEventRef.current.api = api;
+  rowEventRef.current.fireEvent = fireEvent;
+  rowEventRef.current.focusCell = focusCell;
   const handleRowClick = useCallback(
     (rowId: string, e: React.MouseEvent, fromCell = false) => {
-      if (isRowDragging || isDraggingRows) return;
+      const ctx = rowEventRef.current;
+      if (ctx.isRowDragging || ctx.isDraggingRows) return;
       const target = e.target as HTMLElement;
       const isCheckboxColumn = !!target.closest('.fibogrid-checkbox-column');
       const isCheckboxElement = target.getAttribute('role') === 'checkbox' ||
         (target.tagName === 'BUTTON' && target.getAttribute('role') === 'checkbox');
       const isCheckboxInput = target.tagName === 'INPUT' && (target as HTMLInputElement).type === 'checkbox' && isCheckboxColumn;
       const isCheckboxClick = isCheckboxColumn || isCheckboxElement || isCheckboxInput;
-      if (rowSelection && !isCheckboxClick) {
+      if (ctx.rowSelection && !isCheckboxClick) {
         const isShift = e.shiftKey;
         const isCtrl = e.ctrlKey || e.metaKey;
-        if (rowSelection === 'single') {
-          selectRow(rowId, true, isShift, isCtrl);
+        if (ctx.rowSelection === 'single') {
+          ctx.selectRow(rowId, true, isShift, isCtrl);
         } else {
           if (!isShift && !isCtrl) {
             const currentlySelected = selectionRef.current.selectedRows.has(rowId);
-            selectRow(rowId, !currentlySelected, false, false);
+            ctx.selectRow(rowId, !currentlySelected, false, false);
           } else {
-            selectRow(rowId, true, isShift, isCtrl);
+            ctx.selectRow(rowId, true, isShift, isCtrl);
           }
         }
       }
-      if (onRowClickFallback) {
-        const row = displayedRows.find(r => r.id === rowId);
-        if (row) {
-          const currentSelection = selectionRef.current;
-          let futureSelected = currentSelection.selectedRows.has(row.id);
-          if (rowSelection && !isCheckboxClick) {
-            const isShift = e.shiftKey;
-            if (rowSelection === 'single') {
-              futureSelected = true;
-            } else {
-              if (!isShift) {
-                futureSelected = !futureSelected;
-              }
-              if (isShift) futureSelected = true;
-            }
+      if (!ctx.onRowClickFallback) return;
+      const row = displayedRowsRef.current.find(r => r.id === rowId);
+      if (!row) return;
+      const currentSelection = selectionRef.current;
+      let futureSelected = currentSelection.selectedRows.has(row.id);
+      if (ctx.rowSelection && !isCheckboxClick) {
+        const isShift = e.shiftKey;
+        if (ctx.rowSelection === 'single') {
+          futureSelected = true;
+        } else {
+          if (!isShift) {
+            futureSelected = !futureSelected;
           }
-          detectRowClick((clickType) => {
-            const rowClickEvent = {
-              clickType,
-              rowData: row.data,
-              allRowsData: displayedRows.map(r => r.data),
-              rowNode: { ...row, selected: futureSelected },
-              event: e,
-              api,
-            };
-            if (!fromCell) {
-              onRowClickFallback(rowClickEvent);
-            }
-            fireEvent('rowClicked', {
-              rowNode: { ...row, selected: futureSelected },
-              event: e,
-              api
-            });
-            onRowClicked?.({
-              rowNode: { ...row, selected: futureSelected },
-              event: e,
-              api
-            });
+          if (isShift) futureSelected = true;
+        }
+      }
+      ctx.detectRowClick((clickType) => {
+        const latest = rowEventRef.current;
+        if (!fromCell && latest.onRowClickFallback) {
+          latest.onRowClickFallback({
+            clickType,
+            rowData: row.data,
+            allRowsData: displayedRowsRef.current.map(r => r.data),
+            rowNode: { ...row, selected: futureSelected },
+            event: e,
+            api: latest.api,
           });
         }
-      }
+        latest.fireEvent('rowClicked', {
+          rowNode: { ...row, selected: futureSelected },
+          event: e,
+          api: latest.api,
+        });
+        latest.onRowClicked?.({
+          rowNode: { ...row, selected: futureSelected },
+          event: e,
+          api: latest.api,
+        });
+      });
     },
-    [rowSelection, selectRow, isRowDragging, isDraggingRows, onRowClickFallback, displayedRows, detectRowClick, api, selection.selectedRows]
+    []
   );
+  const handleRowDoubleClick = useCallback((rowId: string, e: React.MouseEvent) => {
+    const ctx = rowEventRef.current;
+    if (!ctx.onRowDoubleClicked) return;
+    const row = displayedRowsRef.current.find(r => r.id === rowId);
+    if (!row) return;
+    ctx.onRowDoubleClicked({ rowNode: row, event: e, api: ctx.api });
+  }, []);
+  const handleRowContextMenu = useCallback((rowId: string, e: React.MouseEvent) => {
+    const ctx = rowEventRef.current;
+    if (!ctx.onRowClickFallback) return;
+    const rows = displayedRowsRef.current;
+    const row = rows.find(r => r.id === rowId);
+    if (!row) return;
+    const isCurrentlySelected = selectionRef.current.selectedRows.has(row.id);
+    ctx.onRowClickFallback({
+      clickType: 'menu',
+      rowData: row.data,
+      allRowsData: rows.map(r => r.data),
+      rowNode: { ...row, selected: isCurrentlySelected },
+      event: e,
+      api: ctx.api,
+    });
+  }, []);
+  const handleCellClick = useCallback((rowId: string, col: ProcessedColumn<T>, e: React.MouseEvent) => {
+    e.stopPropagation();
+    handleRowClick(rowId, e, true);
+    const row = displayedRowsRef.current.find(r => r.id === rowId);
+    if (!row) return;
+    const ctx = rowEventRef.current;
+    const currentSelection = selectionRef.current;
+    const isCurrentlySelected = currentSelection.selectedRows.has(row.id);
+    let futureSelected = isCurrentlySelected;
+    if (ctx.rowSelection && !ctx.isRowDragging && !ctx.isDraggingRows) {
+      const target = e.target as HTMLElement;
+      const isCheckboxClick = !!target.closest('.fibogrid-checkbox-column');
+      if (!isCheckboxClick) {
+        if (ctx.rowSelection === 'single') {
+          futureSelected = true;
+        } else {
+          if (!e.shiftKey && !e.ctrlKey && !e.metaKey) {
+            futureSelected = !isCurrentlySelected;
+          } else {
+            futureSelected = true;
+          }
+        }
+      }
+    }
+    ctx.focusCell(row.id, col.field);
+    ctx.onCellClicked?.({
+      rowNode: { ...row, selected: futureSelected },
+      column: col,
+      value: (row.data as any)[col.field],
+      event: e,
+      api: ctx.api,
+    });
+    if (!ctx.onRowClickFallback) return;
+    ctx.detectCellClick((clickType) => {
+      const latest = rowEventRef.current;
+      if (!latest.onRowClickFallback) return;
+      latest.onRowClickFallback({
+        clickType,
+        rowData: row.data,
+        allRowsData: displayedRowsRef.current.map(r => r.data),
+        rowNode: { ...row, selected: futureSelected },
+        event: e,
+        api: latest.api,
+        cell: {
+          column: col,
+          value: getValueFromPath(row.data, col.field),
+          isEditable: !!col.editable,
+        },
+      });
+    });
+  }, [handleRowClick]);
   const prevSelectedIdsRef = useRef<Set<string> | null>(null);
   const prevSelectedRowsRef = useRef<RowNode<T>[] | undefined>(undefined);
   useEffect(() => {
@@ -596,35 +775,167 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
       }
     }
   }, [selection.selectedRows, displayedRows, api, onSelectionChanged]);
-  const allSelected =
-    displayedRows.length > 0 &&
-    displayedRows.every((r) => selection.selectedRows.has(r.id));
-  const someSelected = displayedRows.some((r) => selection.selectedRows.has(r.id));
-  const getDefaultContextMenuItems = useCallback(
-    (): ContextMenuItem[] => [
-      {
-        name: 'Copy',
-        icon: <Copy className="h-4 w-4" />,
-        action: () => api.copyToClipboard(),
-      },
-      {
-        name: 'Export to CSV',
-        icon: <Download className="h-4 w-4" />,
-        action: () => api.exportToCsv(),
-      },
-      { name: '', action: () => { }, separator: true },
-      {
-        name: 'Delete Selected',
-        icon: <Trash2 className="h-4 w-4" />,
-        action: () => {
-          const selectedData = api.getSelectedRows().map((r) => r.data);
-          api.updateRowData({ remove: selectedData });
-        },
-        disabled: selection.selectedRows.size === 0,
-      },
-    ],
-    [api, selection.selectedRows.size]
+  const allSelected = useMemo(
+    () =>
+      displayedRows.length > 0 &&
+      displayedRows.every((r) => selection.selectedRows.has(r.id)),
+    [displayedRows, selection.selectedRows]
   );
+  const someSelected = useMemo(
+    () => displayedRows.some((r) => selection.selectedRows.has(r.id)),
+    [displayedRows, selection.selectedRows]
+  );
+  const getDefaultContextMenuItems = useCallback(
+    (): ContextMenuItem[] => {
+      const contextMenuLabels = (lang as { contextMenu?: { copy?: string; exportCsv?: string; deleteSelected?: string } }).contextMenu;
+      return [
+        {
+          name: contextMenuLabels?.copy ?? 'Copy',
+          icon: <Copy className="h-4 w-4" />,
+          action: () => api.copyToClipboard(),
+        },
+        {
+          name: contextMenuLabels?.exportCsv ?? 'Export to CSV',
+          icon: <Download className="h-4 w-4" />,
+          action: () => api.exportToCsv(),
+        },
+        { name: '', action: () => { }, separator: true },
+        {
+          name: contextMenuLabels?.deleteSelected ?? 'Delete Selected',
+          icon: <Trash2 className="h-4 w-4" />,
+          action: () => {
+            const selectedData = api.getSelectedRows().map((r) => r.data);
+            api.updateRowData({ remove: selectedData });
+          },
+          disabled: selection.selectedRows.size === 0,
+        },
+      ];
+    },
+    [api, selection.selectedRows.size, lang]
+  );
+  const cellMenuRef = useRef({
+    columns,
+    rowSelection,
+    selectRow,
+    deselectAll,
+    displayedRows,
+    finalDisplayedRows,
+    getContextMenuItems,
+    getDefaultContextMenuItems,
+    focusCell,
+    api,
+    setContextMenuItems,
+    setContextMenuPosition,
+  });
+  cellMenuRef.current = {
+    columns,
+    rowSelection,
+    selectRow,
+    deselectAll,
+    displayedRows,
+    finalDisplayedRows,
+    getContextMenuItems,
+    getDefaultContextMenuItems,
+    focusCell,
+    api,
+    setContextMenuItems,
+    setContextMenuPosition,
+  };
+  const handleCellContextMenu = useCallback((
+    row: RowNode<T> | number,
+    column: ProcessedColumn<T> | number,
+    event: React.MouseEvent,
+  ) => {
+    const ctx = cellMenuRef.current;
+    const resolvedColumn = typeof column === 'number' ? ctx.columns[column] : column;
+    if (!resolvedColumn) return;
+    let resolvedRow: RowNode<T> | undefined;
+    if (typeof row === 'number') {
+      const target = event.target;
+      const rowEl = target instanceof Element ? target.closest('[role="row"]') : null;
+      const preferChild = rowEl?.classList.contains('fibogrid-row-child') ?? false;
+      const list = ctx.finalDisplayedRows;
+      for (let i = 0; i < list.length; i++) {
+        const candidate = list[i];
+        if (isGroupNode(candidate) || candidate.rowIndex !== row) continue;
+        const isChild = Boolean((candidate as { isChildRow?: boolean }).isChildRow);
+        if (isChild === preferChild) {
+          resolvedRow = candidate;
+          break;
+        }
+        if (!resolvedRow) resolvedRow = candidate;
+      }
+    } else {
+      resolvedRow = row;
+    }
+    if (!resolvedRow) return;
+    const value = getValueFromPath(resolvedRow.data, resolvedColumn.field);
+    ctx.focusCell(resolvedRow.id, resolvedColumn.field);
+    const currentSelection = selectionRef.current;
+    let newSelectedRows = new Set(currentSelection.selectedRows);
+    if (ctx.rowSelection) {
+      if (ctx.rowSelection === 'multiple') {
+        if (currentSelection.selectedRows.has(resolvedRow.id)) {
+        } else {
+          newSelectedRows.add(resolvedRow.id);
+          ctx.selectRow(resolvedRow.id, true);
+        }
+      } else {
+        if (!currentSelection.selectedRows.has(resolvedRow.id)) {
+          ctx.deselectAll();
+          ctx.selectRow(resolvedRow.id, true);
+          newSelectedRows = new Set([resolvedRow.id]);
+        }
+      }
+    }
+    const selectedData = ctx.displayedRows
+      .filter((item) => newSelectedRows.has(item.id))
+      .map((item) => item.data);
+    const params = {
+      api: ctx.api,
+      column: resolvedColumn,
+      colDef: resolvedColumn,
+      node: resolvedRow,
+      rowNode: resolvedRow,
+      value,
+      data: resolvedRow.data,
+      rowIndex: resolvedRow.rowIndex,
+      selectedRows: selectedData,
+    };
+    const items = ctx.getContextMenuItems
+      ? ctx.getContextMenuItems(params)
+      : ctx.getDefaultContextMenuItems();
+    event.preventDefault();
+    ctx.setContextMenuItems(items);
+    ctx.setContextMenuPosition({ x: event.clientX, y: event.clientY });
+  }, []);
+  const expandRef = useRef({ toggleRowExpand, toggleGroupExpand });
+  expandRef.current.toggleRowExpand = toggleRowExpand;
+  expandRef.current.toggleGroupExpand = toggleGroupExpand;
+  const handleToggleExpand = useCallback((rowId: string) => {
+    expandRef.current.toggleRowExpand(rowId);
+  }, []);
+  const handleToggleGroupExpand = useCallback((rowId: string) => {
+    expandRef.current.toggleGroupExpand(rowId);
+  }, []);
+  const rowExpandHandlersRef = useRef(new Map<string, () => void>());
+  const groupExpandHandlersRef = useRef(new Map<string, () => void>());
+  const expandHandlerForRow = (rowId: string) => {
+    const cache = rowExpandHandlersRef.current;
+    const existing = cache.get(rowId);
+    if (existing) return existing;
+    const handler = () => handleToggleExpand(rowId);
+    cache.set(rowId, handler);
+    return handler;
+  };
+  const expandHandlerForGroup = (rowId: string) => {
+    const cache = groupExpandHandlersRef.current;
+    const existing = cache.get(rowId);
+    if (existing) return existing;
+    const handler = () => handleToggleGroupExpand(rowId);
+    cache.set(rowId, handler);
+    return handler;
+  };
   const handlePageChange = useCallback(
     (page: number) => {
       setPaginationState((prev) => {
@@ -658,11 +969,65 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
   }, [displayedRows, addChildToRow]);
   const effectiveShowFilterRow = configs?.header?.filterRow ?? true;
   const currentFilterRowHeight = effectiveShowFilterRow ? (isCompact ? 26 : 36) : 0;
+  const visibleColumnCount = useMemo(
+    () => columns.reduce((count, column) => (column.hide ? count : count + 1), 0),
+    [columns]
+  );
+  const filterColumnField = filterState?.column.field;
+  const [filterPopoverValues, setFilterPopoverValues] = useState<unknown[]>([]);
+  useEffect(() => {
+    if (!filterColumnField) {
+      setFilterPopoverValues([]);
+      return;
+    }
+    const provided = filterValues?.[filterColumnField];
+    if (provided) {
+      setFilterPopoverValues(provided);
+      return;
+    }
+    let cancelled = false;
+    const values: unknown[] = [];
+    let index = 0;
+    let idleId = 0;
+    let timerId = 0;
+    const finish = () => {
+      if (!cancelled) setFilterPopoverValues(values);
+    };
+    const step = (deadline?: IdleDeadline) => {
+      if (cancelled) return;
+      const start = performance.now();
+      const budget = Math.max(deadline?.timeRemaining() ?? 8, 4);
+      while (index < allRows.length && performance.now() - start < budget) {
+        values.push(getValueFromPath(allRows[index]!.data, filterColumnField));
+        index += 1;
+      }
+      if (index < allRows.length) {
+        schedule();
+        return;
+      }
+      finish();
+    };
+    const schedule = () => {
+      if (typeof window.requestIdleCallback === 'function') {
+        idleId = window.requestIdleCallback((deadline) => step(deadline));
+        return;
+      }
+      timerId = window.setTimeout(() => step(), 1);
+    };
+    schedule();
+    return () => {
+      cancelled = true;
+      if (idleId) window.cancelIdleCallback?.(idleId);
+      if (timerId) window.clearTimeout(timerId);
+    };
+  }, [filterColumnField, filterValues, allRows]);
   const gridContent = (
     <div
       ref={containerRef}
       className={cn(
         'fibogrid',
+        isDarkTheme && 'fibogrid-dark',
+        appearance && appearance !== 'default' && `fibogrid-theme-${appearance}`,
         className,
         'relative flex flex-col rounded-lg overflow-hidden focus:outline-none focus:ring-2 focus:ring-primary/50',
         isResizing && 'cursor-col-resize select-none',
@@ -673,7 +1038,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
       )}
       style={{ height: height || '100%', minHeight }}
       tabIndex={0}
-      onKeyDown={handleKeyDown}
+      onKeyDown={handleContainerKeyDown}
       onMouseDown={(e) => {
         if (e.button !== 2) {
           setContextMenuPosition(null);
@@ -698,10 +1063,67 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
           className={className}
         />
       )}
+      {(initialGroupByFields?.length ?? 0) > 0 && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+            gap: 'var(--fibogrid-spacing-xs)',
+            padding: 'var(--fibogrid-spacing-xs) var(--fibogrid-spacing-sm)',
+            background: 'var(--fibogrid-surface)',
+            borderBottom: '1px solid var(--fibogrid-toolbar-border-bottom)',
+          }}
+        >
+          <button
+            type="button"
+            aria-label={lang.groups.expandAll}
+            onClick={() => {
+              (api as { expandAllGroups?: () => void; collapseAllGroups?: () => void }).expandAllGroups?.();
+            }}
+            style={{
+              fontSize: 'var(--fibogrid-font-size-sm)',
+              lineHeight: 1.2,
+              padding: '2px 8px',
+              borderRadius: 'var(--fibogrid-radius-sm)',
+              border: '1px solid var(--fibogrid-button-border)',
+              background: 'var(--fibogrid-button-bg)',
+              color: 'var(--fibogrid-button-text)',
+              cursor: 'pointer',
+            }}
+          >
+            {lang.groups.expandAll}
+          </button>
+          <button
+            type="button"
+            aria-label={lang.groups.collapseAll}
+            onClick={() => {
+              (api as { expandAllGroups?: () => void; collapseAllGroups?: () => void }).collapseAllGroups?.();
+            }}
+            style={{
+              fontSize: 'var(--fibogrid-font-size-sm)',
+              lineHeight: 1.2,
+              padding: '2px 8px',
+              borderRadius: 'var(--fibogrid-radius-sm)',
+              border: '1px solid var(--fibogrid-button-border)',
+              background: 'var(--fibogrid-button-bg)',
+              color: 'var(--fibogrid-button-text)',
+              cursor: 'pointer',
+            }}
+          >
+            {lang.groups.collapseAll}
+          </button>
+        </div>
+      )}
       <div className="flex-1 flex flex-col overflow-hidden">
         <div
           ref={scrollContainerRef}
-          className="flex-1 overflow-auto"
+          className={cn('flex-1 overflow-auto', isServerPagePending && 'fibogrid-loading')}
+          role="grid"
+          aria-busy={isServerPagePending ? true : undefined}
+          aria-multiselectable={rowSelection === 'multiple' ? true : undefined}
+          aria-rowcount={paginationState.totalRows + 1}
+          aria-colcount={visibleColumnCount}
           onScroll={handleViewportScroll}
         >
           <div style={{ minWidth: totalContentWidth }}>
@@ -740,7 +1162,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                 locale={lang}
               />
             </div>
-              <div style={{ height: totalHeight, position: 'relative' }}>
+              <div style={{ height: totalHeight, position: 'relative', opacity: isServerPagePending ? 0.55 : undefined }}>
                 <div style={{ transform: `translateY(${offsetTop}px)` }}>
                   {virtualRows.map((row, index) => {
                     if (!isGroupRow(row)) {
@@ -753,63 +1175,10 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                           columns={columns}
                           rowHeight={rowHeight}
                           isSelected={isSelected}
-                          onRowClick={(e) => handleRowClick(row.id, e)}
-                          onRowDoubleClick={onRowDoubleClicked ? (e) => onRowDoubleClicked({ rowNode: row, event: e, api }) : () => { }}
-                          onContextMenu={(e) => {
-                            if (onRowClickFallback) {
-                              const currentSelection = selectionRef.current;
-                              const isCurrentlySelected = currentSelection.selectedRows.has(row.id);
-                              onRowClickFallback({
-                                clickType: 'menu',
-                                rowData: row.data,
-                                allRowsData: displayedRows.map(r => r.data),
-                                rowNode: { ...row, selected: isCurrentlySelected },
-                                event: e,
-                                api,
-                              });
-                            }
-                          }}
-                          onCellClick={(col, e) => {
-                            e.stopPropagation();
-                            handleRowClick(row.id, e, true);
-                            const currentSelection = selectionRef.current;
-                            const isCurrentlySelected = currentSelection.selectedRows.has(row.id);
-                            let futureSelected = isCurrentlySelected;
-                            if (rowSelection && !isRowDragging && !isDraggingRows) {
-                              const target = e.target as HTMLElement;
-                              const isCheckboxClick = !!target.closest('.fibogrid-checkbox-column');
-                              if (!isCheckboxClick) {
-                                if (rowSelection === 'single') {
-                                  futureSelected = true;
-                                } else {
-                                  if (!e.shiftKey && !e.ctrlKey && !e.metaKey) {
-                                    futureSelected = !isCurrentlySelected;
-                                  } else {
-                                    futureSelected = true;
-                                  }
-                                }
-                              }
-                            }
-                            focusCell(row.id, col.field);
-                            onCellClicked?.({ rowNode: { ...row, selected: futureSelected }, column: col, value: (row.data as any)[col.field], event: e, api });
-                            if (onRowClickFallback) {
-                              detectCellClick((clickType) => {
-                                onRowClickFallback({
-                                  clickType,
-                                  rowData: row.data,
-                                  allRowsData: displayedRows.map(r => r.data),
-                                  rowNode: { ...row, selected: futureSelected },
-                                  event: e,
-                                  api,
-                                  cell: {
-                                    column: col,
-                                    value: getValueFromPath(row.data, col.field),
-                                    isEditable: !!col.editable,
-                                  },
-                                });
-                              });
-                            }
-                          }}
+                          onRowClick={handleRowClick}
+                          onRowDoubleClick={onRowDoubleClicked ? handleRowDoubleClick : NOOP}
+                          onContextMenu={handleRowContextMenu}
+                          onCellClick={handleCellClick}
                           onCellDoubleClick={(col, e) => {
                             let isEditable = col.editable;
                             if (typeof isEditable === 'function') {
@@ -853,7 +1222,13 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                           onStopEdit={(cancel, currentValue) => {
                             const currentEditing = editingCellRef.current;
                             if (currentEditing && !cancel && currentValue !== undefined) {
-                              const column = columns.find((c) => c.field === currentEditing.field)!;
+                              const column = columns.find((c) => c.field === currentEditing.field);
+                              if (!column) {
+                                editingCellRef.current = null;
+                                api.stopEditing(cancel);
+                                restoreGridFocus();
+                                return;
+                              }
                               let isValid = true;
                               if (column.valueSetter) {
                                 isValid = column.valueSetter({
@@ -880,6 +1255,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                             }
                             editingCellRef.current = null;
                             api.stopEditing(cancel);
+                            restoreGridFocus();
                           }}
                           rowDragEnabled={rowDragEnabled && !rangeCellSelection}
                           onRowDragStart={(e) => handleRowDragStart(e, row)}
@@ -898,7 +1274,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                           level={regularRow.level || 0}
                           hasChildren={regularRow.childRows?.length > 0}
                           isExpanded={expandedRows.has(row.id)}
-                          onToggleExpand={() => toggleRowExpand(row.id)}
+                          onToggleExpand={expandHandlerForRow(row.id)}
                           registerCellRef={registerCellRef}
                           showRowNumbers={!hasCustomRowNumber && effectiveShowRowNumbers}
                           rowNumber={row.rowIndex + 1}
@@ -906,48 +1282,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                           onAddChildRow={handleAddChildRow}
                           onRowRangeMouseDown={handleRowRangeMouseDown}
                           onRowRangeMouseEnter={handleRowRangeMouseEnter}
-                          onCellContextMenu={(rowIndex, colIndex, e) => {
-                            const column = columns[colIndex];
-                            const value = getValueFromPath(row.data, column.field);
-                            focusCell(row.id, column.field);
-                            const currentSelection = selectionRef.current;
-                            let newSelectedRows = new Set(currentSelection.selectedRows);
-                            if (rowSelection) {
-                              if (rowSelection === 'multiple') {
-                                if (currentSelection.selectedRows.has(row.id)) {
-                                } else {
-                                  newSelectedRows.add(row.id);
-                                  selectRow(row.id, true);
-                                }
-                              } else {
-                                if (!currentSelection.selectedRows.has(row.id)) {
-                                  deselectAll();
-                                  selectRow(row.id, true);
-                                  newSelectedRows = new Set([row.id]);
-                                }
-                              }
-                            }
-                            const selectedData = displayedRows
-                              .filter(r => newSelectedRows.has(r.id))
-                              .map(r => r.data);
-                            const params = {
-                              api,
-                              column,
-                              colDef: column,
-                              node: row,
-                              rowNode: row,
-                              value,
-                              data: row.data,
-                              rowIndex: row.rowIndex,
-                              selectedRows: selectedData
-                            };
-                            const items = getContextMenuItems
-                              ? getContextMenuItems(params)
-                              : getDefaultContextMenuItems();
-                            e.preventDefault();
-                            setContextMenuItems(items);
-                            setContextMenuPosition({ x: e.clientX, y: e.clientY });
-                          }}
+                          onCellContextMenu={handleCellContextMenu}
                         />
                       );
                     }
@@ -960,7 +1295,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                         columns={columns}
                         rowHeight={rowHeight}
                         isExpanded={isExpanded}
-                        onToggleExpand={() => toggleGroupExpand(row.id)}
+                        onToggleExpand={expandHandlerForGroup(row.id)}
                         showCheckboxColumn={!!rowSelection}
                         allChildrenSelected={groupRow.groupChildren.every((child) => selection.selectedRows.has(child.id))}
                         someChildrenSelected={groupRow.groupChildren.some((child) => selection.selectedRows.has(child.id))}
@@ -1026,16 +1361,13 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
       )}
       {filterState && (() => {
         const columnField = filterState.column.field;
-        const allValues = filterValues?.[columnField]
-          ? filterValues[columnField]
-          : allRows.map((r) => getValueFromPath(r.data, columnField));
         return (
           <FilterPopover
             column={filterState.column}
             currentFilter={filterModel.find((f) => f.field === columnField)}
             onFilterChange={handleFilterChange}
             onClose={handleCloseFilter}
-            allValues={allValues}
+            allValues={filterPopoverValues}
             onSort={(direction) => {
               setSortModel([{ field: columnField, direction }]);
               handleCloseFilter();

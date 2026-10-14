@@ -1,5 +1,19 @@
 import { GridApi, EventSubscription, DiffSubscription } from '../types';
 import { useState, useEffect, useRef } from 'react';
+
+export function useEventValue<R>(subscription: EventSubscription, initialValue?: R): R {
+    const [value, setValue] = useState<R>(initialValue as R);
+    const setValueRef = useRef(setValue);
+    setValueRef.current = setValue;
+    useEffect(() => {
+        const handler = (data: any) => {
+            setValueRef.current(data);
+        };
+        return subscription.listen(handler);
+    }, [subscription]);
+    return value as R;
+}
+
 export type EventHandler<T = any> = (data: T) => void;
 export class EventBuilder<T = any> {
     private addEventListener: (eventType: string, listener: EventHandler) => void;
@@ -74,18 +88,8 @@ export class EventBuilder<T = any> {
                     }
                 }
             },
-            render: <R = any>(initialValue?: R): R => {
-                const [value, setValue] = useState<R>(initialValue as R);
-                const setValueRef = useRef(setValue);
-                setValueRef.current = setValue;
-                useEffect(() => {
-                    const handler = (data: any) => {
-                        setValueRef.current(data);
-                    };
-                    const unsub = createListen(handler);
-                    return unsub;
-                }, []);
-                return value as R;
+            render: <R = any>(_initialValue?: R): R => {
+                throw new Error('EventSubscription.render() cannot call hooks. Use useEventValue(subscription, initialValue) instead.');
             }
         };
         return selfSubscription;

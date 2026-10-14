@@ -41,6 +41,11 @@ import {
 } from "./gridApi/base";
 export function createGridApiBuilder<T>(context: UseGridApiContext<T>): GridApiBuilder<T> {
     const { getRowId } = context.props;
+    const resolveId = getRowId ?? ((row: T) => {
+        const id = (row as { id?: unknown }).id;
+        if (id != null && String(id) !== '') return String(id);
+        throw new Error('[FiboGrid] getRowId is required when row data has no id');
+    });
     const state = createInitialUpdateState();
     const builder: GridApiBuilder<T> = {
         setFilterModel: (model, options) => setFilterModelBase(state, builder, model, options),
@@ -58,11 +63,19 @@ export function createGridApiBuilder<T>(context: UseGridApiContext<T>): GridApiB
         selectRow: (id, selected) => selectRowBase(state, builder, id, selected),
         selectAll: () => selectAllBase(state, builder),
         deselectAll: () => deselectAllBase(state, builder),
-        updateRowData: (updates) => updateRowDataBase(state, builder, updates, getRowId!),
+        updateRowData: (updates) => updateRowDataBase(state, builder, updates, resolveId),
         resetState: () => resetStateBase(state, builder),
         resetEdits: () => resetEditsBase(state, builder),
         resetCell: (rowId, field) => resetCellBase(state, builder, rowId, field),
         resetRow: (rowId) => resetRowBase(state, builder, rowId),
+        expandAllGroups: () => {
+            context.grouping.expandAllGroups();
+            return builder;
+        },
+        collapseAllGroups: () => {
+            context.grouping.collapseAllGroups();
+            return builder;
+        },
         gridManager: (callback) => {
             let currentKey: string | undefined;
             let isMergeUnique = false;
@@ -79,13 +92,13 @@ export function createGridApiBuilder<T>(context: UseGridApiContext<T>): GridApiB
                 },
                 replaceAll: (rows, compareKey) => replaceAllManager(state, managerBuilder, rows, context.rows.rowsRef.current.map(r => r.data), compareKey || currentKey),
                 remove: (rowIds) => removeManager(state, managerBuilder, rowIds, context.rows.rowsRef.current.map(r => r.data), currentKey),
-                update: (rows) => updateManager(state, managerBuilder, rows, getRowId!, currentKey),
+                update: (rows) => updateManager(state, managerBuilder, rows, resolveId, currentKey),
                 updateCell: (rowId, field, value) => updateCellManager(state, managerBuilder, rowId, field, value),
                 resetCell: (rowId, field) => resetCellManager(state, managerBuilder, rowId, field),
                 resetRow: (rowId) => resetRowManager(state, managerBuilder, rowId),
                 reset: () => resetManager(state, managerBuilder),
                 resetEdits: () => resetEditsManager(state, managerBuilder),
-                setSelectionData: (data) => setSelectionDataManager(state, managerBuilder, data, context.selection, context.rows, getRowId!),
+                setSelectionData: (data) => setSelectionDataManager(state, managerBuilder, data, context.selection, context.rows, resolveId),
                 split: (rowId, options) => {
                     if (context.apiRef.current) {
                         splitManager(context.apiRef.current, rowId, context.rows.rowsRef.current, options);

@@ -24,6 +24,7 @@ export function useVirtualization<T>(
   const [scrollTop, setScrollTop] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const rafIdRef = useRef<number | null>(null);
+  const scrollTopRef = useRef(0);
   const totalHeight = useMemo(() => rows.length * rowHeight, [rows.length, rowHeight]);
   const { startIndex, endIndex, virtualRows, offsetTop } = useMemo(() => {
     const visibleRowCount = Math.ceil(containerHeight / rowHeight);
@@ -39,21 +40,33 @@ export function useVirtualization<T>(
   }, [rows, scrollTop, rowHeight, containerHeight, overscan]);
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     const newScrollTop = e.currentTarget.scrollTop;
+    if (Math.abs(newScrollTop - scrollTopRef.current) < 1) {
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
+      return;
+    }
     if (rafIdRef.current !== null) {
       cancelAnimationFrame(rafIdRef.current);
     }
     rafIdRef.current = requestAnimationFrame(() => {
+      scrollTopRef.current = newScrollTop;
       setScrollTop(newScrollTop);
       rafIdRef.current = null;
     });
   }, []);
   const scrollToRow = useCallback(
     (index: number) => {
+      if (index < 0) return;
+      const rowCount = rows.length;
+      if (rowCount === 0) return;
+      const clampedIndex = index >= rowCount ? rowCount - 1 : index;
       if (containerRef.current) {
-        containerRef.current.scrollTop = index * rowHeight;
+        containerRef.current.scrollTop = clampedIndex * rowHeight;
       }
     },
-    [rowHeight]
+    [rowHeight, rows.length]
   );
   return {
     virtualRows,

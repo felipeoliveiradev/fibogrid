@@ -8,6 +8,7 @@ export const koKR: FiboGridLocale = {
         copy: '복사',
         copied: '복사됨!',
         export: '내보내기',
+        refresh: '새로고침',
         activeFilters: '활성 필터:',
         resetAll: '모두 재설정',
         toggleColumns: '열 전환',
@@ -20,6 +21,10 @@ export const koKR: FiboGridLocale = {
         pageInfo: (start, end, total) => `${total}개 중 ${start}-${end}개`,
         zeroRows: '0행',
         pageOf: (current, total) => `${total}페이지 중 ${current}페이지`,
+        firstPage: '첫 페이지',
+        previousPage: '이전 페이지',
+        nextPage: '다음 페이지',
+        lastPage: '마지막 페이지',
     },
     statusBar: {
         rows: '행',
@@ -78,5 +83,41 @@ export const koKR: FiboGridLocale = {
     overlay: {
         loading: '로딩 중...',
         noRows: '표시할 행이 없습니다',
+    },
+    header: {
+        density: {
+            compact: '좁게',
+            normal: '보통',
+            comfortable: '넓게',
+            label: '밀도',
+        },
+    },
+    contextMenu: {
+        copy: '복사',
+        exportCsv: 'CSV 내보내기',
+        deleteSelected: '선택 항목 삭제',
+    },
+    aria: {
+        selectRow: '행 선택',
+        selectAllRows: '모든 행 선택',
+        addChildRow: '하위 행 추가',
+        close: '닫기',
+        removeFilter: '필터 제거',
+        clearSearch: '검색 지우기',
+        selectGroup: '그룹 선택',
+        expandGroup: '그룹 펼치기',
+    },
+    columnPanel: {
+        search: '열 검색...',
+        pinLeft: '왼쪽에 고정',
+        unpin: '고정 해제',
+    },
+    filterPanel: {
+        title: '필터',
+    },
+    groups: {
+        expandAll: '그룹 펼치기',
+        collapseAll: '그룹 접기',
+        itemCount: (count) => `${count}개`,
     },
 };

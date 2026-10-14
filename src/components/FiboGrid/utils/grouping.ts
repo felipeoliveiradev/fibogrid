@@ -14,6 +14,19 @@ export interface RegularRowNode<T = any> extends RowNode<T> {
   parentRowId?: string;
 }
 export type GroupableRowNode<T = any> = GroupRowNode<T> | RegularRowNode<T>;
+function finiteExtreme(values: any[], which: 'min' | 'max'): number | null {
+  let extreme = which === 'min' ? Infinity : -Infinity;
+  let found = false;
+  for (let i = 0; i < values.length; i++) {
+    const n = Number(values[i]);
+    if (!Number.isFinite(n)) continue;
+    if (which === 'min' ? n < extreme : n > extreme) {
+      extreme = n;
+      found = true;
+    }
+  }
+  return found ? extreme : null;
+}
 export function isGroupNode<T>(node: RowNode<T>): node is GroupRowNode<T> {
   return (node as GroupRowNode<T>).isGroup === true;
 }
@@ -56,10 +69,10 @@ export function groupRowsByFields<T>(
               : 0;
             break;
           case 'min':
-            aggregatedValues[field] = Math.min(...values);
+            aggregatedValues[field] = finiteExtreme(values, 'min');
             break;
           case 'max':
-            aggregatedValues[field] = Math.max(...values);
+            aggregatedValues[field] = finiteExtreme(values, 'max');
             break;
           case 'count':
             aggregatedValues[field] = values.length;

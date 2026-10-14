@@ -39,7 +39,7 @@ export function GridContextMenu({ items, position, onClose, className }: GridCon
       document.removeEventListener('mousedown', handleMouseDown, true);
       document.removeEventListener('keydown', handleEscape);
     };
-  }, [position !== null]);
+  }, [position?.x, position?.y]);
 
   useEffect(() => {
     if (!position || !menuRef.current) return;

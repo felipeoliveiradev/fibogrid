@@ -66,6 +66,13 @@ export function GridRegistryProvider({ children }: { children: ReactNode }) {
                     try {
                         api.removeEventListener(eventName, value as any);
                     } catch (e) {
+                        // O listener pode já ter sido removido.
+                        const message = e instanceof Error ? e.message : String(e);
+                        const listenerAlreadyGone = /listener/i.test(message)
+                            && /(não existe|nao existe|does not exist|not found|already removed|ausente)/i.test(message);
+                        if (!listenerAlreadyGone) {
+                            throw e;
+                        }
                     }
                     gridEvents.delete(key);
                 }

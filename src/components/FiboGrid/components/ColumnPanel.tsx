@@ -6,6 +6,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { X, Search, Eye, EyeOff, Pin, GripVertical } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useGridContext } from '../context/GridContext';
+import { enUS } from '../locales/enUS';
 interface ColumnPanelProps<T> {
   columns: ProcessedColumn<T>[];
   onClose: () => void;
@@ -20,6 +22,7 @@ export function ColumnPanel<T>({
   onColumnPinChange,
   onColumnOrderChange,
 }: ColumnPanelProps<T>) {
+  const locale = useGridContext<T>()?.locale ?? enUS;
   const [searchTerm, setSearchTerm] = useState('');
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
@@ -50,8 +53,8 @@ export function ColumnPanel<T>({
     <div className="fixed right-0 top-0 bottom-0 w-72 fibogrid-column-panel fibogrid-z-column-panel flex flex-col">
       { }
       <div className="flex items-center justify-between px-4 py-3 fibogrid-column-panel-header">
-        <h3 className="font-semibold">Columns</h3>
-        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={onClose}>
+        <h3 className="font-semibold">{locale.toolbar.columns}</h3>
+        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={onClose} aria-label={locale.aria.close}>
           <X className="h-4 w-4" />
         </Button>
       </div>
@@ -60,7 +63,8 @@ export function ColumnPanel<T>({
         <div className="relative">
           <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 fibogrid-column-panel-icon" />
           <Input
-            placeholder="Search columns..."
+            placeholder={locale.columnPanel.search}
+            aria-label={locale.columnPanel.search}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-8 h-8 fibogrid-column-panel-search-input"
@@ -70,7 +74,9 @@ export function ColumnPanel<T>({
       { }
       <ScrollArea className="flex-1">
         <div className="p-2 space-y-1">
-          {filteredColumns.map((column, index) => (
+          {filteredColumns.map((column, index) => {
+            const pinLabel = column.pinned === 'left' ? locale.columnPanel.unpin : locale.columnPanel.pinLeft;
+            return (
             <div
               key={column.field}
               className={cn(
@@ -96,18 +102,21 @@ export function ColumnPanel<T>({
               </span>
               <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100">
                 <button
+                  type="button"
                   onClick={() => onColumnPinChange(column.field, column.pinned === 'left' ? null : 'left')}
                   className={cn(
                     'p-1 rounded',
                     column.pinned === 'left' && 'text-primary'
                   )}
-                  title={column.pinned === 'left' ? 'Unpin' : 'Pin Left'}
+                  title={pinLabel}
+                  aria-label={pinLabel}
                 >
                   <Pin className="h-3 w-3" />
                 </button>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       </ScrollArea>
       { }
@@ -119,7 +128,7 @@ export function ColumnPanel<T>({
           onClick={() => columns.forEach(col => onColumnVisibilityChange(col.field, false))}
         >
           <EyeOff className="h-4 w-4 mr-1" />
-          Hide All
+          {locale.toolbar.hideAll}
         </Button>
         <Button
           variant="outline"
@@ -128,7 +137,7 @@ export function ColumnPanel<T>({
           onClick={() => columns.forEach(col => onColumnVisibilityChange(col.field, true))}
         >
           <Eye className="h-4 w-4 mr-1" />
-          Show All
+          {locale.toolbar.showAll}
         </Button>
       </div>
     </div>
