@@ -1,0 +1,82 @@
+:root {
+  /* =========================================================================
+     NOIR MONOCHROMATIC EDITORIAL DARK TOKENS
+     Deep obsidian canvas (#0A0A0B), soft charcoal cards (#141416),
+     light-weight uppercase geometric typography, and Fibonacci proportions.
+     ========================================================================= */
+  --phi: 1.61803398875;
+
+  /* Strict Fibonacci Spatial Progression */
+  --fib-3: 3px;
+  --fib-5: 5px;
+  --fib-8: 8px;
+  --fib-13: 13px;
+  --fib-21: 21px;
+  --fib-34: 34px;
+  --fib-55: 55px;
+  --fib-89: 89px;
+  --fib-144: 144px;
+
+  /* Obsidian Monochromatic Surfaces */
+  --bg: #0A0A0B;
+  --bg-elevated: #101012;
+  --card: #141417;
+  --card-hover: #19191D;
+  --card-inner: #1C1C21;
+  --pill-bg: #17171B;
+
+  /* Typography Hierarchy */
+  --ink: #F4F4F6;
+  --ink-2: #B4B4BE;
+  --ink-3: #787882;
+  --ink-4: #4E4E57;
+
+  /* Subtle Monochromatic Borders & Hairlines */
+  --border-subtle: rgba(255, 255, 255, 0.065);
+  --border-mid: rgba(255, 255, 255, 0.12);
+  --border-strong: rgba(255, 255, 255, 0.22);
+
+  /* Accents for Live Financial Telemetry */
+  --accent: #F4F4F6;
+  --signal: #F4F4F6;
+  --rule-ink: rgba(255, 255, 255, 0.1);
+  --pos: #34D399;
+  --pos-bg: rgba(52, 211, 153, 0.10);
+  --neg: #F87171;
+  --neg-bg: rgba(248, 113, 113, 0.10);
+
+  /* Font Stacks */
+  --font-display: var(--font-sans-loaded), "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-sans: var(--font-sans-loaded), "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: var(--font-mono-loaded), "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Soft Matte Radii (matching reference cards & pills) */
+  --r-sm: 8px;
+  --r-md: 14px;
+  --r-lg: 18px;
+  --r-pill: 999px;
+  --radius: 10px;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur: 200ms;
+
+  /* Shadcn / Radix Portal HSL tokens (dark mode for FiboGrid popovers, menus, filters) */
+  --background: 240 6% 4%;
+  --foreground: 240 10% 96%;
+  --card-foreground: 240 10% 96%;
+  --popover: 240 7% 8%;
+  --popover-foreground: 240 10% 96%;
+  --primary: 240 10% 96%;
+  --primary-foreground: 240 6% 6%;
+  --secondary: 240 6% 12%;
+  --secondary-foreground: 240 10% 96%;
+  --muted: 240 6% 12%;
+  --muted-foreground: 240 5% 55%;
+  --accent-hsl: 240 6% 15%;
+  --accent-foreground: 240 10% 96%;
+  --destructive: 0 72% 65%;
+  --destructive-foreground: 240 10% 98%;
+  --border: 240 5% 15%;
+  --input: 240 5% 15%;
+  --ring: 240 10% 80%;
+}

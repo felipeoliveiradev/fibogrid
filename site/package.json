@@ -1,0 +1,36 @@
+{
+  "name": "site",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "docs:sync": "npm --prefix .. run build:lib && mkdir -p vendor/fibogrid && cp -Rf ../dist/* vendor/fibogrid/ && node -e \"const fs=require('fs');const p='vendor/fibogrid/index.d.ts';fs.writeFileSync(p,fs.readFileSync(p,'utf8').replace(/import\\s+['\\\"].*\\.css['\\\"];?\\n?/g,''));\"",
+    "predev": "npm run docs:sync",
+    "prebuild": "npm run docs:sync",
+    "docs:import-pt": "mkdir -p content/docs/pt && cp -Rf ../docs/* content/docs/pt/",
+    "dev": "next dev --turbopack",
+    "build": "next build --turbopack",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "fiboui": "^2.4.3",
+    "gray-matter": "^4.0.3",
+    "highlight.js": "^11.12.0",
+    "next": "^16.4.0",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "^16.4.0",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}

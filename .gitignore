@@ -12,6 +12,10 @@ node_modules
 dist
 dist-ssr
 *.local
+site/node_modules
+site/.next
+site/out
+site/.vercel
 
 # Editor / OS
 .vscode/*
