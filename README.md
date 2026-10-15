@@ -5,7 +5,7 @@
 
 High-performance React data grid component inspired by mathematical elegance and the golden ratio.
 
-**[Documentation](https://felipeoliveiradev.github.io/fibogrid)** | **[Demo](https://felipeoliveiradev.github.io/fibogrid/demo)** | **[Examples](https://felipeoliveiradev.github.io/fibogrid/docs)**
+**[Documentation](https://fibogrid.vercel.app)** | **[Docs](https://fibogrid.vercel.app/en/docs)** | **[npm](https://www.npmjs.com/package/fibogrid)**
 
 ## ✨ Features
 
@@ -83,8 +83,9 @@ function App() {
 
 ## 📚 Documentation
 
-- Online: [https://felipeoliveiradev.github.io/fibogrid](https://felipeoliveiradev.github.io/fibogrid)
-- In-repo: [`docs/README.md`](./docs/README.md) · [`docs/guides/usage.md`](./docs/guides/usage.md) · [`docs/guides/theming.md`](./docs/guides/theming.md)
+- Online: [https://fibogrid.vercel.app](https://fibogrid.vercel.app) (landing + docs, en/pt/es/zh)
+- Local site: `npm run site:dev` (Next.js in [`site/`](./site))
+- In-repo docs: [`docs/README.md`](./docs/README.md) · [`docs/guides/usage.md`](./docs/guides/usage.md) · [`docs/guides/theming.md`](./docs/guides/theming.md)
 
 ### Core Props
 
@@ -209,7 +210,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## 🔗 Links
 
-- [Documentation](https://felipeoliveiradev.github.io/fibogrid)
+- [Documentation](https://fibogrid.vercel.app)
 - [NPM Package](https://www.npmjs.com/package/fibogrid)
 - [GitHub Repository](https://github.com/felipeoliveiradev/fibogrid)
 - [Issue Tracker](https://github.com/felipeoliveiradev/fibogrid/issues)

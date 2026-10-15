@@ -1,6 +1,6 @@
 {
   "name": "fibogrid",
-  "version": "1.0.31",
+  "version": "1.0.32",
   "description": "High-performance React data grid component inspired by mathematical elegance",
   "type": "module",
   "main": "./dist/fibogrid.umd.js",
@@ -39,7 +39,7 @@
   "bugs": {
     "url": "https://github.com/felipeoliveiradev/fibogrid/issues"
   },
-  "homepage": "https://felipeoliveiradev.github.io/fibogrid",
+  "homepage": "https://fibogrid.vercel.app",
   "scripts": {
     "dev": "vite --mode development",
     "dev:local": "vite --mode development",
@@ -47,11 +47,13 @@
     "build:lib": "vite build --config vite.config.lib.ts && tsc --project tsconfig.lib.json",
     "types": "tsc --project tsconfig.lib.json",
     "build:dev": "vite build --mode development",
-    "build:pages": "vite build --mode production",
+    "build:pages": "npm run build --prefix site",
+    "site:dev": "npm run dev --prefix site",
+    "site:build": "npm run build --prefix site",
     "lint": "eslint .",
     "test": "vitest run",
     "preview": "vite preview",
-    "preview:pages": "vite preview --mode production",
+    "preview:pages": "npm run start --prefix site",
     "prepublishOnly": "npm run build:lib"
   },
   "peerDependencies": {
