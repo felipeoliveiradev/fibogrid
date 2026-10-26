@@ -1,4 +1,4 @@
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useEffect } from 'react';
 interface ClickDetectorOptions {
   doubleClickDelay?: number;
 }
@@ -33,9 +33,18 @@ export function useClickDetector(options: ClickDetectorOptions = {}) {
         }
         callback(clickType);
         clickCountRef.current = 0;
+        clickTimerRef.current = null;
       }, doubleClickDelay);
     },
     [doubleClickDelay]
   );
+  useEffect(() => {
+    return () => {
+      if (clickTimerRef.current) {
+        clearTimeout(clickTimerRef.current);
+        clickTimerRef.current = null;
+      }
+    };
+  }, []);
   return { detectClick };
 }

@@ -1,18 +1,23 @@
-import React from 'react';
+import React, { useMemo, memo } from 'react';
 import { RowNode, ProcessedColumn, PaginationState, FiboGridConfigs, FooterLayoutItem, ZIndexType } from '../types';
-import { useGridContext } from '../context/GridContext';
+import { useGridLocale } from '../context/GridContext';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { GridPagination } from './GridPagination';
 import { GridStatusBar } from './GridStatusBar';
+
+type AggregationMap = Record<string, { sum?: number; avg?: number; min?: number; max?: number; count?: number }>;
+
+const EMPTY_COLUMNS: ProcessedColumn<any>[] = [];
+
 interface GridFooterProps<T> {
     displayedRows: RowNode<T>[];
     totalRows: number;
     selectedCount: number;
     columns: ProcessedColumn<T>[];
-    aggregations?: Record<string, { sum?: number; avg?: number; min?: number; max?: number; count?: number }>;
+    aggregations?: AggregationMap;
     paginationState: PaginationState;
     pageSizeOptions: number[];
     onPageChange: (page: number) => void;
@@ -20,7 +25,56 @@ interface GridFooterProps<T> {
     config?: FiboGridConfigs['footer'] & { zIndex?: ZIndexType };
     className?: string;
 }
-export function GridFooter<T>({
+
+function areFooterLayoutsEqual(
+    prev?: FooterLayoutItem[],
+    next?: FooterLayoutItem[]
+): boolean {
+    if (prev === next) return true;
+    if (!prev || !next || prev.length !== next.length) return false;
+    for (let i = 0; i < prev.length; i++) {
+        if (prev[i] !== next[i]) return false;
+    }
+    return true;
+}
+
+function areFooterConfigsEqual(
+    prev?: GridFooterProps<unknown>['config'],
+    next?: GridFooterProps<unknown>['config']
+): boolean {
+    if (prev === next) return true;
+    if (!prev || !next) return false;
+    if (!areFooterLayoutsEqual(prev.layout, next.layout)) return false;
+    if (prev.zIndex !== next.zIndex) return false;
+    return true;
+}
+
+function arePaginationStatesEqual(prev: PaginationState, next: PaginationState): boolean {
+    return (
+        prev.enabled === next.enabled &&
+        prev.currentPage === next.currentPage &&
+        prev.pageSize === next.pageSize &&
+        prev.totalRows === next.totalRows &&
+        prev.totalPages === next.totalPages
+    );
+}
+
+function areGridFooterPropsEqual<T>(prev: GridFooterProps<T>, next: GridFooterProps<T>): boolean {
+    if (prev.displayedRows !== next.displayedRows) return false;
+    if (prev.totalRows !== next.totalRows) return false;
+    if (prev.selectedCount !== next.selectedCount) return false;
+    if (prev.columns !== next.columns) return false;
+    if (prev.aggregations !== next.aggregations) return false;
+    if (prev.pageSizeOptions !== next.pageSizeOptions) return false;
+    if (prev.onPageChange !== next.onPageChange) return false;
+    if (prev.onPageSizeChange !== next.onPageSizeChange) return false;
+    if (prev.className !== next.className) return false;
+    if (!arePaginationStatesEqual(prev.paginationState, next.paginationState)) return false;
+    if (!areFooterConfigsEqual(prev.config, next.config)) return false;
+    return true;
+}
+
+function GridFooterInner<T>({
     displayedRows,
     totalRows,
     selectedCount,
@@ -33,26 +87,37 @@ export function GridFooter<T>({
     config,
     className,
 }: GridFooterProps<T>) {
-    const { locale } = useGridContext<T>()!;
+    const locale = useGridLocale();
     const layout: FooterLayoutItem[] = config?.layout || ['pagination', 'status-bar'];
     const hasGranular = layout.some(i => !['pagination', 'status-bar'].includes(i));
-    const numericColumns = columns.filter(col => col.filterType === 'number' || col.aggFunc);
-    const aggData = aggregations || (() => {
-        if (displayedRows.length === 0) return null;
-        const results: Record<string, any> = {};
-        numericColumns.forEach((col) => {
-            const values = displayedRows
-                .map((row) => (row.data as any)[col.field])
-                .filter((v) => typeof v === 'number' && !isNaN(v));
-            if (values.length > 0) {
-                results[col.field] = {
-                    sum: values.reduce((a, b) => a + b, 0),
-                    avg: values.reduce((a, b) => a + b, 0) / values.length,
-                };
+    const needsAggregations = layout.includes('status-bar') || layout.includes('status-aggregations');
+    const numericColumns = useMemo(
+        () => (needsAggregations ? columns.filter(col => col.filterType === 'number' || col.aggFunc) : EMPTY_COLUMNS),
+        [columns, needsAggregations]
+    );
+    const aggData = useMemo(() => {
+        if (!needsAggregations) return null;
+        if (aggregations) return aggregations;
+        if (displayedRows.length === 0 || numericColumns.length === 0) return null;
+        const results: AggregationMap = {};
+        for (let c = 0; c < numericColumns.length; c++) {
+            const col = numericColumns[c]!;
+            const field = col.field;
+            let sum = 0;
+            let count = 0;
+            for (let i = 0; i < displayedRows.length; i++) {
+                const v = (displayedRows[i].data as any)[field];
+                if (typeof v === 'number' && !Number.isNaN(v)) {
+                    sum += v;
+                    count++;
+                }
             }
-        });
+            if (count > 0) {
+                results[field] = { sum, avg: sum / count };
+            }
+        }
         return results;
-    })();
+    }, [needsAggregations, aggregations, displayedRows, numericColumns]);
     const { currentPage, totalPages, pageSize } = paginationState;
     const startRow = currentPage * pageSize + 1;
     const endRow = Math.min((currentPage + 1) * pageSize, totalRows);
@@ -75,6 +140,7 @@ export function GridFooter<T>({
                     totalRows={totalRows}
                     selectedCount={selectedCount}
                     columns={columns}
+                    aggregations={aggData ?? undefined}
                 />;
             case 'spacer':
                 return <div key={`sp-${index}`} className="flex-1" />;
@@ -162,3 +228,5 @@ export function GridFooter<T>({
         </div>
     );
 }
+
+export const GridFooter = memo(GridFooterInner, areGridFooterPropsEqual) as typeof GridFooterInner;

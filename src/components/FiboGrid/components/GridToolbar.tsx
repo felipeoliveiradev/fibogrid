@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, memo } from 'react';
 import { ProcessedColumn, GridApi, FilterModel, FiboGridConfigs, HeaderLayoutItem } from '../types';
 import { cn } from '@/lib/utils';
 import {
@@ -24,7 +24,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useGridContext } from '../context/GridContext';
+import { useGridLocale } from '../context/GridContext';
 import { FilterPanel } from './FilterPanel';
 
 type GridDensity = 'compact' | 'normal' | 'comfortable';
@@ -55,7 +55,25 @@ interface GridToolbarProps<T> {
   density?: GridDensity;
   onDensityChange?: (density: GridDensity) => void;
 }
-export function GridToolbar<T>({
+
+function areGridToolbarPropsEqual<T>(prev: GridToolbarProps<T>, next: GridToolbarProps<T>): boolean {
+  if (prev.api !== next.api) return false;
+  if (prev.columns !== next.columns) return false;
+  if (prev.quickFilterValue !== next.quickFilterValue) return false;
+  if (prev.onQuickFilterChange !== next.onQuickFilterChange) return false;
+  if (prev.onColumnVisibilityChange !== next.onColumnVisibilityChange) return false;
+  if (prev.selectedCount !== next.selectedCount) return false;
+  if (prev.totalCount !== next.totalCount) return false;
+  if (prev.filterModel !== next.filterModel) return false;
+  if (prev.onResetFilters !== next.onResetFilters) return false;
+  if (prev.className !== next.className) return false;
+  if (prev.headerConfig !== next.headerConfig) return false;
+  if (prev.density !== next.density) return false;
+  if (prev.onDensityChange !== next.onDensityChange) return false;
+  return true;
+}
+
+function GridToolbarInner<T>({
   api,
   columns,
   quickFilterValue,
@@ -70,7 +88,7 @@ export function GridToolbar<T>({
   density,
   onDensityChange,
 }: GridToolbarProps<T>) {
-  const { locale } = useGridContext<T>()!;
+  const locale = useGridLocale();
   const [copied, setCopied] = useState(false);
   const [localSearch, setLocalSearch] = useState(quickFilterValue);
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
@@ -401,3 +419,5 @@ export function GridToolbar<T>({
     </div>
   );
 }
+
+export const GridToolbar = memo(GridToolbarInner, areGridToolbarPropsEqual) as typeof GridToolbarInner;

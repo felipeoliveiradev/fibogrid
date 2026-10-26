@@ -351,7 +351,10 @@ export function defaultFilterComparator(filter: FilterModel, value: any): boolea
       const leftDay = calendarDayKey(value);
       const rightDay = calendarDayKey(filterValue);
       if (leftDay != null && rightDay != null) return leftDay === rightDay;
-      return String(value) === String(filterValue);
+      const leftNum = finiteNumber(value);
+      const rightNum = finiteNumber(filterValue);
+      if (leftNum != null && rightNum != null) return leftNum === rightNum;
+      return String(value).toLowerCase() === String(filterValue).toLowerCase();
     }
     case 'contains':
       return String(value).toLowerCase().includes(String(filterValue).toLowerCase());
@@ -553,12 +556,43 @@ export function throttle<T extends (...args: any[]) => any>(
 function isBlockedMergeKey(key: string): boolean {
   return key === '__proto__' || key === 'prototype' || key === 'constructor';
 }
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+/** True when every own enumerable value is not a nested plain object (arrays/primitives/null ok). */
+function isShallowPlainObject(source: Record<string, unknown>): boolean {
+  const keys = Object.keys(source);
+  for (let i = 0; i < keys.length; i++) {
+    const key = keys[i]!;
+    if (isBlockedMergeKey(key)) continue;
+    const value = source[key];
+    if (isPlainObject(value)) return false;
+  }
+  return true;
+}
 export function deepMerge(target: any, source: any): any {
+  if (target === source) {
+    return target;
+  }
   if (typeof target !== 'object' || target === null || typeof source !== 'object' || source === null) {
     return source;
   }
   if (Array.isArray(source)) {
     return [...source];
+  }
+  // Shallow patch into a plain object: one alloc via Object.assign (no nested deepMerge).
+  if (isPlainObject(target) && isPlainObject(source) && isShallowPlainObject(source)) {
+    const result: Record<string, unknown> = Object.assign({}, target);
+    const keys = Object.keys(source);
+    for (let i = 0; i < keys.length; i++) {
+      const key = keys[i]!;
+      if (isBlockedMergeKey(key)) continue;
+      result[key] = source[key];
+    }
+    if (Object.prototype.hasOwnProperty.call(result, '__proto__')) delete (result as any).__proto__;
+    if (Object.prototype.hasOwnProperty.call(result, 'prototype')) delete result.prototype;
+    if (Object.prototype.hasOwnProperty.call(result, 'constructor')) delete result.constructor;
+    return result;
   }
   const result: any = {};
   Object.keys(target).forEach(key => {

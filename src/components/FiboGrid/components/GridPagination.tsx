@@ -1,10 +1,11 @@
-import React, { useId } from 'react';
+import React, { useId, memo } from 'react';
 import { PaginationState, ZIndexType } from '../types';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
-import { useGridContext } from '../context/GridContext';
+import { useGridLocale } from '../context/GridContext';
+
 interface GridPaginationProps {
   pagination: PaginationState;
   pageSizeOptions: number[];
@@ -13,7 +14,25 @@ interface GridPaginationProps {
   className?: string;
   zIndex?: ZIndexType
 }
-export function GridPagination({
+
+function areGridPaginationPropsEqual(prev: GridPaginationProps, next: GridPaginationProps): boolean {
+  if (prev.pageSizeOptions !== next.pageSizeOptions) return false;
+  if (prev.onPageChange !== next.onPageChange) return false;
+  if (prev.onPageSizeChange !== next.onPageSizeChange) return false;
+  if (prev.className !== next.className) return false;
+  if (prev.zIndex !== next.zIndex) return false;
+  const pp = prev.pagination;
+  const np = next.pagination;
+  return (
+    pp.enabled === np.enabled &&
+    pp.currentPage === np.currentPage &&
+    pp.pageSize === np.pageSize &&
+    pp.totalRows === np.totalRows &&
+    pp.totalPages === np.totalPages
+  );
+}
+
+function GridPaginationInner({
   pagination,
   pageSizeOptions,
   onPageChange,
@@ -21,7 +40,7 @@ export function GridPagination({
   className,
   zIndex
 }: GridPaginationProps) {
-  const { locale } = useGridContext()!;
+  const locale = useGridLocale();
   const rowsPerPageId = useId();
   const { currentPage, totalPages, totalRows, pageSize } = pagination;
   const startRow = currentPage * pageSize + 1;
@@ -99,3 +118,5 @@ export function GridPagination({
     </div>
   );
 }
+
+export const GridPagination = memo(GridPaginationInner, areGridPaginationPropsEqual);

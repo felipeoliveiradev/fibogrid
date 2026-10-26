@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { ProcessedColumn, FilterModel } from '../types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,7 +10,25 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Filter, X, Search, SortAsc, SortDesc } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { VirtualFilterList } from './VirtualFilterList';
-import { useGridContext } from '../context/GridContext';
+import { useGridLocale } from '../context/GridContext';
+const EMPTY_UNIQUE_VALUES: string[] = [];
+/** Parent (FiboGrid) already passes unique strings — skip Set+sort when all are strings. */
+function coerceUniqueValues(allValues: unknown[]): string[] {
+  if (allValues.length === 0) return EMPTY_UNIQUE_VALUES;
+  let allStrings = true;
+  for (let i = 0; i < allValues.length; i++) {
+    if (typeof allValues[i] !== 'string') {
+      allStrings = false;
+      break;
+    }
+  }
+  if (allStrings) return allValues as string[];
+  const values = new Set<string>();
+  for (const v of allValues) {
+    if (v != null) values.add(String(v));
+  }
+  return Array.from(values).sort();
+}
 interface FilterPopoverProps<T> {
   column: ProcessedColumn<T>;
   currentFilter?: FilterModel;
@@ -27,57 +46,67 @@ export function FilterPopover<T>({
   currentFilter,
   onFilterChange,
   onClose,
-  allValues = [],
+  allValues = EMPTY_UNIQUE_VALUES,
   onSort,
   anchorRect,
   containerRef,
   enableVirtualization = true,
   className,
 }: FilterPopoverProps<T>) {
-  const { locale } = useGridContext<T>()!;
+  const locale = useGridLocale();
   const popoverRef = useRef<HTMLDivElement>(null);
   const firstFieldRef = useRef<HTMLInputElement>(null);
   const [value, setValue] = useState(() => scalarFilterValue(currentFilter?.value));
   const [betweenRange, setBetweenRange] = useState<[string, string]>(() => betweenFilterValue(currentFilter?.value));
-  const [operator, setOperator] = useState<string>(currentFilter?.operator ?? 'contains');
+  const [operator, setOperator] = useState<string>(() => {
+    if (currentFilter?.operator) return currentFilter.operator;
+    return (column.filterType || 'text') === 'text' ? 'contains' : 'equals';
+  });
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedValues, setSelectedValues] = useState<Set<string>>(() => new Set());
   const [selectAll, setSelectAll] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
   const filterType = column.filterType || 'text';
   const operators = getOperatorsForType(filterType, locale);
-  const uniqueValues = useMemo(() => {
-    const values = new Set<string>();
-    allValues.forEach(v => {
-      if (v != null) {
-        values.add(String(v));
-      }
-    });
-    return Array.from(values).sort();
-  }, [allValues]);
+  const uniqueValues = useMemo(() => coerceUniqueValues(allValues), [allValues]);
   const filteredValues = useMemo(() => {
     if (!searchTerm) return uniqueValues;
     const needle = searchTerm.toLowerCase();
     return uniqueValues.filter(v => v.toLowerCase().includes(needle));
   }, [uniqueValues, searchTerm]);
+  // selectAll is a flag — do not materialize uniqueValues into selectedValues while true
   useEffect(() => {
     if (uniqueValues.length === 0) return;
     if (!isInitialized) {
       if (currentFilter?.operator !== 'between' && currentFilter?.value && Array.isArray(currentFilter.value)) {
-        setSelectedValues(new Set(currentFilter.value.map(String)));
-        setSelectAll(currentFilter.value.length === uniqueValues.length);
+        const currentSet = new Set(currentFilter.value.map(String));
+        setSelectedValues(currentSet);
+        setSelectAll(currentSet.size === uniqueValues.length && uniqueValues.length > 0);
       } else {
-        setSelectedValues(new Set(uniqueValues));
+        setSelectedValues(new Set());
         setSelectAll(true);
       }
       setIsInitialized(true);
     }
   }, [uniqueValues, currentFilter, isInitialized]);
+  /** VirtualFilterList only needs .has(); avoid building a 100k Set when selectAll. */
+  const selectionForList = useMemo(() => {
+    if (selectAll) {
+      return { has: () => true } as unknown as Set<string>;
+    }
+    return selectedValues;
+  }, [selectAll, selectedValues]);
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
-        onClose();
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+      if (popoverRef.current && popoverRef.current.contains(target)) {
+        return;
       }
+      if (target.closest('[data-radix-popper-content-wrapper], .fibogrid-z-popover-nested, [role="listbox"]')) {
+        return;
+      }
+      onClose();
     };
     const timer = setTimeout(() => {
       document.addEventListener('mousedown', handleClickOutside);
@@ -133,30 +162,35 @@ export function FilterPopover<T>({
       handleApplyCondition();
     }
   };
+  const isAllVisibleSelected = useMemo(() => {
+    if (!searchTerm.trim()) return selectAll;
+    if (selectAll) return filteredValues.length > 0;
+    return filteredValues.length > 0 && filteredValues.every((v) => selectedValues.has(v));
+  }, [searchTerm, selectAll, filteredValues, selectedValues]);
+
   const handleApplyValues = () => {
-    if (selectAll) {
+    const trimmedSearch = searchTerm.trim();
+    if (selectAll && !trimmedSearch) {
       onFilterChange(null);
-    } else if (selectedValues.size === 0) {
-      onFilterChange({
-        field: column.field,
-        filterType: 'select',
-        value: [],
-        operator: 'equals',
-      });
-    } else {
-      onFilterChange({
-        field: column.field,
-        filterType: 'select',
-        value: Array.from(selectedValues),
-        operator: 'equals',
-      });
+      onClose();
+      return;
     }
+
+    const activeSelection =
+      selectAll && trimmedSearch ? filteredValues : Array.from(selectedValues);
+
+    onFilterChange({
+      field: column.field,
+      filterType: 'select',
+      value: activeSelection,
+      operator: 'equals',
+    });
     onClose();
   };
   const handleClear = () => {
     setValue('');
     setBetweenRange(['', '']);
-    setSelectedValues(new Set(uniqueValues));
+    setSelectedValues(new Set());
     setSelectAll(true);
     onFilterChange(null);
     onClose();
@@ -164,6 +198,14 @@ export function FilterPopover<T>({
   const toggleValue = (val: string, e?: React.MouseEvent) => {
     if (e) {
       e.stopPropagation();
+    }
+    if (selectAll) {
+      // Materialize only on first deselect from select-all
+      const newSelected = new Set(uniqueValues);
+      newSelected.delete(val);
+      setSelectedValues(newSelected);
+      setSelectAll(false);
+      return;
     }
     setSelectedValues(prev => {
       const newSelected = new Set(prev);
@@ -174,6 +216,9 @@ export function FilterPopover<T>({
       }
       const allSelected = newSelected.size === uniqueValues.length;
       setSelectAll(allSelected);
+      if (allSelected) {
+        return new Set();
+      }
       return newSelected;
     });
   };
@@ -181,36 +226,104 @@ export function FilterPopover<T>({
     if (e) {
       e.stopPropagation();
     }
-    if (selectAll) {
+    if (isAllVisibleSelected) {
       setSelectedValues(new Set());
       setSelectAll(false);
+    } else if (searchTerm.trim()) {
+      if (filteredValues.length === uniqueValues.length) {
+        setSelectedValues(new Set());
+        setSelectAll(true);
+      } else {
+        setSelectedValues(new Set(filteredValues));
+        setSelectAll(false);
+      }
     } else {
-      setSelectedValues(new Set(uniqueValues));
+      setSelectedValues(new Set());
       setSelectAll(true);
     }
   };
-  const style = useMemo(() => {
+  const [positionState, setPositionState] = useState<{ top: number; left: number }>(() => {
     if (!anchorRect) return { top: 0, left: 0 };
-    const containerRect = containerRef?.current?.getBoundingClientRect();
-    if (containerRect) {
-      return {
-        position: 'absolute' as const,
-        top: anchorRect.bottom - containerRect.top + 4,
-        left: Math.max(0, anchorRect.left - containerRect.left),
-      };
-    }
     return {
-      position: 'fixed' as const,
       top: anchorRect.bottom + 4,
       left: Math.max(8, anchorRect.left),
     };
+  });
+
+  useEffect(() => {
+    if (!anchorRect) return;
+    const initialContainerRect = containerRef?.current?.getBoundingClientRect();
+    const offsetTopFromContainer = initialContainerRect ? anchorRect.bottom - initialContainerRect.top : 0;
+    const offsetLeftFromContainer = initialContainerRect ? anchorRect.left - initialContainerRect.left : 0;
+
+    const updatePosition = () => {
+      const vw = typeof window !== 'undefined' ? window.innerWidth : 1280;
+      const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
+      const popoverEl = popoverRef.current;
+      const popWidth = popoverEl?.offsetWidth || 320;
+      const popHeight = popoverEl?.offsetHeight || 360;
+
+      const currentContainerRect = containerRef?.current?.getBoundingClientRect();
+      let desiredTop = currentContainerRect
+        ? currentContainerRect.top + offsetTopFromContainer + 4
+        : anchorRect.bottom + 4;
+      let desiredLeft = currentContainerRect
+        ? currentContainerRect.left + offsetLeftFromContainer
+        : anchorRect.left;
+
+      if (desiredLeft + popWidth > vw - 12) {
+        desiredLeft = Math.max(12, vw - popWidth - 12);
+      }
+      if (desiredLeft < 12) {
+        desiredLeft = 12;
+      }
+      if (desiredTop + popHeight > vh - 12) {
+        const flippedTop = (currentContainerRect
+          ? currentContainerRect.top + (anchorRect.top - (initialContainerRect?.top ?? anchorRect.top))
+          : anchorRect.top) - popHeight - 6;
+        if (flippedTop >= 12) {
+          desiredTop = flippedTop;
+        } else {
+          desiredTop = Math.max(12, vh - popHeight - 12);
+        }
+      }
+
+      setPositionState({ top: desiredTop, left: desiredLeft });
+    };
+
+    updatePosition();
+    const raf = requestAnimationFrame(updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+    window.addEventListener('resize', updatePosition);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('scroll', updatePosition, true);
+      window.removeEventListener('resize', updatePosition);
+    };
   }, [anchorRect, containerRef]);
-  return (
+
+  const style = useMemo(
+    () => ({
+      position: 'fixed' as const,
+      top: positionState.top,
+      left: positionState.left,
+      zIndex: 9999,
+      width: '20rem',
+      maxWidth: 'calc(100vw - 24px)',
+      overflow: 'visible' as const,
+    }),
+    [positionState]
+  );
+
+  const popoverNode = (
     <div
       ref={popoverRef}
       role="dialog"
       aria-label={`${column.filterLabel || column.headerName}. ${locale.filter.advancedFilter}`}
-      className="w-80 bg-popover border border-border rounded-lg shadow-xl fibogrid-z-filter-popover"
+      className={cn(
+        'fibogrid w-80 bg-popover text-popover-foreground border border-border rounded-lg shadow-xl fibogrid-z-filter-popover',
+        className
+      )}
       style={style}
       onClick={(e) => e.stopPropagation()}
     >
@@ -275,7 +388,13 @@ export function FilterPopover<T>({
                   aria-label={locale.filter.searchPlaceholder}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  onKeyDown={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => {
+                    e.stopPropagation();
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleApplyValues();
+                    }
+                  }}
                   className="pl-8 h-8"
                 />
               </div>
@@ -284,7 +403,7 @@ export function FilterPopover<T>({
                 className="flex items-center gap-2 py-1.5 px-2 hover:bg-muted rounded cursor-pointer"
               >
                 <Checkbox
-                  checked={selectAll}
+                  checked={isAllVisibleSelected}
                   onCheckedChange={() => toggleAll()}
                 />
                 <span className="text-sm font-medium">{locale.filter.selectAll}</span>
@@ -293,7 +412,7 @@ export function FilterPopover<T>({
               {enableVirtualization ? (
                 <VirtualFilterList
                   values={filteredValues}
-                  selectedValues={selectedValues}
+                  selectedValues={selectionForList}
                   onToggle={toggleValue}
                   height={192}
                   itemHeight={36}
@@ -308,7 +427,7 @@ export function FilterPopover<T>({
                         className="flex items-center gap-2 py-1.5 px-2 hover:bg-muted rounded cursor-pointer"
                       >
                         <Checkbox
-                          checked={selectedValues.has(val)}
+                          checked={selectAll || selectedValues.has(val)}
                           onCheckedChange={() => toggleValue(val)}
                         />
                         <span className="text-sm truncate">{val || locale.filter.blank}</span>
@@ -365,6 +484,10 @@ export function FilterPopover<T>({
       </div>
     </div>
   );
+  if (typeof document !== 'undefined') {
+    return createPortal(popoverNode, document.body);
+  }
+  return popoverNode;
 }
 function getOperatorsForType(type: string, locale: import('../locales/types').FiboGridLocale) {
   switch (type) {

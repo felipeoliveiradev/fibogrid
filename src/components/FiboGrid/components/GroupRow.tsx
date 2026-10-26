@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { memo, useMemo } from 'react';
 import { ChevronRight, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { GroupRowNode } from '../utils/grouping';
 import { ProcessedColumn } from '../types';
-import { useGridContext } from '../context/GridContext';
+import { useGridLocale } from '../context/GridContext';
 import type { FiboGridLocale } from '../locales/types';
 interface GroupRowProps<T> {
   row: GroupRowNode<T>;
@@ -36,7 +36,7 @@ function groupFieldText(groupValue: unknown, field: string): React.ReactNode {
   }
   return groupValue as React.ReactNode;
 }
-export function GroupRow<T>({
+function GroupRowInner<T>({
   row,
   columns,
   rowHeight,
@@ -48,14 +48,20 @@ export function GroupRow<T>({
   onSelectAll,
   locale: localeProp,
 }: GroupRowProps<T>) {
-  const contextLocale = useGridContext()?.locale;
+  const contextLocale = useGridLocale();
   const locale = localeProp ?? contextLocale;
   const selectLabel = localeString(locale?.aria, 'selectGroup') ?? 'Select group';
   const expandLabel = localeString(locale?.aria, 'expandGroup') ?? 'Expand group';
   const collapseLabel = localeString(locale?.aria, 'collapseGroup') ?? 'Collapse group';
   const groupFields = row.groupField.split(',');
-  const aggregates = Object.entries(row.aggregatedValues ?? {}).filter(([, value]) => value != null);
-  const totalWidth = columns.reduce((sum, col) => sum + col.computedWidth, 0) + (showCheckboxColumn ? 48 : 0);
+  const aggregates = useMemo(
+    () => Object.entries(row.aggregatedValues ?? {}).filter(([, value]) => value != null),
+    [row.aggregatedValues]
+  );
+  const totalWidth = useMemo(
+    () => columns.reduce((sum, col) => sum + col.computedWidth, 0) + (showCheckboxColumn ? 48 : 0),
+    [columns, showCheckboxColumn]
+  );
   return (
     <div
       role="row"
@@ -136,3 +142,18 @@ export function GroupRow<T>({
     </div>
   );
 }
+
+export const GroupRow = memo(GroupRowInner, (prev, next) => {
+  return (
+    prev.row === next.row &&
+    prev.columns === next.columns &&
+    prev.rowHeight === next.rowHeight &&
+    prev.isExpanded === next.isExpanded &&
+    prev.showCheckboxColumn === next.showCheckboxColumn &&
+    prev.allChildrenSelected === next.allChildrenSelected &&
+    prev.someChildrenSelected === next.someChildrenSelected &&
+    prev.onToggleExpand === next.onToggleExpand &&
+    prev.onSelectAll === next.onSelectAll &&
+    prev.locale === next.locale
+  );
+}) as typeof GroupRowInner;

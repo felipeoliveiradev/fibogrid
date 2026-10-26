@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef } from 'react';
+import React, { memo, useCallback, useMemo, useRef } from 'react';
 import { ProcessedColumn, SortModel, SortDirection, FilterModel, GridApi } from '../types';
 import { FiboGridLocale } from '../locales/types';
 import { cn } from '@/lib/utils';
@@ -38,7 +38,43 @@ interface GridHeaderProps<T> {
   className?: string;
   locale: FiboGridLocale;
 }
-export function GridHeader<T>({
+
+function areGridHeaderPropsEqual<T>(prev: GridHeaderProps<T>, next: GridHeaderProps<T>): boolean {
+  if (prev.columns !== next.columns) return false;
+  if (prev.sortModel !== next.sortModel) return false;
+  if (prev.filterModel !== next.filterModel) return false;
+  if (prev.api !== next.api) return false;
+  if (prev.locale !== next.locale) return false;
+  if (prev.resizingColumn !== next.resizingColumn) return false;
+  if (prev.draggedColumn !== next.draggedColumn) return false;
+  if (prev.dragOverColumn !== next.dragOverColumn) return false;
+  if (prev.allSelected !== next.allSelected) return false;
+  if (prev.someSelected !== next.someSelected) return false;
+  if (prev.showCheckboxColumn !== next.showCheckboxColumn) return false;
+  if (prev.showRowNumbers !== next.showRowNumbers) return false;
+  if (prev.showFilterRow !== next.showFilterRow) return false;
+  if (prev.compact !== next.compact) return false;
+  if (prev.headerHeight !== next.headerHeight) return false;
+  if (prev.className !== next.className) return false;
+  if (prev.onSort !== next.onSort) return false;
+  if (prev.onResizeStart !== next.onResizeStart) return false;
+  if (prev.onResizeDoubleClick !== next.onResizeDoubleClick) return false;
+  if (prev.onDragStart !== next.onDragStart) return false;
+  if (prev.onDragOver !== next.onDragOver) return false;
+  if (prev.onDragEnd !== next.onDragEnd) return false;
+  if (prev.onDrop !== next.onDrop) return false;
+  if (prev.onSelectAll !== next.onSelectAll) return false;
+  if (prev.onFilterClick !== next.onFilterClick) return false;
+  if (prev.onQuickColumnFilter !== next.onQuickColumnFilter) return false;
+  if (prev.measureColumnContent !== next.measureColumnContent) return false;
+  if (prev.onPinColumn !== next.onPinColumn) return false;
+  if (prev.onHideColumn !== next.onHideColumn) return false;
+  if (prev.onAutoSize !== next.onAutoSize) return false;
+  if (prev.onAutoSizeAll !== next.onAutoSizeAll) return false;
+  return true;
+}
+
+function GridHeaderInner<T>({
   api,
   columns,
   sortModel,
@@ -366,3 +402,5 @@ export function GridHeader<T>({
     </div>
   );
 }
+
+export const GridHeader = memo(GridHeaderInner, areGridHeaderPropsEqual) as typeof GridHeaderInner;

@@ -2,6 +2,7 @@ export * from './add';
 export * from './replaceAll';
 export * from './remove';
 export * from './update';
+export * from './batchUpdate';
 export * from './updateCell';
 export * from './resetCell';
 export * from './resetRow';

@@ -1,13 +1,59 @@
-import React, { memo, useEffect, useMemo } from 'react';
+import React, { memo, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { ProcessedColumn, RowNode, EditingCell, GridApi, RowClassParams } from '../types';
 import { GridCell } from './GridCell';
 import { cn } from '@/lib/utils';
 import { GripVertical, Plus } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
-import { useGridContext } from '../context/GridContext';
+import { useGridLocale } from '../context/GridContext';
 
 const rowFocusCache = new Map<string, string | null>();
+
+/** Row morph (FLIP-lite): animate a row when its display index changes between commits. */
+const ROW_MORPH_DURATION_MS = 90;
+/** Moves larger than this many rows teleport instead of animating. */
+const ROW_MORPH_MAX_ROWS = 40;
+
+const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
+
+function prefersReducedMotion(): boolean {
+  return (
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  );
+}
+
+/** Current translateY of an element mid-transition (0 when none). */
+function currentTranslateY(el: HTMLElement): number {
+  if (typeof DOMMatrix === 'undefined') return 0;
+  const t = getComputedStyle(el).transform;
+  if (!t || t === 'none') return 0;
+  try {
+    return new DOMMatrix(t).m42;
+  } catch {
+    return 0;
+  }
+}
+
+type CellHandlers = {
+  onStartEdit: () => void;
+  onClick: (e: React.MouseEvent) => void;
+  onDoubleClick: (e: React.MouseEvent) => void;
+  onMouseDown: (e: React.MouseEvent) => void;
+  onMouseEnter: () => void;
+  onContextMenu: (e: React.MouseEvent) => void;
+};
+
+type ColumnWithLayout<T> = ProcessedColumn<T> & {
+  stickyLeft?: number;
+  stickyRight?: number;
+  isLastPinned?: boolean;
+  isFirstPinned?: boolean;
+  isLastCenterBeforeRight?: boolean;
+  globalColIndex: number;
+  visibleColIndex: number;
+};
 
 function focusedFieldForRow(
   isCellFocused: ((rowId: string, field: string) => boolean) | undefined,
@@ -45,6 +91,8 @@ interface GridRowProps<T> {
   isDropTarget?: boolean;
   dropPosition?: 'before' | 'after' | null;
   isCellSelected?: (rowIndex: number, colIndex: number) => boolean;
+  /** Fingerprint so memoized rows repaint when range bounds change. */
+  selectionVersion?: number;
   isCellFocused?: (rowId: string, field: string) => boolean;
   onCellMouseDown?: (rowIndex: number, colIndex: number, e: React.MouseEvent) => void;
   onCellMouseEnter?: (rowIndex: number, colIndex: number) => void;
@@ -106,9 +154,9 @@ function GridRowInner<T>({
   onRowRangeMouseEnter,
   getRowClass,
 }: GridRowProps<T>) {
-  const locale = useGridContext()?.locale;
-  const selectRowLabel = locale?.aria.selectRow ?? 'Select row';
-  const addChildRowLabel = locale?.aria.addChildRow ?? 'Add child row';
+  const locale = useGridLocale();
+  const selectRowLabel = locale.aria.selectRow ?? 'Select row';
+  const addChildRowLabel = locale.aria.addChildRow ?? 'Add child row';
   const focusedField = focusedFieldForRow(isCellFocused, row.id, columns);
   useEffect(() => {
     rowFocusCache.set(row.id, focusedField);
@@ -134,9 +182,22 @@ function GridRowInner<T>({
     return Array.isArray(result) ? result.join(' ') : result;
   }, [getRowClass, row, api]);
   const { leftPinnedColumns, centerColumns, rightPinnedColumns } = useMemo(() => {
-    const left = visibleColumns.filter(c => c.pinned === 'left');
-    const center = visibleColumns.filter(c => !c.pinned);
-    const right = visibleColumns.filter(c => c.pinned === 'right');
+    const globalIndexByField = new Map<string, number>();
+    for (let i = 0; i < columns.length; i++) {
+      globalIndexByField.set(columns[i].field, i);
+    }
+    const visibleIndexByField = new Map<string, number>();
+    for (let i = 0; i < visibleColumns.length; i++) {
+      visibleIndexByField.set(visibleColumns[i].field, i);
+    }
+    const withIndices = (col: ProcessedColumn<T>): ColumnWithLayout<T> => ({
+      ...col,
+      globalColIndex: globalIndexByField.get(col.field) ?? -1,
+      visibleColIndex: visibleIndexByField.get(col.field) ?? -1,
+    });
+    const left = visibleColumns.filter(c => c.pinned === 'left').map(withIndices);
+    const center = visibleColumns.filter(c => !c.pinned).map(withIndices);
+    const right = visibleColumns.filter(c => c.pinned === 'right').map(withIndices);
     let leftOffset = 0;
     const leftWithPositions = left.map((col, idx) => {
       const pos = leftOffset;
@@ -158,24 +219,150 @@ function GridRowInner<T>({
       centerColumns: centerWithFlags,
       rightPinnedColumns: rightWithPositions,
     };
-  }, [visibleColumns]);
+  }, [visibleColumns, columns]);
+
+  const rowElRef = useRef<HTMLDivElement>(null);
+  const prevRowIndexRef = useRef(row.rowIndex);
+  const morphRafRef = useRef<number | null>(null);
+
+  const clearMorph = (el: HTMLElement | null) => {
+    if (morphRafRef.current !== null) {
+      cancelAnimationFrame(morphRafRef.current);
+      morphRafRef.current = null;
+    }
+    if (el) {
+      el.style.transform = '';
+      el.style.transition = '';
+    }
+  };
+
+  // The row sits in normal flow inside the virtualizer's translated wrapper, so after a
+  // re-sort its layout box is already at the new slot. Invert with translateY(old - new),
+  // then play to identity. Inline transform/transition are not managed by React's style prop.
+  useIsomorphicLayoutEffect(() => {
+    const prev = prevRowIndexRef.current;
+    const next = row.rowIndex;
+    prevRowIndexRef.current = next;
+    const el = rowElRef.current;
+    if (!el || prev === next) return;
+
+    const delta = prev - next;
+    if (Math.abs(delta) > ROW_MORPH_MAX_ROWS || rowHeight <= 0 || prefersReducedMotion()) {
+      clearMorph(el);
+      return;
+    }
+
+    // Carry over any residual offset from an interrupted morph.
+    const residual = morphRafRef.current !== null || el.style.transform ? currentTranslateY(el) : 0;
+    clearMorph(el);
+    el.style.transition = 'none';
+    el.style.transform = `translateY(${delta * rowHeight + residual}px)`;
+    void el.offsetHeight; // commit the inverted state before animating
+
+    morphRafRef.current = requestAnimationFrame(() => {
+      morphRafRef.current = null;
+      el.style.transition = `transform ${ROW_MORPH_DURATION_MS}ms linear`;
+      el.style.transform = 'none';
+    });
+  }, [row.rowIndex, rowHeight]);
+
+  useEffect(() => {
+    const el = rowElRef.current;
+    const onEnd = (e: TransitionEvent) => {
+      if (e.target !== el || e.propertyName !== 'transform') return;
+      el.style.transform = '';
+      el.style.transition = '';
+    };
+    el?.addEventListener('transitionend', onEnd);
+    return () => {
+      el?.removeEventListener('transitionend', onEnd);
+      clearMorph(el);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const rowRef = useRef(row);
+  rowRef.current = row;
+  const onStartEditRef = useRef(onStartEdit);
+  onStartEditRef.current = onStartEdit;
+  const onCellClickRef = useRef(onCellClick);
+  onCellClickRef.current = onCellClick;
+  const onCellDoubleClickRef = useRef(onCellDoubleClick);
+  onCellDoubleClickRef.current = onCellDoubleClick;
+  const onCellMouseDownRef = useRef(onCellMouseDown);
+  onCellMouseDownRef.current = onCellMouseDown;
+  const onCellMouseEnterRef = useRef(onCellMouseEnter);
+  onCellMouseEnterRef.current = onCellMouseEnter;
+  const onCellContextMenuRef = useRef(onCellContextMenu);
+  onCellContextMenuRef.current = onCellContextMenu;
+  const columnByFieldRef = useRef(new Map<string, ColumnWithLayout<T>>());
+  const colIndexByFieldRef = useRef(new Map<string, number>());
+  const cellHandlersRef = useRef(new Map<string, CellHandlers>());
+
+  {
+    const nextColumns = new Map<string, ColumnWithLayout<T>>();
+    const nextIndices = new Map<string, number>();
+    const allLayoutCols = [
+      ...leftPinnedColumns,
+      ...centerColumns,
+      ...rightPinnedColumns,
+    ];
+    for (const col of allLayoutCols) {
+      nextColumns.set(col.field, col);
+      nextIndices.set(col.field, col.globalColIndex);
+    }
+    columnByFieldRef.current = nextColumns;
+    colIndexByFieldRef.current = nextIndices;
+  }
+
+  const getCellHandlers = (field: string): CellHandlers => {
+    const cache = cellHandlersRef.current;
+    const existing = cache.get(field);
+    if (existing) return existing;
+    const handlers: CellHandlers = {
+      onStartEdit: () => onStartEditRef.current(field),
+      onClick: (e) => {
+        const col = columnByFieldRef.current.get(field);
+        if (col) onCellClickRef.current(rowRef.current.id, col, e);
+      },
+      onDoubleClick: (e) => {
+        const col = columnByFieldRef.current.get(field);
+        if (col) onCellDoubleClickRef.current(col, e);
+      },
+      onMouseDown: (e) => {
+        const idx = colIndexByFieldRef.current.get(field) ?? -1;
+        onCellMouseDownRef.current?.(rowRef.current.rowIndex, idx, e);
+      },
+      onMouseEnter: () => {
+        const idx = colIndexByFieldRef.current.get(field) ?? -1;
+        onCellMouseEnterRef.current?.(rowRef.current.rowIndex, idx);
+      },
+      onContextMenu: (e) => {
+        const idx = colIndexByFieldRef.current.get(field) ?? -1;
+        onCellContextMenuRef.current?.(rowRef.current.rowIndex, idx, e);
+      },
+    };
+    cache.set(field, handlers);
+    return handlers;
+  };
+
   const getPinnedBgClass = useMemo(() => {
     if (isSelected) return 'fibogrid-row-selected';
     if (isEven) return 'fibogrid-row-even';
     return 'fibogrid-row-odd';
   }, [isSelected, isEven]);
   const renderCell = (
-    column: ProcessedColumn<T> & { stickyLeft?: number; stickyRight?: number; isLastPinned?: boolean; isFirstPinned?: boolean; isLastCenterBeforeRight?: boolean },
+    column: ColumnWithLayout<T>,
     isPinned: boolean,
     stickyLeft?: number,
     stickyRight?: number
   ) => {
     const isEditing = editingCell?.rowId === row.id && editingCell?.field === column.field;
-    const globalColIndex = columns.findIndex(c => c.field === column.field);
+    const globalColIndex = column.globalColIndex;
     const cellSelected = isCellSelected?.(row.rowIndex, globalColIndex);
     const cellFocused = isCellFocused?.(row.id, column.field);
-    const colIndex = visibleColumns.findIndex(c => c.field === column.field);
-    const isFirstColumn = colIndex === 0;
+    const isFirstColumn = column.visibleColIndex === 0;
+    const handlers = getCellHandlers(column.field);
     return (
       <div
         key={column.field}
@@ -203,16 +390,16 @@ function GridRowInner<T>({
           api={api}
           isEditing={isEditing}
           editValue={isEditing ? editingCell?.value : undefined}
-          onStartEdit={() => onStartEdit(column.field)}
+          onStartEdit={handlers.onStartEdit}
           onEditChange={onEditChange}
           onStopEdit={onStopEdit}
-          onClick={(e) => onCellClick(row.id, column, e)}
-          onDoubleClick={(e) => onCellDoubleClick(column, e)}
+          onClick={handlers.onClick}
+          onDoubleClick={handlers.onDoubleClick}
           isSelected={cellSelected}
           isFocused={cellFocused}
-          onMouseDown={(e) => onCellMouseDown?.(row.rowIndex, globalColIndex, e)}
-          onMouseEnter={() => onCellMouseEnter?.(row.rowIndex, globalColIndex)}
-          onContextMenu={(e) => onCellContextMenu?.(row.rowIndex, globalColIndex, e)}
+          onMouseDown={handlers.onMouseDown}
+          onMouseEnter={handlers.onMouseEnter}
+          onContextMenu={handlers.onContextMenu}
           indent={isFirstColumn ? indentWidth : 0}
           showExpandIcon={isFirstColumn && hasChildren}
           isExpanded={isExpanded}
@@ -227,6 +414,7 @@ function GridRowInner<T>({
   };
   return (
     <div
+      ref={rowElRef}
       role="row"
       aria-selected={showCheckboxColumn || onCheckboxChange ? isSelected : undefined}
       aria-rowindex={row.rowIndex + 1}
@@ -329,9 +517,28 @@ export const GridRow = memo(GridRowInner, (prevProps, nextProps) => {
   if (prevProps.isDropTarget !== nextProps.isDropTarget) return false;
   if (prevProps.isExpanded !== nextProps.isExpanded) return false;
   if (prevProps.isCellSelected !== nextProps.isCellSelected) return false;
+  if (prevProps.selectionVersion !== nextProps.selectionVersion) return false;
+  if (prevProps.isEven !== nextProps.isEven) return false;
+  if (prevProps.rowNumber !== nextProps.rowNumber) return false;
+  if (prevProps.row.rowIndex !== nextProps.row.rowIndex) return false;
+  if (prevProps.dropPosition !== nextProps.dropPosition) return false;
+  if (prevProps.rowHeight !== nextProps.rowHeight) return false;
+  if (prevProps.level !== nextProps.level) return false;
+  if (prevProps.hasChildren !== nextProps.hasChildren) return false;
   const prevEdit = prevProps.editingCell;
   const nextEdit = nextProps.editingCell;
-  if (prevEdit?.rowId !== nextEdit?.rowId || prevEdit?.field !== nextEdit?.field || prevEdit?.value !== nextEdit?.value) return false;
+  const rowId = nextProps.row.id;
+  const prevIsEditing = prevEdit?.rowId === rowId;
+  const nextIsEditing = nextEdit?.rowId === rowId;
+  if (prevIsEditing || nextIsEditing) {
+    if (
+      prevIsEditing !== nextIsEditing ||
+      prevEdit?.field !== nextEdit?.field ||
+      prevEdit?.value !== nextEdit?.value
+    ) {
+      return false;
+    }
+  }
   const nextFocus = focusedFieldForRow(nextProps.isCellFocused, nextProps.row.id, nextProps.columns);
   const prevFocus = prevProps.isCellFocused === nextProps.isCellFocused
     ? (rowFocusCache.get(nextProps.row.id) ?? null)

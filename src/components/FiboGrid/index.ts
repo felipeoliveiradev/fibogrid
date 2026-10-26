@@ -1,7 +1,7 @@
 export { FiboGrid } from './FiboGrid';
 export * from './types';
 export * from './utils/helpers';
-export { GridProvider, useGridContext } from './context/GridContext';
+export { GridProvider, useGridContext, useGridLocale } from './context/GridContext';
 export { useGridRegistry, useGridEvent } from './context/GridRegistryContext';
 export * from './utils/grouping';
 export { exportToExcel } from './utils/excelExport';
@@ -24,3 +24,13 @@ export { ColumnMenu } from './components/ColumnMenu';
 export { GroupRow } from './components/GroupRow';
 export { ColumnPanel } from './components/ColumnPanel';
 export { FilterPanel } from './components/FilterPanel';
+export { GridCanvasOverlay } from './components/overlays';
+export type { GridCanvasOverlayProps, FlashRect } from './components/overlays';
+export { useCellFlashOverlay, createFlashTracker } from './hooks/useCellFlashOverlay';
+export type {
+  CellFlashEvent,
+  FlashDirection,
+  ActiveFlash,
+  FlashTracker,
+  FlashTrackerOptions,
+} from './hooks/useCellFlashOverlay';

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { RowNode } from '../types';
 interface VirtualizationOptions {
   rowHeight: number;
@@ -20,7 +20,7 @@ export function useVirtualization<T>(
   rows: RowNode<T>[],
   options: VirtualizationOptions
 ): VirtualizationResult<T> {
-  const { rowHeight, overscan = 10, containerHeight } = options;
+  const { rowHeight, overscan = 5, containerHeight } = options;
   const [scrollTop, setScrollTop] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const rafIdRef = useRef<number | null>(null);
@@ -28,9 +28,10 @@ export function useVirtualization<T>(
   const totalHeight = useMemo(() => rows.length * rowHeight, [rows.length, rowHeight]);
   const { startIndex, endIndex, virtualRows, offsetTop } = useMemo(() => {
     const visibleRowCount = Math.ceil(containerHeight / rowHeight);
-    const dynamicOverscan = Math.min(overscan * 2, 30);
-    const start = Math.max(0, Math.floor(scrollTop / rowHeight) - dynamicOverscan);
-    const end = Math.min(rows.length, start + visibleRowCount + dynamicOverscan * 2);
+    // Cap overscan so a typical viewport renders ~40 rows, not ~90.
+    const effectiveOverscan = Math.min(overscan, 8);
+    const start = Math.max(0, Math.floor(scrollTop / rowHeight) - effectiveOverscan);
+    const end = Math.min(rows.length, start + visibleRowCount + effectiveOverscan * 2);
     return {
       startIndex: start,
       endIndex: end,
@@ -55,6 +56,13 @@ export function useVirtualization<T>(
       setScrollTop(newScrollTop);
       rafIdRef.current = null;
     });
+  }, []);
+  useEffect(() => {
+    return () => {
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+      }
+    };
   }, []);
   const scrollToRow = useCallback(
     (index: number) => {

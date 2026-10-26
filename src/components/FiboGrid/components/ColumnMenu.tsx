@@ -23,7 +23,7 @@ import {
   Filter,
   Check,
 } from 'lucide-react';
-import { useGridContext } from '../context/GridContext';
+import { useGridLocale } from '../context/GridContext';
 interface ColumnMenuProps<T> {
   column: ProcessedColumn<T>;
   onSort?: (field: string, direction?: 'asc' | 'desc') => void;
@@ -46,7 +46,7 @@ export function ColumnMenu<T>({
   children,
   className,
 }: ColumnMenuProps<T>) {
-  const { locale } = useGridContext<T>()!;
+  const locale = useGridLocale();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const handleFilterClick = () => {
     if (triggerRef.current && onFilterClick) {
