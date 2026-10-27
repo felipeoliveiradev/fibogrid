@@ -3,11 +3,13 @@ import './components/FiboGrid/styles/lib.css';
 export { FiboGrid } from './components/FiboGrid';
 export * from './components/FiboGrid/types';
 export * from './components/FiboGrid/utils/helpers';
-export { GridProvider, useGridContext } from './components/FiboGrid/context/GridContext';
+export { GridProvider, useGridContext, useGridLocale } from './components/FiboGrid/context/GridContext';
 export { GridRegistryProvider, useGridRegistry, useGridEvent } from './components/FiboGrid/context/GridRegistryContext';
 export * from './components/FiboGrid/utils/grouping';
 export { exportToExcel } from './components/FiboGrid/utils/excelExport';
 export { EventBuilder, useEventValue } from './components/FiboGrid/utils/EventBuilder';
+export { validateIngress, validateEgress } from './components/FiboGrid/utils/permissionValidator';
+export { GridPermissions, type GridPermissionType } from './components/FiboGrid/constants/permissions';
 
 // Hooks
 export { useGridState } from './components/FiboGrid/hooks/useGridState';

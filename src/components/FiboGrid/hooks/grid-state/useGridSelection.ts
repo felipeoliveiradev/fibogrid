@@ -24,8 +24,18 @@ export function useGridSelection<T>(
         anchorIndex: null,
     });
     const rowsIndexRef = useRef<{ rows: readonly RowNode<T>[]; map: Map<string, RowNode<T>> } | null>(null);
+    const displayIndexRef = useRef<{ rows: readonly RowNode<T>[]; map: Map<string, number> } | null>(null);
     const selectionRef = useRef(selection);
     selectionRef.current = selection;
+    const getDisplayIndex = useCallback((rowId: string): number => {
+        const rows = displayedRowsRef.current;
+        if (displayIndexRef.current?.rows !== rows) {
+            const map = new Map<string, number>();
+            for (let i = 0; i < rows.length; i++) map.set(rows[i].id, i);
+            displayIndexRef.current = { rows, map };
+        }
+        return displayIndexRef.current.map.get(rowId) ?? -1;
+    }, [displayedRowsRef]);
     const selectedNodes = useCallback((ids: Iterable<string>) => {
     const rows = rowsRef.current;
     if (rowsIndexRef.current?.rows !== rows) {
@@ -41,49 +51,57 @@ export function useGridSelection<T>(
     }
     return found;
   }, [rowsRef]);
+    const fireSelectionChanged = useCallback((getSelectedRows: () => RowNode<T>[]) => {
+        if (!apiRef.current || !events.hasListeners('selectionChanged')) return;
+        events.fireEvent('selectionChanged', {
+            api: apiRef.current,
+            selectedRows: getSelectedRows(),
+        });
+    }, [events, apiRef]);
     const selectRow = useCallback(
         (rowId: string, selected: boolean, shift = false, ctrl = false) => {
             if (!rowSelection) return;
             const prev = selectionRef.current;
-            const newSelected = new Set(prev.selectedRows);
-            const rowIndex = displayedRowsRef.current.findIndex((r) => r.id === rowId);
+            const rowIndex = getDisplayIndex(rowId);
+            let newSelected: Set<string>;
             if (rowSelection === 'single') {
                 if (selected) {
                     if (prev.selectedRows.has(rowId) && prev.selectedRows.size === 1) return;
-                    newSelected.clear();
+                    newSelected = new Set([rowId]);
+                } else {
+                    if (!prev.selectedRows.has(rowId)) return;
+                    newSelected = new Set();
+                }
+            } else if (shift && prev.anchorIndex !== null && rowIndex >= 0) {
+                newSelected = new Set(prev.selectedRows);
+                const start = Math.min(prev.anchorIndex, rowIndex);
+                const end = Math.max(prev.anchorIndex, rowIndex);
+                const displayed = displayedRowsRef.current;
+                for (let i = start; i <= end; i++) {
+                    if (displayed[i]) {
+                        newSelected.add(displayed[i].id);
+                    }
+                }
+                if (newSelected.size === prev.selectedRows.size) {
+                    let hasDiff = false;
+                    for (const id of newSelected) {
+                        if (!prev.selectedRows.has(id)) {
+                            hasDiff = true;
+                            break;
+                        }
+                    }
+                    if (!hasDiff) return;
+                }
+            } else {
+                if (selected) {
+                    if (prev.selectedRows.has(rowId)) return;
+                    newSelected = new Set(prev.selectedRows);
                     newSelected.add(rowId);
                 } else {
                     if (!prev.selectedRows.has(rowId)) return;
-                    newSelected.clear();
+                    newSelected = new Set(prev.selectedRows);
+                    newSelected.delete(rowId);
                 }
-            } else {
-                if (shift && prev.anchorIndex !== null) {
-                    const start = Math.min(prev.anchorIndex, rowIndex);
-                    const end = Math.max(prev.anchorIndex, rowIndex);
-                    for (let i = start; i <= end; i++) {
-                        if (displayedRowsRef.current[i]) {
-                            newSelected.add(displayedRowsRef.current[i].id);
-                        }
-                    }
-                } else {
-                    if (selected) {
-                        if (newSelected.has(rowId)) return;
-                        newSelected.add(rowId);
-                    } else {
-                        if (!newSelected.has(rowId)) return;
-                        newSelected.delete(rowId);
-                    }
-                }
-            }
-            if (newSelected.size === prev.selectedRows.size) {
-                let hasDiff = false;
-                for (const id of newSelected) {
-                    if (!prev.selectedRows.has(id)) {
-                        hasDiff = true;
-                        break;
-                    }
-                }
-                if (!hasDiff) return;
             }
             const nextSelection = {
                 selectedRows: newSelected,
@@ -92,41 +110,37 @@ export function useGridSelection<T>(
             };
             selectionRef.current = nextSelection;
             setSelection(nextSelection);
-            if (apiRef.current) {
-                events.fireEvent('selectionChanged', {
-                    api: apiRef.current,
-                    selectedRows: selectedNodes(newSelected),
-                });
-            }
+            fireSelectionChanged(() => selectedNodes(newSelected));
         },
-        [rowSelection, events, apiRef, rowsRef, displayedRowsRef, selectedNodes]
+        [rowSelection, fireSelectionChanged, displayedRowsRef, selectedNodes, getDisplayIndex]
     );
     const selectAll = useCallback(() => {
         if (rowSelection !== 'multiple') return;
         const clientRows = rowsRef.current;
         const source = clientRows.length > 0 ? clientRows : displayedRowsRef.current;
-        const allIds = source.map((r) => r.id);
         const prev = selectionRef.current;
-        if (prev.selectedRows.size === allIds.length) {
+        if (prev.selectedRows.size === source.length) {
             let allMatch = true;
-            for (const id of allIds) {
-                if (!prev.selectedRows.has(id)) {
+            for (let i = 0; i < source.length; i++) {
+                if (!prev.selectedRows.has(source[i].id)) {
                     allMatch = false;
                     break;
                 }
             }
             if (allMatch) return;
         }
+        const selectedRows = new Set<string>();
+        for (let i = 0; i < source.length; i++) {
+            selectedRows.add(source[i].id);
+        }
         const nextSelection = {
             ...selectionRef.current,
-            selectedRows: new Set(allIds),
+            selectedRows,
         };
         selectionRef.current = nextSelection;
         setSelection(nextSelection);
-        if (apiRef.current) {
-            events.fireEvent('selectionChanged', { api: apiRef.current, selectedRows: source });
-        }
-    }, [rowSelection, events, apiRef, displayedRowsRef, rowsRef]);
+        fireSelectionChanged(() => source);
+    }, [rowSelection, fireSelectionChanged, displayedRowsRef, rowsRef]);
     const deselectAll = useCallback(() => {
         const prev = selectionRef.current;
         if (prev.selectedRows.size === 0) return;
@@ -136,27 +150,29 @@ export function useGridSelection<T>(
         };
         selectionRef.current = nextSelection;
         setSelection(nextSelection);
-        if (apiRef.current) {
-            events.fireEvent('selectionChanged', { api: apiRef.current, selectedRows: [] });
-        }
-    }, [setSelection, events, apiRef]);
+        fireSelectionChanged(() => []);
+    }, [setSelection, fireSelectionChanged]);
     const selectRows = useCallback((rowIds: string[], selected: boolean) => {
         const prev = selectionRef.current;
+        let needsCopy = false;
+        for (let i = 0; i < rowIds.length; i++) {
+            const has = prev.selectedRows.has(rowIds[i]);
+            if (selected ? !has : has) {
+                needsCopy = true;
+                break;
+            }
+        }
+        if (!needsCopy) return;
         const newSelected = new Set(prev.selectedRows);
-        rowIds.forEach((id) => {
-            if (selected) newSelected.add(id);
-            else newSelected.delete(id);
-        });
+        for (let i = 0; i < rowIds.length; i++) {
+            if (selected) newSelected.add(rowIds[i]);
+            else newSelected.delete(rowIds[i]);
+        }
         const nextSelection = { ...prev, selectedRows: newSelected };
         selectionRef.current = nextSelection;
         setSelection(nextSelection);
-        if (apiRef.current) {
-            events.fireEvent('selectionChanged', {
-                api: apiRef.current,
-                selectedRows: selectedNodes(newSelected),
-            });
-        }
-    }, [events, apiRef, selectedNodes]);
+        fireSelectionChanged(() => selectedNodes(newSelected));
+    }, [fireSelectionChanged, selectedNodes]);
     return {
         selection,
         setSelection,

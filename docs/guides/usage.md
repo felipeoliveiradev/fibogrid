@@ -6,6 +6,11 @@
 npm install fibogrid
 ```
 
+```result
+added 1 package, and audited the tree
+fibogrid@latest ready
+```
+
 ## Basic TypeScript Example
 
 ```typescript

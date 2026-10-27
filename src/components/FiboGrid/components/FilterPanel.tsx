@@ -5,8 +5,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { X, Search, Filter, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useGridContext } from '../context/GridContext';
-import { enUS } from '../locales/enUS';
+import { useGridLocale } from '../context/GridContext';
 interface FilterPanelProps<T> {
   columns: ProcessedColumn<T>[];
   filterModel: FilterModel[];
@@ -21,7 +20,7 @@ export function FilterPanel<T>({
   onFilterChange,
   onClearAllFilters,
 }: FilterPanelProps<T>) {
-  const locale = useGridContext<T>()?.locale ?? enUS;
+  const locale = useGridLocale();
   const [searchTerm, setSearchTerm] = useState('');
   const filterableColumns = columns.filter(
     col => col.filterable !== false && !col.hide

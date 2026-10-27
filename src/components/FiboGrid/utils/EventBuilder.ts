@@ -20,6 +20,8 @@ export class EventBuilder<T = any> {
     private removeEventListener: (eventType: string, listener: EventHandler) => void;
     private fireEvent: (eventType: string, eventData: any) => void;
     private listeners: Map<string, Set<EventHandler>> = new Map();
+    /** Per-event map of user handler → wrapped listener (for off(userHandler)). */
+    private handlerWrappers: Map<string, Map<EventHandler, EventHandler>> = new Map();
     constructor(
         addEventListener: (eventType: string, listener: EventHandler) => void,
         removeEventListener: (eventType: string, listener: EventHandler) => void,
@@ -28,6 +30,25 @@ export class EventBuilder<T = any> {
         this.addEventListener = addEventListener;
         this.removeEventListener = removeEventListener;
         this.fireEvent = fireEvent;
+    }
+    private wrappersFor(eventName: string): Map<EventHandler, EventHandler> {
+        let map = this.handlerWrappers.get(eventName);
+        if (!map) {
+            map = new Map();
+            this.handlerWrappers.set(eventName, map);
+        }
+        return map;
+    }
+    private trackListener(eventName: string, wrapped: EventHandler) {
+        if (!this.listeners.has(eventName)) {
+            this.listeners.set(eventName, new Set());
+        }
+        this.listeners.get(eventName)!.add(wrapped);
+    }
+    private untrackListener(eventName: string, original: EventHandler, wrapped: EventHandler) {
+        this.removeEventListener(eventName, wrapped);
+        this.listeners.get(eventName)?.delete(wrapped);
+        this.handlerWrappers.get(eventName)?.delete(original);
     }
     calls() {
         return {
@@ -57,35 +78,45 @@ export class EventBuilder<T = any> {
             },
             once: (handler?: EventHandler): any => {
                 if (handler) {
+                    const wrappers = self.wrappersFor(eventName);
+                    const existing = wrappers.get(handler);
+                    if (existing) {
+                        self.untrackListener(eventName, handler, existing);
+                    }
                     const wrappedHandler = (data: any) => {
                         if (filter && !filter(data)) return;
-                        self.removeEventListener(eventName, wrappedHandler);
-                        self.listeners.get(eventName)?.delete(wrappedHandler);
+                        self.untrackListener(eventName, handler, wrappedHandler);
                         const transformedData = transform ? transform(data) : data;
                         handler(transformedData);
                     };
+                    wrappers.set(handler, wrappedHandler);
                     self.addEventListener(eventName, wrappedHandler);
-                    if (!self.listeners.has(eventName)) {
-                        self.listeners.set(eventName, new Set());
-                    }
-                    self.listeners.get(eventName)!.add(wrappedHandler);
+                    self.trackListener(eventName, wrappedHandler);
+                    // Prefer the unsubscribe returned by listen()/once() over off(handler).
                     return () => {
-                        self.removeEventListener(eventName, wrappedHandler);
-                        self.listeners.get(eventName)?.delete(wrappedHandler);
+                        self.untrackListener(eventName, handler, wrappedHandler);
                     };
                 }
                 return selfSubscription;
             },
+            /**
+             * Remove a listener previously registered with listen()/once().
+             * Accepts the original user handler (resolves the wrapped listener via internal Map).
+             * Prefer the unsubscribe function returned by listen()/once() when possible.
+             */
             off: (handler?: EventHandler) => {
                 if (handler) {
-                    self.removeEventListener(eventName, handler);
-                    self.listeners.get(eventName)?.delete(handler);
+                    const wrapped = self.handlerWrappers.get(eventName)?.get(handler);
+                    if (wrapped) {
+                        self.untrackListener(eventName, handler, wrapped);
+                    }
                 } else {
                     const handlers = self.listeners.get(eventName);
                     if (handlers) {
                         handlers.forEach(h => self.removeEventListener(eventName, h));
                         handlers.clear();
                     }
+                    self.handlerWrappers.get(eventName)?.clear();
                 }
             },
             render: <R = any>(_initialValue?: R): R => {
@@ -93,20 +124,25 @@ export class EventBuilder<T = any> {
             }
         };
         return selfSubscription;
+        /**
+         * Register a listener. Returns an unsubscribe fn — preferred over off(handler).
+         */
         function createListen(handler: EventHandler) {
+            const wrappers = self.wrappersFor(eventName);
+            const existing = wrappers.get(handler);
+            if (existing) {
+                self.untrackListener(eventName, handler, existing);
+            }
             const wrappedHandler = (data: any) => {
                 if (filter && !filter(data)) return;
                 const result = transform ? transform(data) : data;
                 handler(result);
             };
+            wrappers.set(handler, wrappedHandler);
             self.addEventListener(eventName, wrappedHandler);
-            if (!self.listeners.has(eventName)) {
-                self.listeners.set(eventName, new Set());
-            }
-            self.listeners.get(eventName)!.add(wrappedHandler);
+            self.trackListener(eventName, wrappedHandler);
             return () => {
-                self.removeEventListener(eventName, wrappedHandler);
-                self.listeners.get(eventName)?.delete(wrappedHandler);
+                self.untrackListener(eventName, handler, wrappedHandler);
             };
         }
     }

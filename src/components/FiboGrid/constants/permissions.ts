@@ -4,6 +4,8 @@ export const GridPermissions = {
         Add: 'manager.add',
         Remove: 'manager.remove',
         Update: 'manager.update',
+        BatchUpdate: 'manager.batchUpdate',
+        BatchFlush: 'manager.batchFlush',
         ReplaceAll: 'manager.replaceAll',
         ResetEdits: 'manager.resetEdits',
         Execute: 'manager.execute',
@@ -18,6 +20,8 @@ export const GridPermissions = {
         GetFilterModel: 'api.getFilterModel',
         SetSortModel: 'api.setSortModel',
         GetSortModel: 'api.getSortModel',
+        BatchUpdate: 'api.batchUpdate',
+        FlushBatchUpdate: 'api.flushBatchUpdate',
         All: 'api.*'
     },
     Events: {

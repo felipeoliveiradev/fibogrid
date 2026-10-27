@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 type GridEventListener = (event: any) => void;
 
@@ -110,10 +110,13 @@ export function useGridEventSystem(gridId?: string) {
             }
         };
     }, [gridIdForEvents]);
-    return {
-        addEventListener,
-        removeEventListener,
-        fireEvent,
-        hasListeners,
-    };
+    return useMemo(
+        () => ({
+            addEventListener,
+            removeEventListener,
+            fireEvent,
+            hasListeners,
+        }),
+        [addEventListener, removeEventListener, fireEvent, hasListeners]
+    );
 }

@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import { FiboGridProps, ProcessedColumn, SortModel, FilterModel, ContextMenuItem, RowNode, EditingCell } from './types';
 import { shouldLoadMoreOnScroll } from './utils/infiniteScroll';
-import { getValueFromPath, setValueAtPath } from './utils/helpers';
+import { getValueFromPath } from './utils/helpers';
 import './styles/theme-mapping.css';
 import { useGridState } from './hooks/useGridState';
 import { useVirtualization } from './hooks/useVirtualization';
@@ -30,8 +30,29 @@ interface FilterState<T> {
   column: ProcessedColumn<T>;
   anchorRect: DOMRect;
 }
-const EMPTY_SELECTED_CELLS = new Set<string>();
 const NOOP = (_rowId: string, _event: React.MouseEvent) => {};
+/** Cache unique filter-pop values per grid + field + rows generation + count. */
+const FILTER_UNIQUE_VALUES_CACHE = new Map<string, string[]>();
+const FILTER_UNIQUE_VALUES_CACHE_MAX = 32;
+let filterCacheAnonId = 0;
+function setFilterUniqueValuesCache(key: string, values: string[]) {
+  if (FILTER_UNIQUE_VALUES_CACHE.has(key)) {
+    FILTER_UNIQUE_VALUES_CACHE.delete(key);
+  }
+  FILTER_UNIQUE_VALUES_CACHE.set(key, values);
+  while (FILTER_UNIQUE_VALUES_CACHE.size > FILTER_UNIQUE_VALUES_CACHE_MAX) {
+    const oldest = FILTER_UNIQUE_VALUES_CACHE.keys().next().value;
+    if (oldest === undefined) break;
+    FILTER_UNIQUE_VALUES_CACHE.delete(oldest);
+  }
+}
+function deleteFilterUniqueValuesCacheByPrefix(prefix: string) {
+  for (const key of FILTER_UNIQUE_VALUES_CACHE.keys()) {
+    if (key.startsWith(prefix)) {
+      FILTER_UNIQUE_VALUES_CACHE.delete(key);
+    }
+  }
+}
 export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
   const {
     rowHeight: rowHeightProp,
@@ -205,6 +226,10 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
   const { registerGrid: registerGlobal, unregisterGrid: unregisterGlobal } = useGridRegistry();
   const apiRef = useRef(api);
   apiRef.current = api;
+  const egressRef = useRef(props.egress);
+  egressRef.current = props.egress;
+  const ingressRef = useRef(props.ingress);
+  ingressRef.current = props.ingress;
   const onGridReadyRef = useRef(onGridReady);
   onGridReadyRef.current = onGridReady;
   const readyFiredRef = useRef(false);
@@ -217,10 +242,14 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
   }, [gridContext, gridId, api]);
   useEffect(() => {
     if (gridId && registerGlobal && unregisterGlobal) {
-      registerGlobal(gridId, apiRef.current);
+      registerGlobal(gridId, apiRef.current, {
+        internalApi,
+        egress: egressRef.current,
+        ingress: ingressRef.current,
+      });
       return () => unregisterGlobal(gridId);
     }
-  }, [gridId, registerGlobal, unregisterGlobal, api]);
+  }, [gridId, registerGlobal, unregisterGlobal, api, internalApi]);
   useEffect(() => {
     if (readyFiredRef.current) return;
     readyFiredRef.current = true;
@@ -232,24 +261,73 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     appliedQuickFilterPropRef.current = quickFilterText;
     setQuickFilter(quickFilterText);
   }, [quickFilterText, setQuickFilter]);
-  useGridEvent<T>(gridId, 'cellValueChanged', (event) => {
-    onCellValueChanged?.(event);
+  const eventHandlersRef = useRef({
+    onCellValueChanged,
+    onSortChanged,
+    onFilterChanged,
+    onPaginationChanged,
+    onGlobalFilterChange,
+    onFilterRemoved,
   });
-  useGridEvent<T>(gridId, 'sortChanged', (event) => {
-    onSortChanged?.(event);
-  });
-  useGridEvent<T>(gridId, 'filterChanged', (event) => {
-    onFilterChanged?.(event);
-  });
-  useGridEvent<T>(gridId, 'paginationChanged', (event) => {
-    onPaginationChanged?.(event);
-  });
-  useGridEvent<T>(gridId, 'quickFilterChanged', (event) => {
-    onGlobalFilterChange?.(event);
-  });
-  useGridEvent<T>(gridId, 'filterRemoved', (event) => {
-    onFilterRemoved?.(event);
-  });
+  eventHandlersRef.current = {
+    onCellValueChanged,
+    onSortChanged,
+    onFilterChanged,
+    onPaginationChanged,
+    onGlobalFilterChange,
+    onFilterRemoved,
+  };
+  // Only bridge events whose prop is defined — preserves hasListeners() for unbridged events.
+  const bridgeCellValueChanged = onCellValueChanged != null;
+  const bridgeSortChanged = onSortChanged != null;
+  const bridgeFilterChanged = onFilterChanged != null;
+  const bridgePaginationChanged = onPaginationChanged != null;
+  const bridgeQuickFilterChanged = onGlobalFilterChange != null;
+  const bridgeFilterRemoved = onFilterRemoved != null;
+  useEffect(() => {
+    const cleanups: Array<() => void> = [];
+    if (bridgeCellValueChanged) {
+      const onCell = (e: any) => eventHandlersRef.current.onCellValueChanged?.(e);
+      internalApi.addEventListener('cellValueChanged', onCell);
+      cleanups.push(() => internalApi.removeEventListener('cellValueChanged', onCell));
+    }
+    if (bridgeSortChanged) {
+      const onSort = (e: any) => eventHandlersRef.current.onSortChanged?.(e);
+      internalApi.addEventListener('sortChanged', onSort);
+      cleanups.push(() => internalApi.removeEventListener('sortChanged', onSort));
+    }
+    if (bridgeFilterChanged) {
+      const onFilter = (e: any) => eventHandlersRef.current.onFilterChanged?.(e);
+      internalApi.addEventListener('filterChanged', onFilter);
+      cleanups.push(() => internalApi.removeEventListener('filterChanged', onFilter));
+    }
+    if (bridgePaginationChanged) {
+      const onPage = (e: any) => eventHandlersRef.current.onPaginationChanged?.(e);
+      internalApi.addEventListener('paginationChanged', onPage);
+      cleanups.push(() => internalApi.removeEventListener('paginationChanged', onPage));
+    }
+    if (bridgeQuickFilterChanged) {
+      const onQuick = (e: any) => eventHandlersRef.current.onGlobalFilterChange?.(e);
+      internalApi.addEventListener('quickFilterChanged', onQuick);
+      cleanups.push(() => internalApi.removeEventListener('quickFilterChanged', onQuick));
+    }
+    if (bridgeFilterRemoved) {
+      const onRemoved = (e: any) => eventHandlersRef.current.onFilterRemoved?.(e);
+      internalApi.addEventListener('filterRemoved', onRemoved);
+      cleanups.push(() => internalApi.removeEventListener('filterRemoved', onRemoved));
+    }
+    return () => {
+      for (const cleanup of cleanups) cleanup();
+    };
+  }, [
+    internalApi,
+    bridgeCellValueChanged,
+    bridgeSortChanged,
+    bridgeFilterChanged,
+    bridgePaginationChanged,
+    bridgeQuickFilterChanged,
+    bridgeFilterRemoved,
+  ]);
   const effectiveContainerHeight = typeof height === 'number' ? height : (containerHeight || 600);
   const toolbarHeight = effectiveShowToolbar ? (isCompact ? 36 : 48) : 0;
   const statusBarHeight = effectiveShowStatusBar ? (isCompact ? 28 : 36) : 0;
@@ -293,8 +371,12 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
       ) {
         return;
       }
+      // Raw pagination state never stores totalPages (those live on the derived
+      // paginationState from useGridPaginationInfo). Guard with the derived value
+      // or page never advances past 0 under infiniteScroll.
+      const totalPages = paginationState.totalPages;
       setPaginationState((prev) => {
-        if (prev.currentPage >= prev.totalPages - 1) return prev;
+        if (prev.currentPage >= totalPages - 1) return prev;
         return { ...prev, currentPage: prev.currentPage + 1 };
       });
     },
@@ -404,18 +486,26 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     (row, target) => onRowDragEnd?.({ rowNode: row, overNode: target, api }),
     (row, target) => onRowDragMove?.({ rowNode: row, overNode: target, api })
   );
-  const rangeSelectionHook = useRangeSelection();
+  const rangeSelectionHook = useRangeSelection({
+    scrollContainerRef,
+    rowHeight,
+    totalRows: finalDisplayedRows.length,
+  });
   const {
     handleCellMouseDown: handleRangeMouseDown,
     handleCellMouseEnter,
     isSelecting,
+    selectionVersion,
   } = rangeCellSelection ? rangeSelectionHook : {
     handleCellMouseDown: () => { },
     handleCellMouseEnter: () => { },
     isSelecting: false,
+    selectionVersion: 0,
   };
-  const selectedCellsRef = useRef(rangeSelectionHook.selectedCells);
-  selectedCellsRef.current = rangeCellSelection ? rangeSelectionHook.selectedCells : EMPTY_SELECTED_CELLS;
+  const isRangeSelectedRef = useRef(rangeSelectionHook.isCellSelected);
+  isRangeSelectedRef.current = rangeSelectionHook.isCellSelected;
+  const rangeEnabledRef = useRef(rangeCellSelection);
+  rangeEnabledRef.current = rangeCellSelection;
   const {
     isDraggingRows,
     handleRowMouseDown: handleRowRangeMouseDown,
@@ -454,7 +544,8 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
   const focusedCellRef = useRef(focusedCell);
   focusedCellRef.current = focusedCell;
   const isCellSelected = useCallback((rowIndex: number, colIndex: number) => {
-    return selectedCellsRef.current.has(`${rowIndex}-${colIndex}`);
+    if (!rangeEnabledRef.current) return false;
+    return isRangeSelectedRef.current(rowIndex, colIndex);
   }, []);
   const isCellFocused = useCallback((rowId: string, field: string) => {
     const cell = focusedCellRef.current;
@@ -635,8 +726,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
           }
         }
       }
-      if (!ctx.onRowClickFallback) return;
-      const row = displayedRowsRef.current.find(r => r.id === rowId);
+      const row = ctx.api.getRowNode(rowId) ?? displayedRowsRef.current.find(r => r.id === rowId);
       if (!row) return;
       const currentSelection = selectionRef.current;
       let futureSelected = currentSelection.selectedRows.has(row.id);
@@ -651,36 +741,41 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
           if (isShift) futureSelected = true;
         }
       }
-      ctx.detectRowClick((clickType) => {
-        const latest = rowEventRef.current;
-        if (!fromCell && latest.onRowClickFallback) {
-          latest.onRowClickFallback({
+      const nextRowNode = { ...row, selected: futureSelected };
+      ctx.fireEvent('rowClicked', {
+        rowNode: nextRowNode,
+        event: e,
+        api: ctx.api,
+      });
+      ctx.onRowClicked?.({
+        rowNode: nextRowNode,
+        event: e,
+        api: ctx.api,
+      });
+      if (!fromCell && ctx.onRowClickFallback) {
+        ctx.detectRowClick((clickType) => {
+          const latest = rowEventRef.current;
+          if (!latest.onRowClickFallback) return;
+          const payload = {
             clickType,
             rowData: row.data,
-            allRowsData: displayedRowsRef.current.map(r => r.data),
-            rowNode: { ...row, selected: futureSelected },
+            get allRowsData() {
+              return displayedRowsRef.current.map(r => r.data);
+            },
+            rowNode: nextRowNode,
             event: e,
             api: latest.api,
-          });
-        }
-        latest.fireEvent('rowClicked', {
-          rowNode: { ...row, selected: futureSelected },
-          event: e,
-          api: latest.api,
+          };
+          latest.onRowClickFallback(payload);
         });
-        latest.onRowClicked?.({
-          rowNode: { ...row, selected: futureSelected },
-          event: e,
-          api: latest.api,
-        });
-      });
+      }
     },
     []
   );
   const handleRowDoubleClick = useCallback((rowId: string, e: React.MouseEvent) => {
     const ctx = rowEventRef.current;
     if (!ctx.onRowDoubleClicked) return;
-    const row = displayedRowsRef.current.find(r => r.id === rowId);
+    const row = ctx.api.getRowNode(rowId) ?? displayedRowsRef.current.find(r => r.id === rowId);
     if (!row) return;
     ctx.onRowDoubleClicked({ rowNode: row, event: e, api: ctx.api });
   }, []);
@@ -688,13 +783,15 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     const ctx = rowEventRef.current;
     if (!ctx.onRowClickFallback) return;
     const rows = displayedRowsRef.current;
-    const row = rows.find(r => r.id === rowId);
+    const row = ctx.api.getRowNode(rowId) ?? rows.find(r => r.id === rowId);
     if (!row) return;
     const isCurrentlySelected = selectionRef.current.selectedRows.has(row.id);
     ctx.onRowClickFallback({
       clickType: 'menu',
       rowData: row.data,
-      allRowsData: rows.map(r => r.data),
+      get allRowsData() {
+        return displayedRowsRef.current.map(r => r.data);
+      },
       rowNode: { ...row, selected: isCurrentlySelected },
       event: e,
       api: ctx.api,
@@ -703,9 +800,9 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
   const handleCellClick = useCallback((rowId: string, col: ProcessedColumn<T>, e: React.MouseEvent) => {
     e.stopPropagation();
     handleRowClick(rowId, e, true);
-    const row = displayedRowsRef.current.find(r => r.id === rowId);
-    if (!row) return;
     const ctx = rowEventRef.current;
+    const row = ctx.api.getRowNode(rowId) ?? displayedRowsRef.current.find(r => r.id === rowId);
+    if (!row) return;
     const currentSelection = selectionRef.current;
     const isCurrentlySelected = currentSelection.selectedRows.has(row.id);
     let futureSelected = isCurrentlySelected;
@@ -739,7 +836,9 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
       latest.onRowClickFallback({
         clickType,
         rowData: row.data,
-        allRowsData: displayedRowsRef.current.map(r => r.data),
+        get allRowsData() {
+          return displayedRowsRef.current.map(r => r.data);
+        },
         rowNode: { ...row, selected: futureSelected },
         event: e,
         api: latest.api,
@@ -768,23 +867,33 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
       }
       if (changed) {
         prevSelectedIdsRef.current = new Set(currentIds);
-        const selectedRows = displayedRows.filter((r) => selection.selectedRows.has(r.id));
+        const selectedRows = currentIds.size === 0
+          ? []
+          : displayedRows.filter((r) => selection.selectedRows.has(r.id));
         const oldSelectedRows = prevSelectedRowsRef.current;
         prevSelectedRowsRef.current = selectedRows;
         onSelectionChanged({ selectedRows, oldSelectedRows, api });
       }
     }
   }, [selection.selectedRows, displayedRows, api, onSelectionChanged]);
-  const allSelected = useMemo(
-    () =>
-      displayedRows.length > 0 &&
-      displayedRows.every((r) => selection.selectedRows.has(r.id)),
-    [displayedRows, selection.selectedRows]
-  );
-  const someSelected = useMemo(
-    () => displayedRows.some((r) => selection.selectedRows.has(r.id)),
-    [displayedRows, selection.selectedRows]
-  );
+  const allSelected = useMemo(() => {
+    const selSize = selection.selectedRows.size;
+    if (selSize === 0 || displayedRows.length === 0 || selSize < displayedRows.length) {
+      return false;
+    }
+    return displayedRows.every((r) => selection.selectedRows.has(r.id));
+  }, [displayedRows, selection.selectedRows]);
+  const someSelected = useMemo(() => {
+    const selSize = selection.selectedRows.size;
+    if (selSize === 0 || displayedRows.length === 0) {
+      return false;
+    }
+    return displayedRows.some((r) => selection.selectedRows.has(r.id));
+  }, [displayedRows, selection.selectedRows]);
+  const handleHeaderSelectAll = useCallback(() => {
+    if (allSelected) deselectAll();
+    else selectAll();
+  }, [allSelected, selectAll, deselectAll]);
   const getDefaultContextMenuItems = useCallback(
     (): ContextMenuItem[] => {
       const contextMenuLabels = (lang as { contextMenu?: { copy?: string; exportCsv?: string; deleteSelected?: string } }).contextMenu;
@@ -936,6 +1045,24 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     cache.set(rowId, handler);
     return handler;
   };
+  const selectRowRef = useRef(selectRow);
+  selectRowRef.current = selectRow;
+  const groupChildrenByIdRef = useRef(new Map<string, RowNode<T>[]>());
+  const groupSelectHandlersRef = useRef(new Map<string, (selected: boolean) => void>());
+  const selectAllHandlerForGroup = (rowId: string) => {
+    const cache = groupSelectHandlersRef.current;
+    const existing = cache.get(rowId);
+    if (existing) return existing;
+    const handler = (selected: boolean) => {
+      const children = groupChildrenByIdRef.current.get(rowId);
+      if (!children) return;
+      for (let i = 0; i < children.length; i++) {
+        selectRowRef.current(children[i]!.id, selected);
+      }
+    };
+    cache.set(rowId, handler);
+    return handler;
+  };
   const handlePageChange = useCallback(
     (page: number) => {
       setPaginationState((prev) => {
@@ -974,7 +1101,36 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     [columns]
   );
   const filterColumnField = filterState?.column.field;
-  const [filterPopoverValues, setFilterPopoverValues] = useState<unknown[]>([]);
+  const filterCacheGridIdRef = useRef<string | null>(null);
+  if (!filterCacheGridIdRef.current) {
+    filterCacheGridIdRef.current = gridId ?? `__fg_${++filterCacheAnonId}`;
+  }
+  if (gridId) filterCacheGridIdRef.current = gridId;
+  const allRowsRef = useRef(allRows);
+  allRowsRef.current = allRows;
+  const rowsGenerationRef = useRef(0);
+  const prevAllRowsIdentityRef = useRef(allRows);
+  if (prevAllRowsIdentityRef.current !== allRows) {
+    const prevGen = rowsGenerationRef.current;
+    rowsGenerationRef.current += 1;
+    prevAllRowsIdentityRef.current = allRows;
+    // Drop previous-generation cache entries for this grid (any field).
+    const gridPrefix = `${filterCacheGridIdRef.current}|`;
+    const prevGenToken = `|${prevGen}|`;
+    for (const key of FILTER_UNIQUE_VALUES_CACHE.keys()) {
+      if (key.startsWith(gridPrefix) && key.includes(prevGenToken)) {
+        FILTER_UNIQUE_VALUES_CACHE.delete(key);
+      }
+    }
+  }
+  useEffect(() => {
+    const id = filterCacheGridIdRef.current;
+    if (!id) return;
+    return () => {
+      deleteFilterUniqueValuesCacheByPrefix(`${id}|`);
+    };
+  }, []);
+  const [filterPopoverValues, setFilterPopoverValues] = useState<string[]>([]);
   useEffect(() => {
     if (!filterColumnField) {
       setFilterPopoverValues([]);
@@ -982,30 +1138,55 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
     }
     const provided = filterValues?.[filterColumnField];
     if (provided) {
-      setFilterPopoverValues(provided);
+      const unique = new Set<string>();
+      for (const v of provided) {
+        if (v != null) unique.add(String(v));
+      }
+      setFilterPopoverValues(Array.from(unique).sort());
+      return;
+    }
+    // Snapshot rows at open; do not depend on allRows identity (stream ticks).
+    const rows = allRowsRef.current;
+    const rowCount = rows.length;
+    const gen = rowsGenerationRef.current;
+    const cacheKey = `${filterCacheGridIdRef.current}|${filterColumnField}|${gen}|${rowCount}`;
+    const cached = FILTER_UNIQUE_VALUES_CACHE.get(cacheKey);
+    if (cached) {
+      setFilterPopoverValues(cached);
       return;
     }
     let cancelled = false;
-    const values: unknown[] = [];
+    const unique = new Set<string>();
     let index = 0;
     let idleId = 0;
     let timerId = 0;
-    const finish = () => {
-      if (!cancelled) setFilterPopoverValues(values);
+    let lastEmittedSize = -1;
+    const emit = (final: boolean) => {
+      if (cancelled) return;
+      if (!final && unique.size === lastEmittedSize) return;
+      lastEmittedSize = unique.size;
+      // Always sort so progressive updates don't jump when final sort lands.
+      const values = Array.from(unique).sort();
+      if (final) {
+        setFilterUniqueValuesCache(cacheKey, values);
+      }
+      setFilterPopoverValues(values);
     };
     const step = (deadline?: IdleDeadline) => {
       if (cancelled) return;
       const start = performance.now();
       const budget = Math.max(deadline?.timeRemaining() ?? 8, 4);
-      while (index < allRows.length && performance.now() - start < budget) {
-        values.push(getValueFromPath(allRows[index]!.data, filterColumnField));
+      while (index < rowCount && performance.now() - start < budget) {
+        const v = getValueFromPath(rows[index]!.data, filterColumnField);
+        if (v != null) unique.add(String(v));
         index += 1;
       }
-      if (index < allRows.length) {
+      if (index < rowCount) {
+        emit(false);
         schedule();
         return;
       }
-      finish();
+      emit(true);
     };
     const schedule = () => {
       if (typeof window.requestIdleCallback === 'function') {
@@ -1020,15 +1201,18 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
       if (idleId) window.cancelIdleCallback?.(idleId);
       if (timerId) window.clearTimeout(timerId);
     };
-  }, [filterColumnField, filterValues, allRows]);
+  }, [filterColumnField, filterValues]);
+  const portalThemeClassName = cn(
+    isDarkTheme && 'fibogrid-dark',
+    appearance && appearance !== 'default' && `fibogrid-theme-${appearance}`,
+    className
+  );
   const gridContent = (
     <div
       ref={containerRef}
       className={cn(
         'fibogrid',
-        isDarkTheme && 'fibogrid-dark',
-        appearance && appearance !== 'default' && `fibogrid-theme-${appearance}`,
-        className,
+        portalThemeClassName,
         'relative flex flex-col rounded-lg overflow-hidden focus:outline-none focus:ring-2 focus:ring-primary/50',
         isResizing && 'cursor-col-resize select-none',
         isSelecting && 'select-none cursor-crosshair',
@@ -1060,7 +1244,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
             internalApi.setFilterModel([]);
             setQuickFilter('');
           } : undefined}
-          className={className}
+          className={portalThemeClassName}
         />
       )}
       {(initialGroupByFields?.length ?? 0) > 0 && (
@@ -1146,7 +1330,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                 showCheckboxColumn={!hasCustomCheckbox && configs?.center?.checkboxSelection !== false && !!rowSelection}
                 allSelected={allSelected}
                 someSelected={someSelected}
-                onSelectAll={() => (allSelected ? deselectAll() : selectAll())}
+                onSelectAll={handleHeaderSelectAll}
                 onFilterClick={handleFilterClick}
                 onQuickColumnFilter={handleQuickColumnFilter}
                 headerHeight={headerHeight}
@@ -1158,7 +1342,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                 onAutoSizeAll={handleAutoSizeAll}
                 showFilterRow={effectiveShowFilterRow}
                 compact={isCompact}
-                className={className}
+                className={portalThemeClassName}
                 locale={lang}
               />
             </div>
@@ -1240,15 +1424,10 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                                 });
                               }
                               if (isValid) {
+                                // Mutate shared edit object; api.stopEditing fires cellValueChanged
+                                // once via event bus → conditional prop bridge (no direct prop call).
                                 currentEditing.value = currentValue;
                                 editingCellRef.current = currentEditing;
-                                onCellValueChanged?.({
-                                  rowNode: { ...row, data: setValueAtPath(row.data, currentEditing.field, currentValue) },
-                                  column,
-                                  oldValue: currentEditing.originalValue,
-                                  newValue: currentValue,
-                                  api,
-                                });
                               } else {
                                 console.warn(`Validation failed for ${column.field}`);
                               }
@@ -1266,11 +1445,12 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                           isDropTarget={dropTargetRow === row.id}
                           dropPosition={dropTargetRow === row.id ? dropPosition : null}
                           isCellSelected={isCellSelected}
+                          selectionVersion={selectionVersion}
                           isCellFocused={isCellFocused}
                           onCellMouseDown={handleCellMouseDown}
                           onCellMouseEnter={handleCellMouseEnter}
                           api={internalApi}
-                          isEven={index % 2 === 0}
+                          isEven={row.rowIndex % 2 === 0}
                           level={regularRow.level || 0}
                           hasChildren={regularRow.childRows?.length > 0}
                           isExpanded={expandedRows.has(row.id)}
@@ -1288,6 +1468,17 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                     }
                     const groupRow = row as unknown as GroupRowNode<T>;
                     const isExpanded = expandedGroups.has(row.id);
+                    const groupChildren = groupRow.groupChildren;
+                    groupChildrenByIdRef.current.set(row.id, groupChildren);
+                    let allChildrenSelected = true;
+                    let someChildrenSelected = false;
+                    for (let i = 0; i < groupChildren.length; i++) {
+                      if (selection.selectedRows.has(groupChildren[i].id)) {
+                        someChildrenSelected = true;
+                      } else {
+                        allChildrenSelected = false;
+                      }
+                    }
                     return (
                       <GroupRow
                         key={row.id}
@@ -1297,11 +1488,9 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
                         isExpanded={isExpanded}
                         onToggleExpand={expandHandlerForGroup(row.id)}
                         showCheckboxColumn={!!rowSelection}
-                        allChildrenSelected={groupRow.groupChildren.every((child) => selection.selectedRows.has(child.id))}
-                        someChildrenSelected={groupRow.groupChildren.some((child) => selection.selectedRows.has(child.id))}
-                        onSelectAll={(selected) => {
-                          groupRow.groupChildren.forEach((child) => selectRow(child.id, selected));
-                        }}
+                        allChildrenSelected={allChildrenSelected}
+                        someChildrenSelected={someChildrenSelected}
+                        onSelectAll={selectAllHandlerForGroup(row.id)}
                       />
                     );
                   })}
@@ -1315,7 +1504,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
           items={contextMenuItems}
           position={contextMenuPosition}
           onClose={() => setContextMenuPosition(null)}
-          className={className}
+          className={portalThemeClassName}
         />
       )}
       <div className="flex-none">
@@ -1375,7 +1564,7 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
             anchorRect={filterState.anchorRect}
             containerRef={containerRef}
             enableVirtualization={enableFilterValueVirtualization}
-            className={className}
+            className={portalThemeClassName}
           />
         );
       })()}

@@ -35,7 +35,7 @@ export const defaultShortcuts: ShortcutDef[] = [
     preventDefault: true,
     action: ({ currentState, focusCell, api }) => {
       const { rowIndex, colIndex } = currentState;
-      const totalRows = api.getDisplayedRows().length;
+      const totalRows = api.getDisplayedRowCount();
       if (rowIndex < totalRows - 1) {
         focusCell(rowIndex + 1, colIndex);
       }
@@ -111,7 +111,7 @@ export const defaultShortcuts: ShortcutDef[] = [
     preventDefault: true,
     action: ({ currentState, focusCell, api }) => {
       const visibleColumns = api.getColumnDefs().filter(c => !c.hide);
-      const totalRows = api.getDisplayedRows().length;
+      const totalRows = api.getDisplayedRowCount();
       if (totalRows === 0 || visibleColumns.length === 0) return;
       const { rowIndex, colIndex } = currentState;
       if (rowIndex === 0 && colIndex === 0) return;
@@ -125,7 +125,7 @@ export const defaultShortcuts: ShortcutDef[] = [
     preventDefault: true,
     action: ({ currentState, focusCell, api }) => {
       const visibleColumns = api.getColumnDefs().filter(c => !c.hide);
-      const totalRows = api.getDisplayedRows().length;
+      const totalRows = api.getDisplayedRowCount();
       const lastRow = totalRows - 1;
       const lastCol = visibleColumns.length - 1;
       if (lastRow < 0 || lastCol < 0) return;
@@ -141,7 +141,7 @@ export const defaultShortcuts: ShortcutDef[] = [
     preventDefault: true,
     action: ({ currentState, focusCell, api }) => {
       const { rowIndex, colIndex } = currentState;
-      const totalRows = api.getDisplayedRows().length;
+      const totalRows = api.getDisplayedRowCount();
       if (totalRows === 0 || rowIndex < 0) return;
       const visibleColumns = api.getColumnDefs().filter(c => !c.hide);
       const safeCol = colIndex >= 0 && colIndex < visibleColumns.length ? colIndex : 0;
@@ -158,7 +158,7 @@ export const defaultShortcuts: ShortcutDef[] = [
     preventDefault: true,
     action: ({ currentState, focusCell, api }) => {
       const { rowIndex, colIndex } = currentState;
-      const totalRows = api.getDisplayedRows().length;
+      const totalRows = api.getDisplayedRowCount();
       if (totalRows === 0 || rowIndex < 0) return;
       const visibleColumns = api.getColumnDefs().filter(c => !c.hide);
       const safeCol = colIndex >= 0 && colIndex < visibleColumns.length ? colIndex : 0;
@@ -183,7 +183,7 @@ export const defaultShortcuts: ShortcutDef[] = [
         event.preventDefault();
         focusCell(rowIndex, colIndex + 1);
       } else {
-        const totalRows = api.getDisplayedRows().length;
+        const totalRows = api.getDisplayedRowCount();
         if (rowIndex < totalRows - 1) {
           event.preventDefault();
           focusCell(rowIndex + 1, 0);

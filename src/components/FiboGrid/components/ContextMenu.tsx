@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { cn } from '@/lib/utils';
 import { ContextMenuItem as ContextMenuItemType } from '../types';
 import { ChevronRight } from 'lucide-react';
@@ -61,20 +62,25 @@ export function GridContextMenu({ items, position, onClose, className }: GridCon
 
   if (!position || items.length === 0) return null;
 
-  return (
+  const menuNode = (
     <div
       ref={menuRef}
       className={cn(
-        'fixed z-[9999] min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md',
+        'fibogrid fixed z-[9999] min-w-[8rem] rounded-md border bg-popover p-1 text-popover-foreground shadow-md',
         className
       )}
-      style={{ left: position.x, top: position.y }}
+      style={{ left: position.x, top: position.y, width: 'auto', overflow: 'visible' }}
     >
       {items.map((item, index) => (
         <ContextMenuRow key={index} item={item} onClose={onClose} />
       ))}
     </div>
   );
+
+  if (typeof document !== 'undefined') {
+    return createPortal(menuNode, document.body);
+  }
+  return menuNode;
 }
 
 function ContextMenuRow({ item, onClose }: { item: ContextMenuItemType; onClose: () => void }) {

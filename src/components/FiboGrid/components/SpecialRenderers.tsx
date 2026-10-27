@@ -1,11 +1,11 @@
 import React from 'react';
 import { CellRendererParams, HeaderRendererParams } from '../types';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useGridContext } from '../context/GridContext';
+import { useGridLocale } from '../context/GridContext';
 
 function useAriaLabel(key: 'selectRow' | 'selectAllRows', fallback: string): string {
-    const locale = useGridContext()?.locale;
-    return locale?.aria[key] ?? fallback;
+    const locale = useGridLocale();
+    return locale.aria[key] ?? fallback;
 }
 
 export const RowNumberRenderer = (params: CellRendererParams) => {
@@ -42,8 +42,8 @@ export const CheckboxCellRenderer = (params: CellRendererParams) => {
 function SelectAllCheckbox({ params }: { params: HeaderRendererParams }) {
     const { api } = params;
     const label = useAriaLabel('selectAllRows', 'Select all rows');
-    const selectedCount = api.getSelectedRows().length;
-    const totalCount = api.getDisplayedRows().length;
+    const selectedCount = api.getSelectedRowCount();
+    const totalCount = api.getDisplayedRowCount();
     const isAllSelected = totalCount > 0 && selectedCount === totalCount;
     const isIndeterminate = selectedCount > 0 && selectedCount < totalCount;
     const handleCheckedChange = (checked: boolean) => {

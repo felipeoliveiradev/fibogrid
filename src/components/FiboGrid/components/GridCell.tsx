@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { memo, useRef, useEffect } from 'react';
 import { ProcessedColumn, RowNode, GridApi } from '../types';
 import { getValueFromPath } from '../utils/helpers';
 import { cn } from '@/lib/utils';
@@ -28,7 +28,7 @@ interface GridCellProps<T> {
   isFirstPinnedRight?: boolean;
   isLastCenterBeforeRight?: boolean;
 }
-export function GridCell<T>({
+function GridCellInner<T>({
   column,
   row,
   api,
@@ -292,3 +292,46 @@ export function GridCell<T>({
     </div>
   );
 }
+
+function areGridCellPropsEqual<T>(
+  prev: GridCellProps<T>,
+  next: GridCellProps<T>,
+): boolean {
+  if (prev.isSelected !== next.isSelected) return false;
+  if (prev.isFocused !== next.isFocused) return false;
+  if (prev.isEditing !== next.isEditing) return false;
+  if (prev.isEditing && prev.editValue !== next.editValue) return false;
+  if (prev.column.field !== next.column.field) return false;
+  if (prev.column.computedWidth !== next.column.computedWidth) return false;
+  if (prev.indent !== next.indent) return false;
+  if (prev.showExpandIcon !== next.showExpandIcon) return false;
+  if (prev.isExpanded !== next.isExpanded) return false;
+  if (prev.rowHeight !== next.rowHeight) return false;
+  if (prev.isFirstPinnedRight !== next.isFirstPinnedRight) return false;
+  if (prev.isLastCenterBeforeRight !== next.isLastCenterBeforeRight) return false;
+  if (prev.column.editable !== next.column.editable) return false;
+  if (prev.column.cellClass !== next.column.cellClass) return false;
+  if (prev.column.cellRenderer !== next.column.cellRenderer) return false;
+  if (prev.column.valueFormatter !== next.column.valueFormatter) return false;
+  if (prev.row.id !== next.row.id) return false;
+  if (prev.row.rowIndex !== next.row.rowIndex) return false;
+  if (prev.onStartEdit !== next.onStartEdit) return false;
+  if (prev.onEditChange !== next.onEditChange) return false;
+  if (prev.onStopEdit !== next.onStopEdit) return false;
+  if (prev.onClick !== next.onClick) return false;
+  if (prev.onDoubleClick !== next.onDoubleClick) return false;
+  if (prev.onMouseDown !== next.onMouseDown) return false;
+  if (prev.onMouseEnter !== next.onMouseEnter) return false;
+  if (prev.onContextMenu !== next.onContextMenu) return false;
+  if (prev.onToggleExpand !== next.onToggleExpand) return false;
+  if (prev.registerCellRef !== next.registerCellRef) return false;
+  if (
+    getValueFromPath(prev.row.data, prev.column.field) !==
+    getValueFromPath(next.row.data, next.column.field)
+  ) {
+    return false;
+  }
+  return true;
+}
+
+export const GridCell = memo(GridCellInner, areGridCellPropsEqual) as typeof GridCellInner;

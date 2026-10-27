@@ -1,8 +1,10 @@
+import { MutableRefObject } from 'react';
 import { GridApi, ProcessedColumn, RowNode } from '../../../types';
 import { EventBuilder } from '../../../utils/EventBuilder';
 import { exportToCsv, copyToClipboard, setValueAtPath, getValueFromPath, isEqual } from '../../../utils/helpers';
 import { UseGridApiContext } from './apiTypes';
 import type { GridHistoryEntry } from '../useGridRows';
+import { enqueueBatchUpdate, flushBatchUpdate } from './gridApi/manager/batchUpdate';
 const PASTE_ROW_LIMIT = 5000;
 const HISTORY_LIMIT = 50;
 function cloneCellOverrides(
@@ -163,23 +165,18 @@ function readFocusedCellAnchor(
     if (colIndex < 0) return null;
     return { rowIndex, colIndex };
 }
-export function createGridApiMethods<T>(context: UseGridApiContext<T>): Partial<GridApi<T>> {
-    const {
-        props,
-        events,
-        sortFilter,
-        pagination,
-        columns,
-        rows,
-        selection,
-        editing,
-        apiRef,
-        grouping
-    } = context;
-    const { paginationMode = 'client', infiniteScroll = false } = props;
-    const isServerData = paginationMode === 'server' || infiniteScroll;
+export function createGridApiMethods<T>(
+    contextRef: MutableRefObject<UseGridApiContext<T>>,
+): Partial<GridApi<T>> {
+    // One stable bag; every method reads the latest context via contextRef.current.
+    const ctx = () => contextRef.current;
+    const isServerData = () => {
+        const { paginationMode = 'client', infiniteScroll = false } = ctx().props;
+        return paginationMode === 'server' || infiniteScroll;
+    };
     const refreshRowNodes = () => {
-        if (!isServerData) {
+        const { rows } = ctx();
+        if (!isServerData()) {
             rows.setInternalRowData(prev => prev.slice());
             return;
         }
@@ -188,22 +185,34 @@ export function createGridApiMethods<T>(context: UseGridApiContext<T>): Partial<
         }
     };
     const writeColumnWidth = (field: string, width: number) => {
-        columns.setColumnWidths(prev => {
+        ctx().columns.setColumnWidths(prev => {
             if (prev[field] === width) return prev;
             return { ...prev, [field]: width };
         });
     };
+    // Singleton per GridApi so listen()/off() share one handlerWrappers Map across events() calls.
+    // Delegates always read contextRef so event wiring stays fresh without reallocating the builder.
+    const eventBuilder = new EventBuilder<T>(
+        (eventType, listener) => ctx().events.addEventListener(eventType, listener),
+        (eventType, listener) => ctx().events.removeEventListener(eventType, listener),
+        (eventType, eventData) => ctx().events.fireEvent(eventType, eventData),
+    );
     return {
-        addEventListener: events.addEventListener,
-        removeEventListener: events.removeEventListener,
-        events: () => new EventBuilder<T>(events.addEventListener, events.removeEventListener, events.fireEvent),
-        getRowData: () => isServerData ? rows.serverSideState.data : rows.internalRowData,
+        addEventListener: (...args: any[]) => (ctx().events.addEventListener as any)(...args),
+        removeEventListener: (...args: any[]) => (ctx().events.removeEventListener as any)(...args),
+        events: () => eventBuilder,
+        getRowData: () => {
+            const { rows } = ctx();
+            return isServerData() ? rows.serverSideState.data : rows.internalRowData;
+        },
         setRowData: (data) => {
+            const { rows } = ctx();
             if (isEqual(data, rows.internalRowData)) return;
             rows.setInternalRowData(data);
         },
         updateRowData: (updates) => {
             if (!updates || (!updates.add && !updates.remove && !updates.update)) return;
+            const { props, rows } = ctx();
             rows.setInternalRowData(prev => {
                 let next = [...prev];
                 if (updates.remove) {
@@ -213,14 +222,29 @@ export function createGridApiMethods<T>(context: UseGridApiContext<T>): Partial<
                         return !idsToRemove.has(id);
                     });
                 }
-                if (updates.update) {
-                    updates.update.forEach(u => {
-                        const id = props.getRowId ? props.getRowId(u) : (u as any).id;
-                        const idx = next.findIndex(r => (props.getRowId ? props.getRowId(r) : (r as any).id) === id);
-                        if (idx >= 0) {
+                if (updates.update && updates.update.length > 0) {
+                    const getId = (r: T) => (props.getRowId ? props.getRowId(r) : (r as any).id) as string;
+                    // Reuse live O(1) index when row set structure is intact; otherwise rebuild once.
+                    const canReuseIndex =
+                        !updates.remove
+                        && Boolean(props.getRowId)
+                        && rows.rowIndexByIdRef.current.size === next.length;
+                    const indexById: ReadonlyMap<string, number> = canReuseIndex
+                        ? rows.rowIndexByIdRef.current
+                        : (() => {
+                            const map = new Map<string, number>();
+                            for (let i = 0; i < next.length; i++) {
+                                map.set(getId(next[i]!), i);
+                            }
+                            return map;
+                        })();
+                    for (let i = 0; i < updates.update.length; i++) {
+                        const u = updates.update[i]!;
+                        const idx = indexById.get(getId(u));
+                        if (idx !== undefined) {
                             next[idx] = u;
                         }
-                    });
+                    }
                 }
                 if (updates.add) {
                     next = [...next, ...updates.add];
@@ -228,41 +252,56 @@ export function createGridApiMethods<T>(context: UseGridApiContext<T>): Partial<
                 return next;
             });
         },
+        batchUpdate: (rows) => {
+            const context = ctx();
+            enqueueBatchUpdate(context.apiRef, ctx, rows, context.props.getRowId);
+        },
+        flushBatchUpdate: () => flushBatchUpdate(ctx().apiRef),
         getRowNode: (id) => {
-            const node = rows.rowsRef.current.find((r) => r.id === id);
+            const { rows, selection } = ctx();
+            const idx = rows.rowIndexByIdRef.current.get(id);
+            if (idx === undefined) return null;
+            const node = rows.rowsRef.current[idx];
             if (!node) return null;
             const selected = selection.selectionRef.current.selectedRows.has(id);
             return { ...node, selected };
         },
-        forEachNode: (callback) => rows.rowsRef.current.forEach(callback),
-        getDisplayedRowCount: () => rows.displayedRowsRef.current.length,
-        getDisplayedRowAtIndex: (index) => rows.displayedRowsRef.current[index] || null,
-        getDisplayedRows: () => rows.displayedRowsRef.current,
+        forEachNode: (callback) => ctx().rows.rowsRef.current.forEach(callback),
+        getDisplayedRowCount: () => ctx().rows.displayedRowsRef.current.length,
+        getDisplayedRowAtIndex: (index) => ctx().rows.displayedRowsRef.current[index] || null,
+        getDisplayedRows: () => ctx().rows.displayedRowsRef.current,
         getSelectedRows: () => {
+            const { rows, selection } = ctx();
             const selectedIds = selection.selectionRef.current.selectedRows;
+            if (selectedIds.size === 0) return [];
             return rows.sortedRowsRef.current.filter((r) => selectedIds.has(r.id));
         },
         getSelectedNodes: () => {
+            const { rows, selection } = ctx();
             const selectedIds = selection.selectionRef.current.selectedRows;
+            if (selectedIds.size === 0) return [];
             return rows.sortedRowsRef.current.filter((r) => selectedIds.has(r.id));
         },
-        selectAll: selection.selectAll,
-        deselectAll: selection.deselectAll,
-        /* Validation added to selectRow in usage or relying on useGridSelection check? 
+        getSelectedRowCount: () => ctx().selection.selectionRef.current.selectedRows.size,
+        selectAll: (...args: any[]) => (ctx().selection.selectAll as any)(...args),
+        deselectAll: (...args: any[]) => (ctx().selection.deselectAll as any)(...args),
+        /* Validation added to selectRow in usage or relying on useGridSelection check?
            Let's add check here for redundancy or performance */
         selectRow: (id, selected = true) => {
+            const { selection } = ctx();
             const isSelected = selection.selection.selectedRows.has(id);
             if (isSelected === selected) return;
             selection.selectRow(id, selected);
         },
         selectRows: (rowIds, selected = true) => {
+            const { selection } = ctx();
             const allSatisfy = rowIds.every(id => selection.selection.selectedRows.has(id) === selected);
             if (allSatisfy) return;
             selection.selectRows(rowIds, selected);
         },
-        getColumnDefs: () => columns.columns,
+        getColumnDefs: () => ctx().columns.columns,
         setColumnVisible: (field, visible) => {
-            columns.setHiddenColumns((prev) => {
+            ctx().columns.setHiddenColumns((prev) => {
                 const isHidden = prev.has(field);
                 if ((visible && !isHidden) || (!visible && isHidden)) return prev;
                 const next = new Set(prev);
@@ -271,10 +310,10 @@ export function createGridApiMethods<T>(context: UseGridApiContext<T>): Partial<
                 return next;
             });
         },
-        setColumnPinned: columns.setColumnPinned,
+        setColumnPinned: (...args: any[]) => (ctx().columns.setColumnPinned as any)(...args),
         moveColumn: (fromIndex, toIndex) => {
             if (fromIndex === toIndex) return;
-            columns.setColumnOrder((prev) => {
+            ctx().columns.setColumnOrder((prev) => {
                 const next = [...prev];
                 const [moved] = next.splice(fromIndex, 1);
                 next.splice(toIndex, 0, moved);
@@ -282,17 +321,19 @@ export function createGridApiMethods<T>(context: UseGridApiContext<T>): Partial<
             });
         },
         resizeColumn: (field, width) => {
-            columns.setColumnWidths((prev) => {
+            ctx().columns.setColumnWidths((prev) => {
                 if (prev[field] === width) return prev;
                 return { ...prev, [field]: width };
             });
         },
         autoSizeColumn: (field) => {
+            const { columns, rows } = ctx();
             const column = columns.columns.find(col => col.field === field);
             if (!column) return;
             writeColumnWidth(field, measureColumnWidth(column, rows.rowsRef.current));
         },
         autoSizeAllColumns: () => {
+            const { columns, rows } = ctx();
             const visible = columns.columns.filter(col => !col.hide);
             if (visible.length === 0) return;
             const nodes = rows.rowsRef.current;
@@ -313,7 +354,7 @@ export function createGridApiMethods<T>(context: UseGridApiContext<T>): Partial<
             });
         },
         setPage: (page) => {
-            pagination.setPaginationState((prev) => {
+            ctx().pagination.setPaginationState((prev) => {
                 const newPage = Math.max(0, Math.min(page, prev.totalPages - 1));
                 if (prev.currentPage === newPage) return prev;
                 return {
@@ -323,7 +364,7 @@ export function createGridApiMethods<T>(context: UseGridApiContext<T>): Partial<
             });
         },
         setPageSize: (size) => {
-            pagination.setPaginationState((prev) => {
+            ctx().pagination.setPaginationState((prev) => {
                 if (prev.pageSize === size) return prev;
                 return {
                     ...prev,
@@ -333,25 +374,27 @@ export function createGridApiMethods<T>(context: UseGridApiContext<T>): Partial<
             });
         },
         nextPage: () => {
-            pagination.setPaginationState((prev) => {
+            ctx().pagination.setPaginationState((prev) => {
                 const newPage = Math.min(prev.currentPage + 1, prev.totalPages - 1);
                 if (prev.currentPage === newPage) return prev;
                 return { ...prev, currentPage: newPage };
             });
         },
         previousPage: () => {
-            pagination.setPaginationState((prev) => {
+            ctx().pagination.setPaginationState((prev) => {
                 const newPage = Math.max(prev.currentPage - 1, 0);
                 if (prev.currentPage === newPage) return prev;
                 return { ...prev, currentPage: newPage };
             });
         },
         setSortModel: (model) => {
+            const { sortFilter } = ctx();
             if (isEqual(model, sortFilter.sortModel)) return;
             sortFilter.setSortModel(model);
         },
-        getSortModel: () => sortFilter.sortModel,
+        getSortModel: () => ctx().sortFilter.sortModel,
         setFilterModel: (model, options) => {
+            const { sortFilter } = ctx();
             let nextModel = model;
             if (options?.behavior === 'merge') {
                 const currentModel = sortFilter.filterModel;
@@ -369,21 +412,26 @@ export function createGridApiMethods<T>(context: UseGridApiContext<T>): Partial<
             if (isEqual(nextModel, sortFilter.filterModel)) return;
             sortFilter.setFilterModel(nextModel);
         },
-        getFilterModel: () => sortFilter.filterModel,
+        getFilterModel: () => ctx().sortFilter.filterModel,
         setQuickFilter: (text) => {
+            const { sortFilter } = ctx();
             if (sortFilter.quickFilter === text) return;
             sortFilter.setQuickFilter(text);
         },
-        startEditingCell: editing.startEditingCell,
-        stopEditing: editing.stopEditing,
+        startEditingCell: (...args: any[]) => (ctx().editing.startEditingCell as any)(...args),
+        stopEditing: (...args: any[]) => (ctx().editing.stopEditing as any)(...args),
         ensureRowVisible: (id) => {
-            const node = rows.rowsRef.current.find(r => r.id === id)
-                ?? rows.displayedRowsRef.current.find(r => r.id === id);
+            const { rows } = ctx();
+            const idx = rows.rowIndexByIdRef.current.get(id);
+            const node = idx !== undefined
+                ? rows.rowsRef.current[idx]
+                : null;
             if (!node) return;
         },
         ensureColumnVisible: (_field) => { },
         scrollTo: (_position) => { },
         exportToCsv: (params) => {
+            const { rows, selection, columns } = ctx();
             const rowsToExport = params?.onlySelected
                 ? rows.displayedRowsRef.current.filter((r) => selection.selection.selectedRows.has(r.id))
                 : rows.displayedRowsRef.current;
@@ -393,6 +441,7 @@ export function createGridApiMethods<T>(context: UseGridApiContext<T>): Partial<
             });
         },
         copyToClipboard: async (includeHeaders = true) => {
+            const { rows, selection, columns } = ctx();
             const selectedRows = rows.displayedRowsRef.current.filter((r) =>
                 selection.selection.selectedRows.has(r.id)
             );
@@ -402,7 +451,8 @@ export function createGridApiMethods<T>(context: UseGridApiContext<T>): Partial<
         refreshCells: refreshRowNodes,
         redrawRows: refreshRowNodes,
         refresh: () => {
-            if (isServerData) {
+            const { rows, pagination, sortFilter } = ctx();
+            if (isServerData()) {
                 pagination.setPaginationState((prev) => ({ ...prev, currentPage: 0 }));
                 rows.serverSideState.refresh();
             } else {
@@ -413,12 +463,14 @@ export function createGridApiMethods<T>(context: UseGridApiContext<T>): Partial<
             }
         },
         refreshSelection: () => {
+            const { selection } = ctx();
             const currentSelected = Array.from(selection.selection.selectedRows);
             if (currentSelected.length === 0) return;
             selection.deselectAll();
             selection.selectRows(currentSelected, true);
         },
         undo: () => {
+            const { rows } = ctx();
             const previous = rows.historyRef.current.pop();
             if (!previous) return;
             if (previous.kind === 'cell') {
@@ -439,6 +491,7 @@ export function createGridApiMethods<T>(context: UseGridApiContext<T>): Partial<
             rows.setOverrides(previous.overrides);
         },
         redo: () => {
+            const { rows } = ctx();
             const next = rows.redoHistoryRef.current.pop();
             if (!next) return;
             if (next.kind === 'cell') {
@@ -459,6 +512,7 @@ export function createGridApiMethods<T>(context: UseGridApiContext<T>): Partial<
             rows.setOverrides(next.overrides);
         },
         pushUndoSnapshot: () => {
+            const { rows } = ctx();
             pushHistoryEntry(rows.historyRef.current, {
                 kind: 'snapshot',
                 rows: rows.internalRowDataRef.current.slice(),
@@ -467,6 +521,7 @@ export function createGridApiMethods<T>(context: UseGridApiContext<T>): Partial<
             rows.redoHistoryRef.current.length = 0;
         },
         pushCellUndo: (rowId: string, field: string) => {
+            const { rows } = ctx();
             pushHistoryEntry(rows.historyRef.current, cellHistoryFromOverrides(
                 rows.overridesRef.current,
                 rowId,
@@ -482,6 +537,7 @@ export function createGridApiMethods<T>(context: UseGridApiContext<T>): Partial<
             try {
                 const text = await navigator.clipboard.readText();
                 if (!text) return;
+                const { props, rows, columns, selection, editing, apiRef } = ctx();
                 const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
                 const separator = normalized.includes('\t') ? '\t' : ',';
                 const pastedRows = normalized.split('\n').filter(r => r.trim() !== '').slice(0, PASTE_ROW_LIMIT);
@@ -590,11 +646,11 @@ export function createGridApiMethods<T>(context: UseGridApiContext<T>): Partial<
             }
         },
         expandAllGroups: () => {
-            grouping.expandAllGroups();
+            ctx().grouping.expandAllGroups();
         },
         collapseAllGroups: () => {
-            grouping.collapseAllGroups();
+            ctx().grouping.collapseAllGroups();
         },
-        addChildToRow: grouping.addChildToRow,
+        addChildToRow: (...args: any[]) => (ctx().grouping.addChildToRow as any)(...args),
     } as Partial<GridApi<T>>;
 };

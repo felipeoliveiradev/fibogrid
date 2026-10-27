@@ -276,6 +276,7 @@ export interface GridApi<T = any> {
   selectRows: (ids: string[], selected?: boolean) => void;
   getSelectedRows: () => RowNode<T>[];
   getSelectedNodes: () => RowNode<T>[];
+  getSelectedRowCount: () => number;
   setSortModel: (model: SortModel[]) => void;
   getSortModel: () => SortModel[];
   setFilterModel: (model: FilterModel[], options?: SetFilterOptions) => void;
@@ -303,6 +304,10 @@ export interface GridApi<T = any> {
   pasteFromClipboard: () => Promise<void>;
   params: () => GridApiBuilder<T>;
   manager: () => GridManagerBuilder<T>;
+  /** rAF-coalesced row patches: any number of calls per frame result in one grid update. */
+  batchUpdate: (rows: Partial<T>[] | T[]) => void;
+  /** Cancels the pending frame and applies queued `batchUpdate` patches immediately. */
+  flushBatchUpdate: () => void;
   refreshCells: () => void;
   redrawRows: () => void;
   refresh: () => void;
@@ -345,6 +350,10 @@ export interface GridManagerBuilder<T = any> {
   replaceAll: (rows: T[], compareKey?: string) => GridManagerBuilder<T>;
   remove: (rowIds: string[]) => GridManagerBuilder<T>;
   update: (rows: T[]) => GridManagerBuilder<T>;
+  /** Coalesces patches (merged per row id) into one execute per animation frame. Applies without calling `execute()`. */
+  batchUpdate: (rows: Partial<T>[] | T[]) => GridManagerBuilder<T>;
+  /** Cancels the pending frame and applies queued `batchUpdate` patches immediately. */
+  batchFlush: () => GridManagerBuilder<T>;
   updateCell: (rowId: string, field: string, value: any) => GridManagerBuilder<T>;
   resetCell: (rowId: string, field: string) => GridManagerBuilder<T>;
   resetRow: (rowId: string) => GridManagerBuilder<T>;
@@ -586,5 +595,6 @@ export interface FiboGridProps<T = any> extends GridEvents<T> {
 export type UseFiboGridReturn<T = any> = {
   registry: GridRegistryContextValue<T>;
   events: EventBuilder<T>;
-  grid: GridApi<T>;
+  /** Undefined until the grid with this id is registered (and after unregister). */
+  grid: GridApi<T> | undefined;
 }

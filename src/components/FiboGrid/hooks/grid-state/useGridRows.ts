@@ -18,6 +18,7 @@ import {
     getValueFromPath,
     isEqual,
 } from '../../utils/helpers';
+import { repositionRows } from '../../utils/sortedIndex';
 interface UseGridRowsProps<T> {
     props: FiboGridProps<T>;
     columns: ProcessedColumn<T>[];
@@ -48,10 +49,13 @@ export interface UseGridRowsResult<T> {
     sortedRowsRef: MutableRefObject<RowNode<T>[]>;
     overridesRef: MutableRefObject<Record<string, Record<string, any>>>;
     internalRowDataRef: MutableRefObject<T[]>;
+    rowIndexByIdRef: MutableRefObject<Map<string, number>>;
     serverSideState: ServerSideDataState<T>;
     totalRows: number;
 }
 const EMPTY_ROW_DATA: readonly any[] = [];
+const EMPTY_CHANGED_FIELDS = new Set<string>();
+const EMPTY_CHANGED_IDS: readonly string[] = [];
 function withDisplayedSelection<T>(page: RowNode<T>[], selectedIds: Set<string>): RowNode<T>[] {
     const len = page.length;
     let next: RowNode<T>[] | null = null;
@@ -160,13 +164,42 @@ export function useGridRows<T>({
             resolveId,
         ));
     }, [controlledRows, isServerData]);
-    const baseRows = useMemo(() => {
+    const prevBaseRowsRef = useRef<RowNode<T>[]>([]);
+    const prevRowIndexMapRef = useRef<Map<string, number>>(new Map());
+    const rowIndexByIdRef = useRef<Map<string, number>>(new Map());
+    const { baseRows, rowIndexById, changedBaseFields, changedRowIds } = useMemo(() => {
         const sourceData = isServerData ? serverSideState.data : internalRowData;
         const len = sourceData.length;
+        const prevBase = prevBaseRowsRef.current;
         const result: RowNode<T>[] = new Array(len);
+        const canReuseMap = prevBase.length === len && prevRowIndexMapRef.current.size === len;
+        let idsUnchanged = canReuseMap;
+        const diffFields = new Set<string>();
+        const changedIds: string[] = [];
         for (let i = 0; i < len; i++) {
             const raw = sourceData[i];
+            const prevNode = prevBase[i];
+            if (prevNode && prevNode.data === raw && prevNode.rowIndex === i) {
+                result[i] = prevNode;
+                continue;
+            }
             const rowId = getRowId ? getRowId(raw) : `row-${i}`;
+            if (!prevNode || prevNode.id !== rowId) {
+                idsUnchanged = false;
+            } else if (idsUnchanged) {
+                changedIds.push(rowId);
+                if (prevNode.data && raw && typeof prevNode.data === 'object' && typeof raw === 'object') {
+                const prevRec = prevNode.data as Record<string, unknown>;
+                const nextRec = raw as Record<string, unknown>;
+                const keys = Object.keys(nextRec);
+                for (let k = 0; k < keys.length; k++) {
+                    const key = keys[k]!;
+                    if (prevRec[key] !== nextRec[key]) {
+                        diffFields.add(key);
+                    }
+                }
+                }
+            }
             result[i] = {
                 id: rowId,
                 data: raw,
@@ -176,15 +209,25 @@ export function useGridRows<T>({
                 level: 0,
             };
         }
-        return result;
-    }, [internalRowData, serverSideState.data, isServerData, getRowId]);
-    const rowIndexById = useMemo(() => {
-        const map = new Map<string, number>();
-        for (let i = 0; i < baseRows.length; i++) {
-            map.set(baseRows[i].id, i);
+        prevBaseRowsRef.current = result;
+        const changedBaseFields = diffFields.size === 0 ? EMPTY_CHANGED_FIELDS : diffFields;
+        if (idsUnchanged) {
+            return {
+                baseRows: result,
+                rowIndexById: prevRowIndexMapRef.current,
+                changedBaseFields,
+                changedRowIds: changedIds.length === 0 ? EMPTY_CHANGED_IDS : changedIds,
+            };
         }
-        return map;
-    }, [baseRows]);
+        const map = new Map<string, number>();
+        for (let i = 0; i < len; i++) {
+            map.set(result[i].id, i);
+        }
+        prevRowIndexMapRef.current = map;
+        // Topology changed (ids added/removed/reordered): no incremental ids.
+        return { baseRows: result, rowIndexById: map, changedBaseFields, changedRowIds: EMPTY_CHANGED_IDS };
+    }, [internalRowData, serverSideState.data, isServerData, getRowId]);
+    rowIndexByIdRef.current = rowIndexById;
     const rows = useMemo(() => {
         const ids = Object.keys(overrides);
         if (ids.length === 0) return baseRows;
@@ -208,46 +251,89 @@ export function useGridRows<T>({
     internalRowDataRef.current = internalRowData;
     overridesRef.current = overrides;
     const deferredQuickFilter = useDeferredValue(quickFilter);
-    const editedFields = useMemo(() => collectEditedFields(overrides), [overrides]);
+    const overrideFields = useMemo(() => collectEditedFields(overrides), [overrides]);
+    const editedFields = useMemo(() => {
+        const set = new Set<string>(overrideFields);
+        changedBaseFields.forEach((f) => set.add(f));
+        return set;
+    }, [overrideFields, changedBaseFields]);
     const layoutRef = useRef<{
         base: RowNode<T>[];
+        rowIndexById: Map<string, number>;
         filtered: RowNode<T>[];
         sorted: RowNode<T>[];
         sortedReady: boolean;
+        filterModel: FilterModel[];
+        quickFilter: string;
+        sortModel: SortModel[];
+        columns: ProcessedColumn<T>[];
     } | null>(null);
     const filteredRows = useMemo(() => {
         const filterTouchesEdit = filterModel.some((filter) => editedFields.has(filter.field));
         const layout = layoutRef.current;
+        const sameTopology =
+            layout != null
+            && layout.rowIndexById === rowIndexById
+            && layout.filterModel === filterModel
+            && layout.quickFilter === deferredQuickFilter
+            && layout.columns === columns;
+
+        if (!isServerData && filterModel.length === 0 && !deferredQuickFilter) {
+            // When preserving a sorted cache, keep the previous sortModel so
+            // sortedRows sees a mismatch and re-sorts if sort changed.
+            // Never write the new sortModel while sortedReady stays true.
+            layoutRef.current = {
+                base: baseRows,
+                rowIndexById,
+                filtered: rows,
+                sorted: sameTopology ? layout.sorted : rows,
+                sortedReady: sameTopology ? layout.sortedReady : false,
+                filterModel,
+                quickFilter: deferredQuickFilter,
+                sortModel: sameTopology ? layout.sortModel : sortModel,
+                columns,
+            };
+            return rows;
+        }
+
         if (
             !isServerData
             && !filterTouchesEdit
             && !deferredQuickFilter
-            && layout?.base === baseRows
+            && sameTopology
         ) {
             const patched = patchRowNodes(layout.filtered, rows, rowIndexById);
-            if (patched) {
-                layoutRef.current = { ...layout, filtered: patched };
-                return patched;
-            }
-            return layout.filtered;
+            const nextFiltered = patched ?? layout.filtered;
+            layoutRef.current = {
+                ...layout,
+                base: baseRows,
+                filtered: nextFiltered,
+            };
+            return nextFiltered;
         }
         let next: RowNode<T>[];
         if (isServerData) {
             next = clientFilterModel.length > 0
                 ? filterRows(rows, clientFilterModel, columns, '')
                 : rows;
-        } else if (filterModel.length === 0 && !deferredQuickFilter) {
-            next = rows;
         } else {
             next = filterRows(rows, filterModel, columns, deferredQuickFilter);
         }
         layoutRef.current = {
             base: baseRows,
+            rowIndexById,
             filtered: next,
             sorted: next,
             sortedReady: false,
+            filterModel,
+            quickFilter: deferredQuickFilter,
+            sortModel,
+            columns,
         };
         return next;
+        // sortModel intentionally omitted: filtering does not depend on it.
+        // Writing a new sortModel into layoutRef while preserving sortedReady
+        // would make sortedRows skip re-sort and show a stale order.
     }, [rows, baseRows, rowIndexById, filterModel, columns, deferredQuickFilter, isServerData, clientFilterModel, editedFields]);
     const sortedRows = useMemo(() => {
         if (isServerData) {
@@ -255,11 +341,42 @@ export function useGridRows<T>({
         }
         const sortTouchesEdit = sortModel.some((sort) => editedFields.has(sort.field));
         const layout = layoutRef.current;
+
+        // Live-stream path: single numeric sort column, only base data changed
+        // (no cell overrides on that field), topology + sort cache intact.
+        // Reposition just the changed rows via binary search: O(n + k log n)
+        // instead of a full O(n log n) sortRows every tick.
+        if (
+            sortModel.length === 1
+            && sortTouchesEdit
+            && changedRowIds.length > 0
+            && layout?.sortedReady
+            && layout.rowIndexById === rowIndexById
+            && layout.sortModel === sortModel
+            && layout.columns === columns
+            && layout.sorted.length > 0
+        ) {
+            const live = tryLiveReposition(
+                layout.sorted,
+                rows,
+                rowIndexById,
+                changedRowIds,
+                sortModel[0]!,
+                columns,
+                overrideFields,
+            );
+            if (live) {
+                layoutRef.current = { ...layout, sorted: live };
+                return live;
+            }
+        }
         if (
             sortModel.length > 0
             && !sortTouchesEdit
             && layout?.sortedReady
-            && layout.base === baseRows
+            && layout.rowIndexById === rowIndexById
+            && layout.sortModel === sortModel
+            && layout.columns === columns
         ) {
             const patched = patchRowNodes(layout.sorted, rows, rowIndexById);
             if (patched) {
@@ -269,6 +386,12 @@ export function useGridRows<T>({
             return layout.sorted;
         }
         if (sortModel.length === 0) {
+            if (filteredRows === rows) {
+                if (layoutRef.current) {
+                    layoutRef.current = { ...layoutRef.current, sorted: rows, sortedReady: false, sortModel, columns };
+                }
+                return rows;
+            }
             let needsUpdate = false;
             for (let i = 0; i < filteredRows.length; i++) {
                 if (filteredRows[i].rowIndex !== i) {
@@ -280,7 +403,7 @@ export function useGridRows<T>({
                 ? filteredRows.map((row, index) => (row.rowIndex === index ? row : { ...row, rowIndex: index }))
                 : filteredRows;
             if (layoutRef.current) {
-                layoutRef.current = { ...layoutRef.current, sorted: next, sortedReady: false };
+                layoutRef.current = { ...layoutRef.current, sorted: next, sortedReady: false, sortModel, columns };
             }
             return next;
         }
@@ -292,11 +415,12 @@ export function useGridRows<T>({
             result[i] = row.rowIndex === i ? row : { ...row, rowIndex: i };
         }
         if (layoutRef.current) {
-            layoutRef.current = { ...layoutRef.current, sorted: result, sortedReady: true };
+            layoutRef.current = { ...layoutRef.current, sorted: result, sortedReady: true, sortModel, columns };
         }
         return result;
-    }, [filteredRows, rows, baseRows, rowIndexById, sortModel, columns, isServerData, editedFields]);
+    }, [filteredRows, rows, rowIndexById, sortModel, columns, isServerData, editedFields, changedRowIds, overrideFields]);
     sortedRowsRef.current = sortedRows;
+    const prevSelectedCountRef = useRef(0);
     const displayedRows = useMemo(() => {
         let page = sortedRows;
         if (pagination && !isServerData) {
@@ -306,8 +430,15 @@ export function useGridRows<T>({
             const start = currentPage * pageSize;
             page = sortedRows.slice(start, start + pageSize);
         }
+        const selectedCount = selection.selectedRows.size;
+        // Stream hot path: with no selection and no prior selection, skip O(n) flag walk.
+        // Fresh/patched nodes default to selected:false; only clear once after deselect-all.
+        if (selectedCount === 0 && prevSelectedCountRef.current === 0) {
+            return page;
+        }
+        prevSelectedCountRef.current = selectedCount;
         return withDisplayedSelection(page, selection.selectedRows);
-    }, [sortedRows, pagination, paginationMode, isServerData, paginationState.currentPage, paginationState.pageSize, selection.selectedRows]);
+    }, [sortedRows, pagination, isServerData, paginationState.currentPage, paginationState.pageSize, selection.selectedRows]);
     displayedRowsRef.current = displayedRows;
     const totalRows = isServerData ? serverSideState.totalRows : sortedRows.length;
     return useMemo(() => ({
@@ -326,6 +457,7 @@ export function useGridRows<T>({
         sortedRowsRef,
         overridesRef,
         internalRowDataRef,
+        rowIndexByIdRef,
         serverSideState,
         totalRows
     }), [
@@ -344,6 +476,7 @@ export function useGridRows<T>({
         sortedRowsRef,
         overridesRef,
         internalRowDataRef,
+        rowIndexByIdRef,
         serverSideState,
         totalRows,
     ]);
@@ -369,19 +502,66 @@ function patchRowNodes<T>(
     current: RowNode<T>[],
     indexById: Map<string, number>,
 ): RowNode<T>[] | null {
-    let changed = false;
-    const next = previous.slice();
-    for (let i = 0; i < next.length; i++) {
-        const index = indexById.get(next[i].id);
+    const len = previous.length;
+    let next: RowNode<T>[] | null = null;
+    for (let i = 0; i < len; i++) {
+        const row = previous[i];
+        const index = indexById.get(row.id);
         if (index == null) continue;
         const replacement = current[index];
-        if (!replacement || replacement === next[i]) continue;
-        next[i] = replacement.rowIndex === next[i].rowIndex
+        if (!replacement || replacement === row) continue;
+        if (next === null) next = previous.slice();
+        next[i] = replacement.rowIndex === row.rowIndex
             ? replacement
-            : { ...replacement, rowIndex: next[i].rowIndex };
-        changed = true;
+            : { ...replacement, rowIndex: row.rowIndex };
     }
-    return changed ? next : null;
+    return next;
+}
+/**
+ * Live-stream sort: reposition changed rows in the cached sorted array.
+ * Returns null when the fast path does not apply (caller falls back to sortRows).
+ */
+function tryLiveReposition<T>(
+    sorted: RowNode<T>[],
+    rows: RowNode<T>[],
+    rowIndexById: Map<string, number>,
+    changedIds: readonly string[],
+    sort: SortModel,
+    columns: ProcessedColumn<T>[],
+    overrideFields: Set<string>,
+): RowNode<T>[] | null {
+    const dir = sort.direction;
+    if (dir !== 'asc' && dir !== 'desc') return null;
+    const field = sort.field;
+    // Overrides on the sort field and custom comparators change ordering semantics.
+    if (overrideFields.has(field)) return null;
+    const column = columns.find((c) => c.field === field);
+    if (column?.comparator) return null;
+
+    // Numeric gate: every changed value must be a real number (this subsumes
+    // `filterType === 'number'` and the `typeof value === 'number'` check).
+    const changedById = new Map<string, RowNode<T>>();
+    for (let i = 0; i < changedIds.length; i++) {
+        const id = changedIds[i]!;
+        const index = rowIndexById.get(id);
+        const node = index === undefined ? undefined : rows[index];
+        if (!node) continue;
+        const value = getValueFromPath(node.data, field);
+        if (typeof value !== 'number' || Number.isNaN(value)) return null;
+        changedById.set(id, node);
+    }
+    if (changedById.size === 0) return null;
+
+    // O(1) guard: sortRows places null/undefined at one end; the binary search
+    // treats them as +Infinity. If either end holds a non-number, bail out.
+    const first = getValueFromPath(sorted[0]!.data, field);
+    const last = getValueFromPath(sorted[sorted.length - 1]!.data, field);
+    if (typeof first !== 'number' || typeof last !== 'number') return null;
+
+    const repositioned = repositionRows(sorted, changedIds, changedById, field, dir);
+    if (overrideFields.size === 0) return repositioned;
+    // Other-field overrides may have produced fresh nodes for unchanged rows.
+    return patchRowNodes(repositioned, rows, rowIndexById) ?? repositioned;
 }
 function indexRowsById<T>(rows: readonly T[], getRowId?: (row: T) => string): Map<string, T> {
     const map = new Map<string, T>();
@@ -400,15 +580,20 @@ function dropStaleCellOverrides<T>(
     const ids = Object.keys(overrides);
     if (ids.length === 0) return overrides;
     const previousById = indexRowsById(previousRows, getRowId);
-    const nextById = indexRowsById(nextRows, getRowId);
+    let nextById: Map<string, T> | null = null;
     let changed = false;
     const next: Record<string, Record<string, any>> = {};
     for (let i = 0; i < ids.length; i++) {
         const id = ids[i]!;
         const fields = overrides[id];
         const previousRow = previousById.get(id);
+        if (!fields || !previousRow) {
+            changed = true;
+            continue;
+        }
+        if (nextById === null) nextById = indexRowsById(nextRows, getRowId);
         const nextRow = nextById.get(id);
-        if (!fields || !previousRow || !nextRow) {
+        if (!nextRow) {
             changed = true;
             continue;
         }

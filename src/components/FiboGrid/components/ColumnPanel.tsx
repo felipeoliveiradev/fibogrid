@@ -6,8 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { X, Search, Eye, EyeOff, Pin, GripVertical } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useGridContext } from '../context/GridContext';
-import { enUS } from '../locales/enUS';
+import { useGridLocale } from '../context/GridContext';
 interface ColumnPanelProps<T> {
   columns: ProcessedColumn<T>[];
   onClose: () => void;
@@ -22,7 +21,7 @@ export function ColumnPanel<T>({
   onColumnPinChange,
   onColumnOrderChange,
 }: ColumnPanelProps<T>) {
-  const locale = useGridContext<T>()?.locale ?? enUS;
+  const locale = useGridLocale();
   const [searchTerm, setSearchTerm] = useState('');
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);

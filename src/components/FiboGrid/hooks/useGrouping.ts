@@ -118,6 +118,9 @@ export function useGrouping<T>({
     setGroupByFieldsState((prev) => (sameStringList(prev, fields) ? prev : fields));
   }, []);
   const rowsWithChildren = useMemo(() => {
+    if (childRowsMap.size === 0) {
+      return rows as RegularRowNode<T>[];
+    }
     let result = rows as RegularRowNode<T>[];
     childRowsMap.forEach((children, parentId) => {
       const processedChildren = children.map(childData => {
@@ -168,6 +171,9 @@ export function useGrouping<T>({
     }
     if (groupByFields.length > 0) {
       return flattenGroupedRows(groupedRows, expandedGroups);
+    }
+    if (expandedRows.size === 0) {
+      return splitByField ? splitRows : rowsWithChildren;
     }
     const result: RegularRowNode<T>[] = [];
     (splitByField ? splitRows : rowsWithChildren).forEach(row => {

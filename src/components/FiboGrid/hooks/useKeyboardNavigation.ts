@@ -43,9 +43,16 @@ export function useKeyboardNavigation<T>({
 }: UseKeyboardNavigationProps<T>) {
   const [focusedCell, setFocusedCell] = useState<CellPosition | null>(null);
   const visibleColumns = columns.filter((col) => !col.hide);
+  const { rowIndexById, totalRows } = useMemo(() => {
+    const map = new Map<string, number>();
+    for (let i = 0; i < displayedRows.length; i++) {
+      map.set(displayedRows[i].id, i);
+    }
+    return { rowIndexById: map, totalRows: displayedRows.length };
+  }, [displayedRows]);
   const getRowIndex = useCallback(
-    (rowId: string) => displayedRows.findIndex((r) => r.id === rowId),
-    [displayedRows]
+    (rowId: string) => rowIndexById.get(rowId) ?? -1,
+    [rowIndexById]
   );
   const getColIndex = useCallback(
     (field: string) => visibleColumns.findIndex((c) => c.field === field),
@@ -81,7 +88,7 @@ export function useKeyboardNavigation<T>({
       }
       if (!focusedCell && isInitialFocusKey(e)) {
         const firstColIndex = visibleColumns.findIndex((col) => !col.hide);
-        if (displayedRows.length > 0 && firstColIndex >= 0) {
+        if (totalRows > 0 && firstColIndex >= 0) {
           e.preventDefault();
           navigateToCell(0, firstColIndex);
           return;
@@ -117,7 +124,7 @@ export function useKeyboardNavigation<T>({
       activeShortcuts,
       api,
       navigateToCell,
-      displayedRows,
+      totalRows,
       visibleColumns
     ]
   );

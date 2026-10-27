@@ -5,12 +5,13 @@ import { EventBuilder as EventBuilderClass } from '../utils/EventBuilder';
 export function useGridEvents<T = any>(gridId: string): EventBuilder<T> {
     const { subscribeToGridEvent } = useGridRegistry<T>();
     const activeListeners = useRef<Map<any, () => void>>(new Map());
+    // Clear host subscriptions on unmount and when gridId changes.
     useEffect(() => {
         return () => {
             activeListeners.current.forEach(unsub => unsub());
             activeListeners.current.clear();
         };
-    }, []);
+    }, [gridId]);
     return useMemo(() => {
         const add = (evt: string, fn: any) => {
             const unsub = subscribeToGridEvent(gridId, evt, fn);

@@ -53,7 +53,7 @@ export function useRowRangeSelection(): RowRangeSelectionResult {
   }, []);
   useEffect(() => {
     const handleGlobalMouseUp = () => {
-      if (isDraggingRef.current) {
+      if (isMouseDownRef.current || isDraggingRef.current) {
         handleRowMouseUp();
       }
     };
