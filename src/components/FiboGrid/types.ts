@@ -19,6 +19,10 @@ export interface ColumnDef<T = any> {
   hide?: boolean;
   filterLabel?: string;
   filterType?: FilterType;
+  /** Backend `by` key when it differs from the displayed field. */
+  filterField?: string;
+  /** Remote options for a select filter. The applied value is the option id. */
+  filterOptions?: (search: string) => Promise<Array<{ value: string; label: string }>>;
   type?: 'data' | 'action' | 'checkbox' | 'rowNumber';
   cellEditor?: CellEditorType;
   cellEditorParams?: Record<string, any>;

@@ -1224,9 +1224,10 @@ export function FiboGrid<T extends object>(props: FiboGridProps<T>) {
       tabIndex={0}
       onKeyDown={handleContainerKeyDown}
       onMouseDown={(e) => {
-        if (e.button !== 2) {
-          setContextMenuPosition(null);
-        }
+        if (e.button === 2) return;
+        const target = e.target;
+        if (!(target instanceof Node) || !containerRef.current?.contains(target)) return;
+        setContextMenuPosition(null);
       }}
     >
       {effectiveShowToolbar && (

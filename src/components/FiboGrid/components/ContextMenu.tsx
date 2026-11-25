@@ -70,6 +70,11 @@ export function GridContextMenu({ items, position, onClose, className }: GridCon
         className
       )}
       style={{ left: position.x, top: position.y, width: 'auto', overflow: 'visible' }}
+      onMouseDown={(e) => {
+        // Portal: the DOM node is on document.body, but the React parent is the grid.
+        // A bubbled mousedown closes the menu before the item action runs.
+        e.stopPropagation();
+      }}
     >
       {items.map((item, index) => (
         <ContextMenuRow key={index} item={item} onClose={onClose} />
@@ -132,8 +137,10 @@ function ContextMenuRow({ item, onClose }: { item: ContextMenuItemType; onClose:
         'hover:bg-accent hover:text-accent-foreground',
         item.disabled && 'pointer-events-none opacity-50'
       )}
-      onClick={() => {
-        if (item.disabled) return;
+      onMouseDown={(e) => {
+        if (e.button !== 0 || item.disabled) return;
+        e.preventDefault();
+        e.stopPropagation();
         item.action?.();
         onClose();
       }}
